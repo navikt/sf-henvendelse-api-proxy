@@ -1,0 +1,67 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: sf-henvendelse-api-proxy
+  namespace: teamnks
+  labels:
+    team: teamnks
+spec:
+  image: {{ image }}
+  port: 8080
+  replicas:
+    min: 1
+    max: 2
+  liveness:
+    path: /internal/isAlive
+    initialDelay: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  readiness:
+    path: /internal/isReady
+    initialDelay: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  prometheus:
+    enabled: true
+    path: /internal/metrics
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 100m
+      memory: 512Mi
+  vault:
+    enabled: true
+    paths:
+      - mountPath: /var/run/secrets/nais.io/vault
+        kvPath: /kv/preprod/fss/sf-henvendelse-api-proxy/teamnks
+  ingresses:
+    - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
+  azure:
+    application:
+      enabled: true
+      tenant: trygdeetaten.no
+  accessPolicy:
+    inbound:
+      rules:
+        - application: salesforce
+          namespace: teamcrm
+          cluster: dev-external
+    outbound:
+      rules:
+        - application: veilarbapi
+          namespace: pto
+        - application: sf-brukernotifikasjon
+          namespace: teamnks
+        - application: digdir-krr-proxy
+          namespace: team-rocket
+        - application: sokos-kontoregister-person
+          namespace: okonomi
+        - application: nom-api
+          namespace: nom
+  env:
+    - name: WHITELIST_FILE
+      value: '/whitelist/dev.json'
+    - name: SF_TOKENHOST
+      value: 'https://test.salesforce.com/services/oauth2/token'

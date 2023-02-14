@@ -1,0 +1,25 @@
+{
+  "pto": {
+    "veilarbapi": [
+      "GET /v1/oppfolging/periode",
+      "GET /v1/oppfolging/info"
+    ]
+  },
+  "teamnks": {
+    "sf-brukernotifikasjon": [
+      "POST /innboks",
+      "POST /done"
+    ]
+  },
+  "team-rocket": {
+    "digdir-krr-proxy": [
+      "POST /rest/v1/personer",
+      "GET /rest/v1/person"
+    ]
+  },
+  "okonomi": {
+    "sokos-kontoregister-person": [
+      "POST /api/system/v1/hent-aktiv-konto"
+    ]
+  }
+}
