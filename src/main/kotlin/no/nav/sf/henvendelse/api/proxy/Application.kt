@@ -2,14 +2,8 @@ package no.nav.sf.henvendelse.api.proxy
 
 import io.prometheus.client.exporter.common.TextFormat
 import java.io.StringWriter
-import java.net.URI
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
-import org.apache.http.HttpHost
-import org.apache.http.client.config.CookieSpecs
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClients
-import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -42,6 +36,7 @@ class Application {
     private val log = KotlinLogging.logger { }
     // val rules = Rules.parse(System.getenv(env_WHITELIST_FILE))
 
+    /*
     val client = System.getenv("HTTPS_PROXY").let {
         val uri = URI(it)
         ApacheClient(HttpClients.custom()
@@ -55,6 +50,8 @@ class Application {
                 .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                 .build()).build()) }
 
+
+     */
     fun start() {
         log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
