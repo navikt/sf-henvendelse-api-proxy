@@ -22,7 +22,7 @@ object AccessTokenHandler {
     val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    val SFTokenHost = System.getenv("SF_TOKENHOST")
+    val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
 
     val SFClientID = fetchVaultValue("SFClientID")
     val SFUsername = fetchVaultValue("SFUsername")
@@ -31,7 +31,7 @@ object AccessTokenHandler {
     val privateKeyAlias = fetchVaultValue("PrivateKeyAlias")
     val privateKeyPassword = fetchVaultValue("PrivateKeyPassword")
 
-    val client = ApacheClient.supportProxy(System.getenv("HTTPS_PROXY"))
+    val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
     val gson = Gson()
 
@@ -40,6 +40,8 @@ object AccessTokenHandler {
     private var lastTokenPair = Pair("", "")
 
     var expireTime = System.currentTimeMillis()
+
+    val hello = "hello"
 
     fun fetchVaultValue(vaultKey: String): String {
         val vaultPath = "/var/run/secrets/nais.io/vault"
@@ -53,7 +55,7 @@ object AccessTokenHandler {
         val expireSeconds = (System.currentTimeMillis() / 1000) + expTimeSeconds
         val claim = JWTClaim(
             iss = SFClientID,
-            aud = SFTokenHost,
+            aud = SFTokenHost.value,
             sub = SFUsername,
             exp = expireSeconds.toString() // seconds (not milliseconds) since Epoch
         )
@@ -68,14 +70,14 @@ object AccessTokenHandler {
         }.${gson.toJson(claim).encodeB64UrlSafe()}"
         val fullClaimSignature = privateKey.sign(claimWithHeaderJsonUrlSafe.toByteArray())
 
-        val accessTokenRequest = org.http4k.core.Request(Method.POST, SFTokenHost)
+        val accessTokenRequest = org.http4k.core.Request(Method.POST, SFTokenHost.value)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .query("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
             .query("assertion", "$claimWithHeaderJsonUrlSafe.$fullClaimSignature")
 
         for (retry in 1..4) {
             try {
-                val response = client(accessTokenRequest)
+                val response = client.value(accessTokenRequest)
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)

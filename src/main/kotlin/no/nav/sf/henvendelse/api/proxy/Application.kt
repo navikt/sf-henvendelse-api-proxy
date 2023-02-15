@@ -53,7 +53,7 @@ class Application {
 
      */
     fun start() {
-        log.info { "Starting" }
+        log.info { "Starting ${AccessTokenHandler.hello}" }
         apiServer(NAIS_DEFAULT_PORT).start()
         log.info { "Finished!" }
     }
