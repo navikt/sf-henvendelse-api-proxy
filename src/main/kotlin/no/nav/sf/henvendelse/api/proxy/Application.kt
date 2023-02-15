@@ -1,6 +1,7 @@
 package no.nav.sf.henvendelse.api.proxy
 
 import io.prometheus.client.exporter.common.TextFormat
+import java.io.File
 import java.io.StringWriter
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
@@ -52,13 +53,19 @@ class Application {
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind { req: Request ->
             val firstValidToken = TokenValidator.firstValidToken(req)
-            if (!firstValidToken.isPresent) Response(Status.UNAUTHORIZED) else {
+            if (!firstValidToken.isPresent) {
+                File("tmp/unauthorized").writeText("!")
+                Response(Status.UNAUTHORIZED)
+            } else {
                 val token = firstValidToken.get()
                 token.logStatsInTmp()
                 val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/${req.path("rest") ?: ""}"
                 val headers: Headers =
-                    req.headers + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
+                    req.headers.filter { it.first.toLowerCase() != "authorization" } + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
+
                 val request = Request(req.method, dstUrl).headers(headers).body(req.body)
+                File("tmp/rest").writeText(req.path("rest") ?: "")
+                File("tmp/latestReq").writeText("method: ${request.method}, url: $dstUrl, uri: ${req.uri}, body: ${req.bodyString()}, headers: ${req.headers}")
                 val response = client.value(request)
                 response
             }
