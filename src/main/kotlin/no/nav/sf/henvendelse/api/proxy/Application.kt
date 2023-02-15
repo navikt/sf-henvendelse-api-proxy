@@ -4,6 +4,9 @@ import io.prometheus.client.exporter.common.TextFormat
 import java.io.StringWriter
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
+import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
+import org.http4k.client.ApacheClient
+import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -37,6 +40,8 @@ const val env_WHITELIST_FILE = "WHITELIST_FILE"
 class Application {
     private val log = KotlinLogging.logger { }
 
+    private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
+
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
         log.info { "Finished!" }
@@ -45,10 +50,18 @@ class Application {
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
     fun api(): HttpHandler = routes(
-        "/api/{rest:.*}" bind Method.GET to { req: Request ->
-            val path = req.path("rest") ?: ""
-            val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/$path"
-            Response(Status.OK).body(dstUrl)
+        "/api/{rest:.*}" bind { req: Request ->
+            val firstValidToken = TokenValidator.firstValidToken(req)
+            if (!firstValidToken.isPresent) Response(Status.UNAUTHORIZED) else {
+                val token = firstValidToken.get()
+                token.logStatsInTmp()
+                val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/${req.path("rest") ?: ""}"
+                val headers: Headers =
+                    req.headers + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
+                val request = Request(req.method, dstUrl).headers(headers).body(req.body)
+                val response = client.value(request)
+                response
+            }
         },
         NAIS_ISALIVE bind Method.GET to { Response(Status.OK) },
         NAIS_ISREADY bind Method.GET to { Response(Status.OK) },
