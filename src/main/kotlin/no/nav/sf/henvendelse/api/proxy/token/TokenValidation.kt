@@ -1,14 +1,15 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
+import java.io.File
 import java.net.URL
 import java.util.Optional
+import mu.KotlinLogging
 import no.nav.security.token.support.core.configuration.IssuerProperties
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.core.http.HttpRequest
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler
 import org.http4k.core.Request
-import org.slf4j.LoggerFactory
 
 const val env_AZURE_APP_WELL_KNOWN_URL = "AZURE_APP_WELL_KNOWN_URL"
 const val env_AZURE_APP_CLIENT_ID = "AZURE_APP_CLIENT_ID"
@@ -35,7 +36,7 @@ object TokenValidator {
     private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
     private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',')
 
-    private val log = LoggerFactory.getLogger(TokenValidator::class.java)
+    private val log = KotlinLogging.logger { }
 
     private val callerList: MutableMap<String, Int> = mutableMapOf()
 
@@ -52,7 +53,7 @@ object TokenValidator {
     }
 
     fun firstValidToken(request: Request): Optional<JwtToken> =
-        jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+        jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken.also { File("/tmp/azurevars").writeText("azureUrl $azureUrl, azureAudience $azureAudience") }
 
     fun Request.toNavRequest(): HttpRequest {
         val req = this
