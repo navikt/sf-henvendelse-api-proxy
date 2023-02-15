@@ -54,8 +54,8 @@ class Application {
         "/api/{rest:.*}" bind { req: Request ->
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
-                File("tmp/unauthorized").writeText("!")
-                Response(Status.UNAUTHORIZED)
+                File("/tmp/unauthorized").writeText("!")
+                Response(Status.UNAUTHORIZED).body("Not authorized")
             } else {
                 val token = firstValidToken.get()
                 token.logStatsInTmp()
