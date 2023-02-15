@@ -6,10 +6,12 @@ import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
+import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.Status.Companion.OK
 import org.http4k.routing.bind
+import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.Netty
@@ -34,26 +36,8 @@ const val env_WHITELIST_FILE = "WHITELIST_FILE"
 
 class Application {
     private val log = KotlinLogging.logger { }
-    // val rules = Rules.parse(System.getenv(env_WHITELIST_FILE))
 
-    /*
-    val client = System.getenv("HTTPS_PROXY").let {
-        val uri = URI(it)
-        ApacheClient(HttpClients.custom()
-        .setDefaultRequestConfig(
-            RequestConfig.custom()
-                .setConnectTimeout(5000)
-                .setSocketTimeout(5000)
-                .setConnectionRequestTimeout(5000)
-                .setRedirectsEnabled(false)
-                .setProxy(HttpHost(uri.host, uri.port, uri.scheme))
-                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                .build()).build()) }
-
-
-     */
-    fun start() {
-        log.info { "Starting" }
+    fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
         log.info { "Finished!" }
     }
@@ -61,6 +45,11 @@ class Application {
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
     fun api(): HttpHandler = routes(
+        "/api/{rest:.*}" bind Method.GET to { req: Request ->
+            val path = req.path("rest") ?: ""
+            val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/$path"
+            Response(Status.OK).body(dstUrl)
+        },
         NAIS_ISALIVE bind Method.GET to { Response(Status.OK) },
         NAIS_ISREADY bind Method.GET to { Response(Status.OK) },
         NAIS_METRICS bind Method.GET to {

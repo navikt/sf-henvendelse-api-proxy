@@ -2,16 +2,12 @@ package no.nav.sf.henvendelse.api.proxy.token
 
 import com.google.gson.Gson
 import java.io.File
-import java.net.URI
 import java.security.KeyStore
 import java.security.PrivateKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.apache.http.HttpHost
-import org.apache.http.client.config.CookieSpecs
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClients
+import no.nav.sf.henvendelse.api.proxy.supportProxy
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -22,26 +18,23 @@ object AccessTokenHandler {
     val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
+    private val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
+    private val SFClientID = fetchVaultValue("SFClientID")
+    private val SFUsername = fetchVaultValue("SFUsername")
+    private val keystoreB64 = fetchVaultValue("KeystoreJKSB64")
+    private val keystorePassword = fetchVaultValue("KeystorePassword")
+    private val privateKeyAlias = fetchVaultValue("PrivateKeyAlias")
+    private val privateKeyPassword = fetchVaultValue("PrivateKeyPassword")
 
-    val SFClientID = fetchVaultValue("SFClientID")
-    val SFUsername = fetchVaultValue("SFUsername")
-    val keystoreB64 = fetchVaultValue("KeystoreJKSB64")
-    val keystorePassword = fetchVaultValue("KeystorePassword")
-    val privateKeyAlias = fetchVaultValue("PrivateKeyAlias")
-    val privateKeyPassword = fetchVaultValue("PrivateKeyPassword")
+    private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
-    val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
+    private val gson = Gson()
 
-    val gson = Gson()
-
-    const val expTimeSeconds = 300 // 5 min
+    private const val expTimeSecondsClaim = 300 // 5 min - expire time for the access token we ask salesforce for
 
     private var lastTokenPair = Pair("", "")
 
-    var expireTime = System.currentTimeMillis()
-
-    val hello = "hello"
+    private var expireTime = System.currentTimeMillis()
 
     fun fetchVaultValue(vaultKey: String): String {
         val vaultPath = "/var/run/secrets/nais.io/vault"
@@ -52,12 +45,12 @@ object AccessTokenHandler {
         if (System.currentTimeMillis() < expireTime) {
             return lastTokenPair
         }
-        val expireSeconds = (System.currentTimeMillis() / 1000) + expTimeSeconds
+        val expireMomentSinceEpochInSeconds = (System.currentTimeMillis() / 1000) + expTimeSecondsClaim
         val claim = JWTClaim(
             iss = SFClientID,
             aud = SFTokenHost.value,
             sub = SFUsername,
-            exp = expireSeconds.toString() // seconds (not milliseconds) since Epoch
+            exp = expireMomentSinceEpochInSeconds.toString()
         )
         val privateKey = PrivateKeyFromBase64Store(
             ksB64 = keystoreB64,
@@ -81,14 +74,15 @@ object AccessTokenHandler {
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
-                    expireTime = expireSeconds * 1000
+                    expireTime = expireMomentSinceEpochInSeconds * 1000
                     return lastTokenPair
                 }
             } catch (e: Exception) {
-                log.error("Attempt to fetch access token $retry of 3 failed by ${e.message} stack: ${e.printStackTrace()}}")
+                log.error("Attempt to fetch access token $retry of 3 failed by ${e.message}")
                 runBlocking { delay(retry * 1000L) }
             }
         }
+        log.error("Attempt to fetch access token given up")
         return Pair("", "")
     }
 
@@ -113,42 +107,21 @@ object AccessTokenHandler {
     fun String.decodeB64(): ByteArray = org.apache.commons.codec.binary.Base64.decodeBase64(this)
     fun String.encodeB64UrlSafe(): String =
         org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this.toByteArray())
-}
 
-data class JWTClaim(
-    val iss: String,
-    val aud: String,
-    val sub: String,
-    val exp: String
-)
+    data class JWTClaim(
+        val iss: String,
+        val aud: String,
+        val sub: String,
+        val exp: String
+    )
 
-data class JWTClaimHeader(val alg: String)
+    data class JWTClaimHeader(val alg: String)
 
-data class AccessTokenResponse(
-    val access_token: String,
-    val scope: String,
-    val instance_url: String,
-    val id: String,
-    val token_type: String
-)
-
-private fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let { p ->
-    when {
-        p.isEmpty() -> this()
-        else -> {
-            val up = URI(p)
-            this(
-                client =
-                HttpClients.custom()
-                    .setDefaultRequestConfig(
-                        RequestConfig.custom()
-                            .setProxy(HttpHost(up.host, up.port, up.scheme))
-                            .setRedirectsEnabled(false)
-                            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                            .build()
-                    )
-                    .build()
-            )
-        }
-    }
+    data class AccessTokenResponse(
+        val access_token: String,
+        val scope: String,
+        val instance_url: String,
+        val id: String,
+        val token_type: String
+    )
 }
