@@ -79,7 +79,7 @@ jobs:
       - uses: nais/deploy/actions/deploy@v1
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: dev-gcp
+          CLUSTER: dev-fss
           RESOURCE: .nais/dev.yaml
 #  deploy-prod:
 #    name: Deploy to NAIS prod gcp
@@ -91,5 +91,5 @@ jobs:
 #      - uses: nais/deploy/actions/deploy@v1
 #        env:
 #          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-#          CLUSTER: prod-gcp
+#          CLUSTER: prod-fss
 #          RESOURCE: .nais/prod.yaml
