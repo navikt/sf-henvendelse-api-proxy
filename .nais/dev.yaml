@@ -27,7 +27,7 @@ spec:
     path: /internal/metrics
   resources:
     limits:
-      cpu: 1000m
+      cpu: 1000men
       memory: 1024Mi
     requests:
       cpu: 100m
