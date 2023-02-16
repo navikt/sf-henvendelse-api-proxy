@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.3.61'
-    ext.http4k_version = '3.242.0'
+    ext.http4k_version = '3.285.2'
     ext.embedded_kafka = '2.4.0'
     ext.kotlin_loggin_version = '1.7.8'
     ext.logback_version = '1.2.3'
@@ -76,7 +76,7 @@ dependencies {
 
     implementation "org.http4k:http4k-core:$http4k_version"
     implementation "org.http4k:http4k-server-netty:$http4k_version"
-    implementation "org.http4k:http4k-client-apache:$http4k_version"
+    implementation "org.http4k:http4k-client-apache:3.244.0"
 
     implementation "io.github.microutils:kotlin-logging:$kotlin_loggin_version"
     implementation "ch.qos.logback:logback-classic:$logback_version"
