@@ -52,9 +52,10 @@ object TokenValidator {
         return firstValidToken.isPresent
     }
 
-    fun firstValidToken(request: Request): Optional<JwtToken> =
-        jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken.also { File("/tmp/azurevars").writeText("azureUrl $azureUrl, azureAudience $azureAudience") }
-
+    fun firstValidToken(request: Request): Optional<JwtToken> {
+        File("/tmp/azurevars").writeText("azureUrl $azureUrl, azureAudience $azureAudience")
+        return jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+    }
     fun Request.toNavRequest(): HttpRequest {
         val req = this
         return object : HttpRequest {
