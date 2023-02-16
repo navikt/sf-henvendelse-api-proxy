@@ -54,7 +54,6 @@ class Application {
         "/api/{rest:.*}" bind { req: Request ->
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
-                File("/tmp/unauthorized").writeText("!")
                 Response(Status.UNAUTHORIZED).body("Not authorized")
             } else {
                 val token = firstValidToken.get()
@@ -64,6 +63,8 @@ class Application {
                     req.headers.filter { it.first.toLowerCase() != "authorization" } + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
 
                 val request = Request(req.method, dstUrl).headers(headers).body(req.body)
+                File("/tmp/message").writeText(req.toMessage())
+                File("/tmp/q-query").writeText(req.query("q").toString())
                 File("/tmp/rest").writeText(req.path("rest") ?: "")
                 File("/tmp/latestReq").writeText("method: ${request.method}, url: $dstUrl, uri: ${req.uri}, body: ${req.bodyString()}, headers: ${req.headers}")
                 val response = client.value(request)

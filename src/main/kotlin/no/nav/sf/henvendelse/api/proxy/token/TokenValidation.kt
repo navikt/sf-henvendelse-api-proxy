@@ -1,6 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import java.io.File
 import java.net.URL
 import java.util.Optional
 import mu.KotlinLogging
@@ -52,10 +51,9 @@ object TokenValidator {
         return firstValidToken.isPresent
     }
 
-    fun firstValidToken(request: Request): Optional<JwtToken> {
-        File("/tmp/azurevars").writeText("azureUrl $azureUrl, azureAudience $azureAudience")
-        return jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
-    }
+    fun firstValidToken(request: Request): Optional<JwtToken> =
+        jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+
     fun Request.toNavRequest(): HttpRequest {
         val req = this
         return object : HttpRequest {
