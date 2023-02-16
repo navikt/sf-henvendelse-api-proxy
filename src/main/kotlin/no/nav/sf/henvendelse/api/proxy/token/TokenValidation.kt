@@ -40,8 +40,7 @@ object TokenValidator {
     private val callerList: MutableMap<String, Int> = mutableMapOf()
 
     private val multiIssuerConfiguration = MultiIssuerConfiguration(
-        mapOf(issoAlias to IssuerProperties(URL(issoUrl), issoAudience),
-            tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
+        mapOf(tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
             azureAlias to IssuerProperties(URL(azureUrl), azureAudience)))
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
