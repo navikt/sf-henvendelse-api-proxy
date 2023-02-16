@@ -56,6 +56,7 @@ class Application {
             if (!firstValidToken.isPresent) {
                 Response(Status.UNAUTHORIZED).body("Not authorized")
             } else {
+                File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
                 token.logStatsInTmp()
                 val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/${req.path("rest") ?: ""}"
@@ -63,11 +64,14 @@ class Application {
                     req.headers.filter { it.first.toLowerCase() != "authorization" } + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
 
                 val request = Request(req.method, dstUrl).headers(headers).body(req.body)
-                File("/tmp/message").writeText(req.toMessage())
+
                 File("/tmp/q-query").writeText(req.query("q").toString())
+                File("/tmp/aktorid-query").writeText(req.query("aktorid").toString())
                 File("/tmp/rest").writeText(req.path("rest") ?: "")
                 File("/tmp/latestReq").writeText("method: ${request.method}, url: $dstUrl, uri: ${req.uri}, body: ${req.bodyString()}, headers: ${req.headers}")
+                File("/tmp/forwardmessage").writeText(request.toMessage())
                 val response = client.value(request)
+
                 response
             }
         },
