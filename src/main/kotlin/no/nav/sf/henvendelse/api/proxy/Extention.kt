@@ -5,10 +5,9 @@ import java.net.URI
 import java.util.Arrays
 import java.util.stream.Collectors
 import no.nav.security.token.support.core.jwt.JwtToken
-import org.apache.http.HttpHost
-import org.apache.http.client.config.CookieSpecs
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClients
+import org.apache.hc.client5.http.config.RequestConfig
+import org.apache.hc.client5.http.impl.classic.HttpClients
+import org.apache.hc.core5.http.HttpHost
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 
@@ -22,12 +21,12 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let 
                 HttpClients.custom()
                     .setDefaultRequestConfig(
                         RequestConfig.custom()
-                            .setProxy(HttpHost(up.host, up.port, up.scheme))
-                            .setConnectTimeout(5000)
-                            .setSocketTimeout(5000)
-                            .setConnectionRequestTimeout(5000)
+                            .setProxy(HttpHost(up.scheme, up.host, up.port))
+//                            .setConnectTimeout(5000)
+//                            .setSocketTimeout(5000)
+//                            .setConnectionRequestTimeout(5000)
                             .setRedirectsEnabled(false)
-                            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+//                            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                             .build()
                     )
                     .build()

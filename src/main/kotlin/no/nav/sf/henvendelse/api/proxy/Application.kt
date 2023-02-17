@@ -18,7 +18,7 @@ import org.http4k.routing.bind
 import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
-import org.http4k.server.Netty
+import org.http4k.server.KtorCIO
 import org.http4k.server.asServer
 
 const val NAIS_DEFAULT_PORT = 8080
@@ -48,7 +48,7 @@ class Application {
         log.info { "Finished!" }
     }
 
-    fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
+    fun apiServer(port: Int): Http4kServer = api().asServer(KtorCIO(port))
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind { req: Request ->
