@@ -60,7 +60,7 @@ class Application {
                 File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
                 token.logStatsInTmp()
-                val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}}"
+                val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
                 val headers: Headers =
                     req.headers.filter { it.first.toLowerCase() != "authorization" } + listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"))
 
