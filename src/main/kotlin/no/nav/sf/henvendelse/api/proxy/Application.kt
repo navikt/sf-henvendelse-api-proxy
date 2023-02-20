@@ -52,6 +52,7 @@ class Application {
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind { req: Request ->
+            log.info { "Incoming call ${req.uri}" }
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
                 Response(Status.UNAUTHORIZED).body("Not authorized")
