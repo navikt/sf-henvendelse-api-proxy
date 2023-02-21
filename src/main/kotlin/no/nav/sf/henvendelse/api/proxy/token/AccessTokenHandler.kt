@@ -7,6 +7,7 @@ import java.security.PrivateKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.supportProxy
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
@@ -75,6 +76,7 @@ object AccessTokenHandler {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
                     expireTime = expireMomentSinceEpochInSeconds * 1000
+                    investigateAsNavJWT(lastTokenPair.first)
                     return lastTokenPair
                 }
             } catch (e: Exception) {
@@ -84,6 +86,15 @@ object AccessTokenHandler {
         }
         log.error("Attempt to fetch access token given up")
         return Pair("", "")
+    }
+
+    fun investigateAsNavJWT(serializedJwt: String) {
+        try {
+            val jwt = JwtToken(serializedJwt)
+            File("/tmp/accesstokenparsed").writeText(jwt.jwtTokenClaims.allClaims.toString())
+        } catch (e: Exception) {
+            File("/tmp/accesstokenparsed-exception").writeText("${e.message}")
+        }
     }
 
     fun PrivateKeyFromBase64Store(ksB64: String, ksPwd: String, pkAlias: String, pkPwd: String): PrivateKey {
