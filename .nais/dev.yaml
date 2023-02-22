@@ -78,11 +78,5 @@ spec:
       value: 'https://security-token-service.nais.preprod.local'
     - name: AUDIENCE_TOKEN_SERVICE
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
-    - name: AUDIENCE_ISSO_URL
-      value: 'https://isso-q.adeo.no:443/isso/oauth2/.well-known/openid-configuration'
-    - name: AUDIENCE_ISSO_ALIAS
-      value: 'https://isso-q.adeo.no:443'
-    - name: AUDIENCE_ISSO
-      value: 'modialogin-q0,modialogin-q1'
     - name: SALESFORCE_AZURE_CLIENT_ID
       value: 6d2d8031-f17d-4ed6-83f5-e554d5c07eca

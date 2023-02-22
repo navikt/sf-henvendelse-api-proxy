@@ -6,6 +6,7 @@ import java.util.Arrays
 import java.util.stream.Collectors
 import no.nav.security.token.support.core.jwt.JwtToken
 import org.apache.http.HttpHost
+import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClients
 import org.http4k.client.ApacheClient
@@ -26,7 +27,7 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let 
                             .setSocketTimeout(5000)
                             .setConnectionRequestTimeout(5000)
                             .setRedirectsEnabled(false)
-//                            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                            .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                             .build()
                     )
                     .build()
@@ -53,11 +54,11 @@ private fun MutableMap<String, Int>.inc(key: String) {
 fun JwtToken.logStatsInTmp() {
     try {
         val azp = this.jwtTokenClaims.get(claim_azp_name)?.toString() ?: "null"
-        val name = this.jwtTokenClaims.get(claim_name)?.toString() ?: "null"
+        val name = this.jwtTokenClaims.get(claim_name)?.toString()
         azpMap.inc(azp)
-        nameMap.inc(name)
+        nameMap.inc(name?.let { "name" } ?: "none")
         latestAzp = azp
-        latestName = name
+        latestName = name ?: "none"
         File("/tmp/azpMap").writeText(azpMap.toString())
         File("/tmp/nameMap").writeText(nameMap.toString())
     } catch (e: Exception) {
