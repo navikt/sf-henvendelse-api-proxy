@@ -47,7 +47,7 @@ class Application {
                 File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
                 var oboToken = ""
-                var NAVidentclaim : String = ""
+                var NAVidentclaim: String = ""
                 try {
                     NAVidentclaim = token.jwtTokenClaims.getStringClaim(claim_NAVident)
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
