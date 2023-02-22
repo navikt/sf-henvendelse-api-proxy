@@ -11,6 +11,7 @@ import no.nav.sf.henvendelse.api.proxy.supportProxy
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
+import org.http4k.core.body.toBody
 
 object AccessTokenHandler {
     private val log = KotlinLogging.logger { }
@@ -65,8 +66,13 @@ object AccessTokenHandler {
 
         val accessTokenRequest = org.http4k.core.Request(Method.POST, SFTokenHost.value)
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .query("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-            .query("assertion", "$claimWithHeaderJsonUrlSafe.$fullClaimSignature")
+            // .query("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+            // .query("assertion", "$claimWithHeaderJsonUrlSafe.$fullClaimSignature")
+            .body(
+                listOf(
+                    "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                    "assertion" to "$claimWithHeaderJsonUrlSafe.$fullClaimSignature"
+                ).toBody())
 
         for (retry in 1..4) {
             try {

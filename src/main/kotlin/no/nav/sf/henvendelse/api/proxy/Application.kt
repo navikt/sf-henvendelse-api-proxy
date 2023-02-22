@@ -35,7 +35,6 @@ class Application {
 
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
-        log.info { "Finished!" }
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
