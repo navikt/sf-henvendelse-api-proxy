@@ -33,7 +33,10 @@ class Application {
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
-    fun start() = apiServer(NAIS_DEFAULT_PORT).start()
+    fun start() { log.info { "Starting" }
+        apiServer(NAIS_DEFAULT_PORT).start()
+        log.info { "Finished!" }
+    }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
@@ -47,7 +50,7 @@ class Application {
                 File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
                 var oboToken = ""
-                var NAVidentclaim: String = ""
+                var NAVidentclaim: String
                 try {
                     NAVidentclaim = token.jwtTokenClaims.getStringClaim(claim_NAVident)
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
