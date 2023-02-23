@@ -62,7 +62,9 @@ object OboTokenExchangeHandler {
 
         File("/tmp/azureOBOresult").writeText(res.toMessage())
 
-        val jwt = JwtToken(JSONObject(res.body).get("access_token").toString())
+        File("/tmp/azureOBObodyString").writeText(res.bodyString())
+
+        val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
         File("/tmp/azurejwtclaimset").writeText(jwt.jwtTokenClaims.toString())
         OBOcache[key] = jwt
         return jwt
