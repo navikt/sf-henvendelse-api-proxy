@@ -36,14 +36,14 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let 
     }
 }
 
-var latestAzp = ""
+var latestAzpName = ""
 var latestName = ""
 
 const val claim_NAVident = "NAVident"
 const val claim_azp_name = "azp_name"
 const val claim_name = "name"
 
-private val azpMap: MutableMap<String, Int> = mutableMapOf()
+private val azpNameMap: MutableMap<String, Int> = mutableMapOf()
 private val nameMap: MutableMap<String, Int> = mutableMapOf()
 
 private fun MutableMap<String, Int>.inc(key: String) {
@@ -53,13 +53,13 @@ private fun MutableMap<String, Int>.inc(key: String) {
 
 fun JwtToken.logStatsInTmp() {
     try {
-        val azp = this.jwtTokenClaims.get(claim_azp_name)?.toString() ?: "null"
+        val azp_name = this.jwtTokenClaims.get(claim_azp_name)?.toString() ?: "null"
         val name = this.jwtTokenClaims.get(claim_name)?.toString()
-        azpMap.inc(azp)
+        azpNameMap.inc(azp_name)
         nameMap.inc(name?.let { "name" } ?: "none")
-        latestAzp = azp
+        latestAzpName = azp_name
         latestName = name ?: "none"
-        File("/tmp/azpMap").writeText(azpMap.toString())
+        File("/tmp/azpMap").writeText(azpNameMap.toString())
         File("/tmp/nameMap").writeText(nameMap.toString())
     } catch (e: Exception) {
         File("/tmp/exception").writeText(e.message.toString())
