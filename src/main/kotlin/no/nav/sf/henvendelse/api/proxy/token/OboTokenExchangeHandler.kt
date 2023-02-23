@@ -60,7 +60,7 @@ object OboTokenExchangeHandler {
 
         val res = client.value(req)
 
-        File("/tmp/azureOBOtestresult").writeText(res.toMessage())
+        File("/tmp/azureOBOresult").writeText(res.toMessage())
 
         val jwt = JwtToken(JSONObject(res.body).get("access_token").toString())
         File("/tmp/azurejwtclaimset").writeText(jwt.jwtTokenClaims.toString())
