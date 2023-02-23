@@ -82,12 +82,12 @@ object AccessTokenHandler {
                 lateinit var response: Response
                 FetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis {
                     response = client.value(accessTokenRequest)
-                    if (response.status.code == 200) {
-                        val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
-                        lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
-                        expireTime = (expireMomentSinceEpochInSeconds - 10) * 1000
-                        return lastTokenPair
-                    }
+                }
+                if (response.status.code == 200) {
+                    val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
+                    lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
+                    expireTime = (expireMomentSinceEpochInSeconds - 10) * 1000
+                    return lastTokenPair
                 }
             } catch (e: Exception) {
                 log.error("Attempt to fetch access token $retry of 3 failed by ${e.message}")

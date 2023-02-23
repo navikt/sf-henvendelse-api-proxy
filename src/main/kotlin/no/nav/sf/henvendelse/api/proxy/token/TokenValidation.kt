@@ -2,6 +2,7 @@ package no.nav.sf.henvendelse.api.proxy.token
 
 import java.net.URL
 import java.util.Optional
+import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.security.token.support.core.configuration.IssuerProperties
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
@@ -47,8 +48,13 @@ object TokenValidator {
         return firstValidToken.isPresent
     }
 
-    fun firstValidToken(request: Request): Optional<JwtToken> =
-        jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+    fun firstValidToken(request: Request): Optional<JwtToken> {
+        lateinit var result: Optional<JwtToken>
+        FetchStats.elapsedTimeTokenValidation = measureTimeMillis {
+            result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+        }
+        return result
+    }
 
     fun Request.toNavRequest(): HttpRequest {
         val req = this

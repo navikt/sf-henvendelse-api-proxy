@@ -7,14 +7,17 @@ object FetchStats {
 
     var elapsedTimeAccessTokenRequest: Long = -1L
     var elapsedTimeOboExchangeRequest: Long = -1L
+    var elapsedTimeTokenValidation: Long = -1L
+
     fun resetFetchVars() = {
         elapsedTimeAccessTokenRequest = 0L
         elapsedTimeOboExchangeRequest = 0L
+        elapsedTimeTokenValidation = 0L
     }
     var callTime: MutableMap<String, Long> = mutableMapOf()
 
     fun logStats() {
-        log.info { "Accesstoken: $elapsedTimeAccessTokenRequest, OboExchange $elapsedTimeOboExchangeRequest" }
+        log.info { "Validation ${elapsedTimeTokenValidation }Accesstoken: $elapsedTimeAccessTokenRequest, OboExchange $elapsedTimeOboExchangeRequest" }
         log.info { "Call times $callTime" }
     }
 }
