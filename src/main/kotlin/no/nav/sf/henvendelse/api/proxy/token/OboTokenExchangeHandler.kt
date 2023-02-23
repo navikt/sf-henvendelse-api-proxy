@@ -27,6 +27,10 @@ object OboTokenExchangeHandler {
     val sfClientId: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
     val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
 
+    val poseClientId: Lazy<String> = lazy { System.getenv("POSE_ID") }
+
+    val poseClientSecret: Lazy<String> = lazy { System.getenv("POSE_SECRET") }
+
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
     fun fetchAzureTokenOBO(jwtIn: JwtToken): JwtToken {
@@ -47,9 +51,9 @@ object OboTokenExchangeHandler {
                 listOf(
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to jwtIn.tokenAsString,
-                    "client_id" to clientId.value,
+                    "client_id" to poseClientId.value,
                     "scope" to "api://${sfClientId.value}/.default",
-                    "client_secret" to clientSecret.value,
+                    "client_secret" to poseClientSecret.value,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )

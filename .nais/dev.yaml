@@ -67,6 +67,8 @@ spec:
           namespace: okonomi
         - application: nom-api
           namespace: nom
+  envFrom:
+    - secret: pose-as-henv
   env:
     - name: WHITELIST_FILE
       value: '/whitelist/dev.json'
