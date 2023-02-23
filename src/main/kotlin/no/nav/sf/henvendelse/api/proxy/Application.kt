@@ -3,8 +3,11 @@ package no.nav.sf.henvendelse.api.proxy
 import io.prometheus.client.exporter.common.TextFormat
 import java.io.File
 import java.io.StringWriter
+import java.lang.Integer.max
+import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
+import no.nav.sf.henvendelse.api.proxy.token.FetchStats
 import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import org.http4k.client.ApacheClient
@@ -15,6 +18,7 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.bind
+import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.server.Http4kServer
 import org.http4k.server.Netty
@@ -40,6 +44,7 @@ class Application {
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind { req: Request ->
+            FetchStats.resetFetchVars()
             log.info { "Incoming call ${req.uri}" }
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
@@ -48,43 +53,53 @@ class Application {
                 File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
                 var oboToken = ""
-                var NAVidentclaim: String
+                var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
                 val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString()
+                val navIdentHeader = req.header("Nav-Ident")
 
-                NAVidentclaim = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
-                if (NAVidentclaim.isNotEmpty()) {
-                    log.info { "Entry as obo" }
+                if (NAVident.isNotEmpty()) {
+                    log.info { "Ident from obo" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     File("/tmp/message-obo").writeText(req.toMessage())
-                } else {
-                    log.info { "Entry not obo" }
-                    val navIdentHeader = req.header("Nav-Ident")
-                    log.info { "head $navIdentHeader" }
-                    if (navIdentHeader != null) {
-                        log.info { "Entry as header" }
-                        NAVidentclaim = navIdentHeader
-                        File("/tmp/message-header").writeText(req.toMessage())
-                    } else if (azpName != null) {
-                        log.info { "Entry as srvusr" }
-                        NAVidentclaim = azpName
-                        File("/tmp/message-srvusr").writeText(req.toMessage())
-                    } else {
-                        Response(Status.BAD_REQUEST).body("Missing Nav identifier")
-                    }
+                } else if (navIdentHeader != null) {
+                    log.info { "Ident from header" }
+                    NAVident = navIdentHeader
+                    File("/tmp/message-header").writeText(req.toMessage())
+                } else if (azpName != null) {
+                    log.info { "Ident as machine source" }
+                    NAVident = azpName
+                    File("/tmp/message-m2m").writeText(req.toMessage())
                 }
 
-                token.logStatsInTmp()
-                val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
-                val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
-                val headers: Headers =
-                    req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
-                            listOf(Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
-                                Pair("X-ACTING-NAV-IDENT", NAVidentclaim)) + oboHeader
-                val request = Request(req.method, dstUrl).headers(headers).body(req.body)
+                if (NAVident.isEmpty()) {
+                    Response(Status.BAD_REQUEST).body("Missing Nav identifier")
+                } else {
+                    token.logStatsInTmp()
+                    val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
+                    val oboHeader = if (oboToken.isNotEmpty()) {
+                        listOf(Pair("X-Nav-Token", oboToken))
+                    } else {
+                        listOf()
+                    }
+                    val headers: Headers =
+                        req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
+                                listOf(
+                                    Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
+                                    Pair("X-ACTING-NAV-IDENT", NAVident)
+                                ) + oboHeader
+                    val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 
-                File("/tmp/forwardmessage").writeText(request.toMessage())
-                val response = client.value(request)
-                response
+                    File("/tmp/forwardmessage").writeText(request.toMessage())
+                    lateinit var response: Response
+                    val pathStump =
+                        req.path("rest")?.let { rest -> rest.substring(0, max(20, rest.length - 1)) } ?: "null"
+                    FetchStats.callTime[pathStump] =
+                        measureTimeMillis {
+                            response = client.value(request)
+                        }
+                    FetchStats.logStats()
+                    response
+                }
             }
         },
         NAIS_ISALIVE bind Method.GET to { Response(Status.OK) },

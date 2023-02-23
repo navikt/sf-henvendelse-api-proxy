@@ -3,6 +3,7 @@ package no.nav.sf.henvendelse.api.proxy.token
 import com.google.gson.Gson
 import java.io.File
 import java.time.Instant
+import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.claim_NAVident
@@ -12,6 +13,7 @@ import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Response
 import org.http4k.core.body.toBody
 import org.json.JSONObject
 
@@ -58,7 +60,10 @@ object OboTokenExchangeHandler {
                 ).toBody()
             )
 
-        val res = client.value(req)
+        lateinit var res: Response
+        FetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
+            res = client.value(req)
+        }
 
         File("/tmp/azureOBOresult").writeText(res.toMessage())
 

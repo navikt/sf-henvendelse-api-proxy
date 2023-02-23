@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import java.io.File
 import java.security.KeyStore
 import java.security.PrivateKey
+import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -14,6 +15,7 @@ import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Response
 import org.http4k.core.body.toBody
 
 object AccessTokenHandler {
@@ -77,12 +79,15 @@ object AccessTokenHandler {
 
         for (retry in 1..4) {
             try {
-                val response = client.value(accessTokenRequest)
-                if (response.status.code == 200) {
-                    val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
-                    lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
-                    expireTime = (expireMomentSinceEpochInSeconds - 10) * 1000
-                    return lastTokenPair
+                lateinit var response: Response
+                FetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis {
+                    response = client.value(accessTokenRequest)
+                    if (response.status.code == 200) {
+                        val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
+                        lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
+                        expireTime = (expireMomentSinceEpochInSeconds - 10) * 1000
+                        return lastTokenPair
+                    }
                 }
             } catch (e: Exception) {
                 log.error("Attempt to fetch access token $retry of 3 failed by ${e.message}")
