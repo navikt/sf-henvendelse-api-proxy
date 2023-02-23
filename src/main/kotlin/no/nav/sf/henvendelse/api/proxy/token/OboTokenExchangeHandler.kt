@@ -25,7 +25,7 @@ object OboTokenExchangeHandler {
     val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
     val sfClientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
     val sfClientSecret: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
-    val azureTokenEndPoint : Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
+    val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
 
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
