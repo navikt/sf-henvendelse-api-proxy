@@ -8,6 +8,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.supportProxy
+import org.apache.commons.codec.binary.Base64.decodeBase64
+import org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -108,10 +110,9 @@ object AccessTokenHandler {
         }
     }
 
-    fun ByteArray.encodeB64(): String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this)
-    fun String.decodeB64(): ByteArray = org.apache.commons.codec.binary.Base64.decodeBase64(this)
-    fun String.encodeB64UrlSafe(): String =
-        org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this.toByteArray())
+    fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
+    fun String.decodeB64(): ByteArray = decodeBase64(this)
+    fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
 
     data class JWTClaim(
         val iss: String,

@@ -23,8 +23,8 @@ object OboTokenExchangeHandler {
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
     val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
-    val sfClientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
-    val sfClientSecret: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
+    val clientSecret: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
+    val sfClientId: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
     val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
 
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
@@ -49,7 +49,7 @@ object OboTokenExchangeHandler {
                     "assertion" to jwtIn.tokenAsString,
                     "client_id" to clientId.value,
                     "scope" to "api://${sfClientId.value}/.default",
-                    "client_secret" to sfClientSecret.value,
+                    "client_secret" to clientSecret.value,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
