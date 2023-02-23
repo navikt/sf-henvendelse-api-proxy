@@ -25,10 +25,10 @@ const val NAIS_ISALIVE = "/internal/isAlive"
 const val NAIS_ISREADY = "/internal/isReady"
 const val NAIS_METRICS = "/internal/metrics"
 
-val restrictedHeaders = listOf("host", "content-length", "authorization")
-
 class Application {
     private val log = KotlinLogging.logger { }
+
+    val restrictedHeaders = listOf("host", "content-length", "authorization")
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 

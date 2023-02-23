@@ -25,6 +25,7 @@ object OboTokenExchangeHandler {
     val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
     val sfClientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
     val sfClientSecret: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
+    val azureTokenEndPoint : Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
 
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
@@ -40,7 +41,7 @@ object OboTokenExchangeHandler {
             }
         }
 
-        val req = Request(Method.POST, AccessTokenHandler.SFTokenHost.value)
+        val req = Request(Method.POST, azureTokenEndPoint.value)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(
                 listOf(
@@ -52,8 +53,6 @@ object OboTokenExchangeHandler {
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
-
-        File("/tmp/requestOBOmessage").writeText(req.toMessage())
 
         val res = client.value(req)
 
