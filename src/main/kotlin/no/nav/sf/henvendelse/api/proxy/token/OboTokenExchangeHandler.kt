@@ -39,6 +39,7 @@ object OboTokenExchangeHandler {
                 return cachedToken
             }
         }
+
         val req = Request(Method.POST, AccessTokenHandler.SFTokenHost.value)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(
@@ -51,6 +52,8 @@ object OboTokenExchangeHandler {
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
+
+        File("/tmp/requestOBOmessage").writeText(req.toMessage())
 
         val res = client.value(req)
 
