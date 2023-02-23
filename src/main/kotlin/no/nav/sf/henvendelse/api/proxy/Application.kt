@@ -53,14 +53,17 @@ class Application {
 
                 NAVidentclaim = token.jwtTokenClaims.getStringClaim(claim_NAVident)?.toString() ?: ""
                 if (NAVidentclaim.isNotEmpty()) {
+                    log.info { "Entry as obo" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     File("/tmp/message-obo").writeText(req.toMessage())
                 } else {
                     val navIdentHeader = req.header("Nav-Ident")
                     if (navIdentHeader != null) {
+                        log.info { "Entry as header" }
                         NAVidentclaim = navIdentHeader
                         File("/tmp/message-header").writeText(req.toMessage())
                     } else if (azpName != null) {
+                        log.info { "Entry as srvusr" }
                         NAVidentclaim = azpName
                         File("/tmp/message-srvusr").writeText(req.toMessage())
                     } else {
