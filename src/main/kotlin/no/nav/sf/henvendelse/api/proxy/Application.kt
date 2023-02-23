@@ -72,6 +72,7 @@ class Application {
                 }
 
                 if (NAVident.isEmpty()) {
+                    File("/tmp/message-missing").writeText(req.toMessage())
                     Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
                     token.logStatsInTmp()
