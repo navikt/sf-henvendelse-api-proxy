@@ -30,6 +30,7 @@ const val NAIS_ISREADY = "/internal/isReady"
 const val NAIS_METRICS = "/internal/metrics"
 
 class Application {
+    private var callTime = 0L
     private val log = KotlinLogging.logger { }
 
     val restrictedHeaders = listOf("host", "content-length", "authorization")
@@ -44,7 +45,8 @@ class Application {
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind { req: Request ->
-            log.info { "Incoming call ${req.uri}" }
+            log.info { "Incoming call ($callTime) ${req.uri}" }
+            callTime++
             FetchStats.resetFetchVars()
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
@@ -58,22 +60,22 @@ class Application {
                 val navIdentHeader = req.header("Nav-Ident")
 
                 if (NAVident.isNotEmpty()) {
-                    log.info { "Ident from obo" }
+                    log.info { "Ident from obo ($callTime)" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
-                    File("/tmp/message-obo").writeText(req.toMessage())
+                    File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header" }
+                    log.info { "Ident from header ($callTime)" }
                     NAVident = navIdentHeader
-                    File("/tmp/message-header").writeText(req.toMessage())
+                    File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
                 } else if (azpName != null) {
-                    log.info { "Ident as machine source" }
+                    log.info { "Ident as machine source ($callTime)" }
                     NAVident = azpName
-                    File("/tmp/message-m2m").writeText(req.toMessage())
+                    File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
                 }
 
                 if (NAVident.isEmpty()) {
-                    File("/tmp/message-missing").writeText(req.toMessage())
-                    Response(Status.BAD_REQUEST).body("Missing Nav identifier")
+                    File("/tmp/message-missing").writeText("($callTime)" + req.toMessage())
+                    Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callTime)")
                 } else {
                     token.logStatsInTmp()
                     val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
@@ -94,11 +96,11 @@ class Application {
                     lateinit var response: Response
                     val pathStump =
                         req.path("rest")?.let { rest -> rest.substring(0, max(20, rest.length - 1)) } ?: "null"
-                    FetchStats.callTime[pathStump] =
+                    FetchStats.callElapsedTime[pathStump] =
                         measureTimeMillis {
                             response = client.value(request)
                         }
-                    FetchStats.logStats()
+                    FetchStats.logStats(callTime)
                     response
                 }
             }

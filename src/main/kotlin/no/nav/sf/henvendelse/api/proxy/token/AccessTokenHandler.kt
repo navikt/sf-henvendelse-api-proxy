@@ -36,7 +36,7 @@ object AccessTokenHandler {
 
     private val gson = Gson()
 
-    private const val expTimeSecondsClaim = 300 // 5 min - expire time for the access token we ask salesforce for
+    private const val expTimeSecondsClaim = 3600 // 60 min - expire time for the access token we ask salesforce for
 
     private var lastTokenPair = Pair("", "")
 
@@ -49,6 +49,7 @@ object AccessTokenHandler {
 
     fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
         if (System.currentTimeMillis() < expireTime) {
+            log.info { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
             return lastTokenPair
         }
         val expireMomentSinceEpochInSeconds = (System.currentTimeMillis() / 1000) + expTimeSecondsClaim

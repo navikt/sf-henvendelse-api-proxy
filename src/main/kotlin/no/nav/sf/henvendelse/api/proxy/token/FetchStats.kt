@@ -14,10 +14,10 @@ object FetchStats {
         elapsedTimeOboExchangeRequest = 0L
         elapsedTimeTokenValidation = 0L
     }
-    var callTime: MutableMap<String, Long> = mutableMapOf()
+    var callElapsedTime: MutableMap<String, Long> = mutableMapOf()
 
-    fun logStats() {
-        log.info { "Validation ${elapsedTimeTokenValidation }Accesstoken: $elapsedTimeAccessTokenRequest, OboExchange $elapsedTimeOboExchangeRequest" }
-        log.info { "Call times $callTime" }
+    fun logStats(callTime: Long) {
+        log.info { "($callTime) Validation ${elapsedTimeTokenValidation }Accesstoken: $elapsedTimeAccessTokenRequest, OboExchange $elapsedTimeOboExchangeRequest" }
+        log.info { "Call times $callElapsedTime" }
     }
 }
