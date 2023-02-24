@@ -46,32 +46,27 @@ spec:
       claims:
         extra:
           - azp_name
+          - NAVident
       tenant: trygdeetaten.no
   accessPolicy:
     inbound:
       rules:
         - application: itestapp
           namespace: teamcrm
+        - application: gosys-q1
+          namespace: isa
+        - application: gosys-q2
+          namespace: isa
+        - application: modia-robot-api
+          namespace: personoversikt
+        - application: modiapersonoversikt-api-q1
+          namespace: personoversikt
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
-    outbound:
-      rules:
-        - application: veilarbapi
-          namespace: pto
-        - application: sf-brukernotifikasjon
-          namespace: teamnks
-        - application: digdir-krr-proxy
-          namespace: team-rocket
-        - application: sokos-kontoregister-person
-          namespace: okonomi
-        - application: nom-api
-          namespace: nom
   envFrom:
     - secret: pose-as-henv
   env:
-    - name: WHITELIST_FILE
-      value: '/whitelist/dev.json'
     - name: SF_TOKENHOST
       value: 'https://test.salesforce.com/services/oauth2/token'
     - name: AUDIENCE_TOKEN_SERVICE_URL

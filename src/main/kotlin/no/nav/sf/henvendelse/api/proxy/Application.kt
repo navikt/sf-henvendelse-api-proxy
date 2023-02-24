@@ -17,9 +17,11 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
 import org.http4k.routing.path
 import org.http4k.routing.routes
+import org.http4k.routing.static
 import org.http4k.server.Http4kServer
 import org.http4k.server.Netty
 import org.http4k.server.asServer
@@ -30,8 +32,8 @@ const val NAIS_ISREADY = "/internal/isReady"
 const val NAIS_METRICS = "/internal/metrics"
 
 class Application {
-    private var callTime = 0L
     private val log = KotlinLogging.logger { }
+    private var callTime = 0L
 
     val restrictedHeaders = listOf("host", "content-length", "authorization")
 
@@ -44,6 +46,7 @@ class Application {
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
     fun api(): HttpHandler = routes(
+        "/static" bind static(Classpath("/static")),
         "/api/{rest:.*}" bind { req: Request ->
             callTime++
             log.info { "Incoming call ($callTime) ${req.uri}" }

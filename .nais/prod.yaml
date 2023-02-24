@@ -46,24 +46,27 @@ spec:
       claims:
         extra:
           - azp_name
+          - NAVident
   accessPolicy:
     inbound:
       rules:
+        - application: gosys
+          namespace: isa
+        - application: modia-robot-api
+          namespace: personoversikt
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
-    outbound:
-      rules:
-        - application: veilarbapi
-          namespace: pto
-        - application: sf-brukernotifikasjon
-          namespace: teamnks
-        - application: digdir-krr-proxy
-          namespace: team-rocket
-        - application: sokos-kontoregister-person
-          namespace: okonomi
   env:
-    - name: WHITELIST_FILE
-      value: '/whitelist/prod.json'
     - name: SF_TOKENHOST
       value: 'https://login.salesforce.com/services/oauth2/token'
+    - name: AUDIENCE_TOKEN_SERVICE_URL
+      value: 'https://security-token-service.nais.adeo.no/rest/v1/sts/.well-known/openid-configuration'
+    - name: AUDIENCE_TOKEN_SERVICE_ALIAS
+      value: 'https://security-token-service.nais.adeo.no'
+    - name: AUDIENCE_TOKEN_SERVICE
+      value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
+    - name: SALESFORCE_AZURE_CLIENT_ID
+      value: eeb46d29-5cf1-482f-a8fa-218bbc6be363
