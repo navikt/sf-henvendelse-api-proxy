@@ -31,7 +31,7 @@ object TokenValidator {
 
     private val azureAlias = "azure"
     private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
-    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',') + "a37c2c66-ca41-4445-b9f3-1cdc266c9559"
+    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',') // + "a37c2c66-ca41-4445-b9f3-1cdc266c9559"
 
     private val log = KotlinLogging.logger { }
 

@@ -70,6 +70,9 @@ class Application {
                     log.info("Got roles claim class ${rolesClaim.javaClass.name}")
                     val firstRolesClaim = (rolesClaim as JSONArray)[0]
                     log.info("Got roles claim entry $firstRolesClaim")
+                    if (firstRolesClaim.toString() == "access_as_application") {
+                        File("/tmp/machinetoken").writeText(token.tokenAsString)
+                    }
                 }
 
                 if (NAVident.isNotEmpty()) {

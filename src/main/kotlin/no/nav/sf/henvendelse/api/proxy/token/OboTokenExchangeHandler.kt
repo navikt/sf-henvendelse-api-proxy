@@ -53,9 +53,9 @@ object OboTokenExchangeHandler {
                 listOf(
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to jwtIn.tokenAsString,
-                    "client_id" to poseClientId.value,
+                    "client_id" to clientId.value, // poseClientId.value,
                     "scope" to "api://${sfClientId.value}/.default",
-                    "client_secret" to poseClientSecret.value,
+                    "client_secret" to clientSecret.value, // poseClientSecret.value,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
