@@ -79,11 +79,7 @@ class Application {
                 } else {
                     token.logStatsInTmp()
                     val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
-                    val oboHeader = if (oboToken.isNotEmpty()) {
-                        listOf(Pair("X-Nav-Token", oboToken))
-                    } else {
-                        listOf()
-                    }
+                    val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
                     val headers: Headers =
                         req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
                                 listOf(
@@ -94,12 +90,12 @@ class Application {
 
                     File("/tmp/forwardmessage").writeText(request.toMessage())
                     lateinit var response: Response
-                    val pathStump =
-                        req.path("rest")?.let { rest -> rest.substring(0, max(20, rest.length - 1)) } ?: "null"
-                    FetchStats.callElapsedTime[pathStump] =
+                    val pathStump = req.path("rest")?.let { rest -> rest.substring(0, max(20, rest.length - 1)) } ?: "null"
+                    FetchStats.latestCallElapsedTime =
                         measureTimeMillis {
                             response = client.value(request)
                         }
+                    FetchStats.callElapsedTime[pathStump] = FetchStats.latestCallElapsedTime
                     FetchStats.logStats(callTime)
                     response
                 }
