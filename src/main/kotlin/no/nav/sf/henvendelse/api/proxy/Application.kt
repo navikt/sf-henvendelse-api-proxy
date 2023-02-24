@@ -6,6 +6,7 @@ import java.io.StringWriter
 import java.lang.Integer.max
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
+import net.minidev.json.JSONArray
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.FetchStats
 import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
@@ -60,18 +61,27 @@ class Application {
                 var oboToken = ""
                 var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
                 val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString()
+                var azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
+                var sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                 val navIdentHeader = req.header("Nav-Ident")
+
+                val rolesClaim = token.jwtTokenClaims.get(claim_roles)
+                if (rolesClaim != null) {
+                    log.info("Got roles claim class ${rolesClaim.javaClass.name}")
+                    val firstRolesClaim = (rolesClaim as JSONArray)[0]
+                    log.info("Got roles claim entry $firstRolesClaim")
+                }
 
                 if (NAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime)" }
+                    log.info { "Ident from header ($callTime) - token with azp $azp, sub $sub" }
                     NAVident = navIdentHeader
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
                 } else if (azpName != null) {
-                    log.info { "Ident as machine source ($callTime)" }
+                    log.info { "Ident as machine source ($callTime) - token with azp $azp, sub $sub" }
                     NAVident = azpName
                     File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
                 }
