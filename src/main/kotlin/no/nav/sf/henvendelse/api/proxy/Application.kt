@@ -58,12 +58,16 @@ class Application {
             } else {
                 File("/tmp/message").writeText(req.toMessage())
                 val token = firstValidToken.get()
+
                 var oboToken = ""
                 var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
-                val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString()
-                var azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
-                var sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
+
+                val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString() ?: ""
+                val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
+                val sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                 val navIdentHeader = req.header("Nav-Ident")
+                val navConsumerId = req.header("nav-consumer-id")?.first() ?: ""
+                val xProxyRef = req.header("X-Proxy-Ref")?.first() ?: ""
 
                 val rolesClaim = token.jwtTokenClaims.get(claim_roles)
                 if (rolesClaim != null) {
@@ -80,11 +84,11 @@ class Application {
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime) - token with azp $azp, sub $sub" }
+                    log.info { "Ident from header ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = navIdentHeader
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
-                } else if (azpName != null) {
-                    log.info { "Ident as machine source ($callTime) - token with azp $azp, sub $sub" }
+                } else if (azpName.isNotEmpty()) {
+                    log.info { "Ident as machine source ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = azpName
                     File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
                 }
@@ -93,7 +97,7 @@ class Application {
                     File("/tmp/message-missing").writeText("($callTime)" + req.toMessage())
                     Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callTime)")
                 } else {
-                    token.logStatsInTmp()
+                    // token.logStatsInTmp()
                     val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
                     val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
                     val headers: Headers =
