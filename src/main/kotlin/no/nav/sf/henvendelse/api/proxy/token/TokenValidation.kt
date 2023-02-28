@@ -56,7 +56,7 @@ object TokenValidator {
         return result
     }
 
-    fun Request.toNavRequest(): HttpRequest {
+    private fun Request.toNavRequest(): HttpRequest {
         val req = this
         return object : HttpRequest {
             override fun getHeader(headerName: String): String {

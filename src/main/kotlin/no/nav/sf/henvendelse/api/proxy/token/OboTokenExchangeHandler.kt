@@ -1,7 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import com.google.gson.Gson
-import java.io.File
 import java.time.Instant
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
@@ -59,11 +58,7 @@ object OboTokenExchangeHandler {
         FetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
             res = client.value(req)
         }
-
-        File("/tmp/azureOBOresult").writeText(res.toMessage())
-        File("/tmp/azureOBObodyString").writeText(res.bodyString())
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
-        File("/tmp/azureOBOjwtclaimset").writeText(jwt.jwtTokenClaims.toString())
         OBOcache[key] = jwt
         FetchStats.OBOfetches++
         return jwt

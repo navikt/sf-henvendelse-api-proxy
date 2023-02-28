@@ -36,7 +36,7 @@ class Application {
     private val log = KotlinLogging.logger { }
     private var callTime = 0L
 
-    val restrictedHeaders = listOf("host", "content-length", "authorization")
+    private val restrictedHeaders = listOf("host", "content-length", "authorization")
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
@@ -83,14 +83,17 @@ class Application {
                 if (NAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
+                    callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
                     log.info { "Ident from header ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = navIdentHeader
+                    callSourceCount.inc("header-$navConsumerId.$xProxyRef")
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
                 } else if (azpName.isNotEmpty()) {
                     log.info { "Ident as machine source ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = azpName
+                    callSourceCount.inc("m2m-$navConsumerId.$xProxyRef")
                     File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
                 }
 
@@ -139,4 +142,12 @@ class Application {
                 }
         }
     )
+
+    private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
+
+    private fun MutableMap<String, Int>.inc(key: String) {
+        if (!this.containsKey(key)) this[key] = 0
+        this[key] = this[key]!! + 1
+        File("/tmp/callSourceCount").writeText(this.toString())
+    }
 }
