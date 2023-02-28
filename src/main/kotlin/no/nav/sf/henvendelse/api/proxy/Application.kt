@@ -5,9 +5,6 @@ import java.io.File
 import java.io.StringWriter
 import java.lang.Integer.max
 import kotlin.system.measureTimeMillis
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import net.minidev.json.JSONArray
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
@@ -45,7 +42,7 @@ class Application {
 
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
-        loop() // Refresh access token outside of calls
+        AccessTokenHandler.loop() // Refresh access token outside of calls
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
@@ -140,37 +137,6 @@ class Application {
                 .getOrDefault("").let {
                     if (it.isNotEmpty()) Response(Status.OK).body(it) else Response(Status.NO_CONTENT)
                 }
-        },
-        "/itest" bind Method.GET to { Response(Status.OK).body("at: ${AccessTokenHandler.accessToken}") }
+        }
     )
-
-    private tailrec fun loop() {
-        val stop = ShutdownHook.isActive()
-        when {
-            stop -> Unit
-            !stop -> {
-                log.info { "Refreshing access token" }
-                AccessTokenHandler.accessToken
-                conditionalWait()
-                loop()
-            }
-        }
-    }
-
-    private fun conditionalWait(ms: Long = 350000) =
-        runBlocking {
-            val cr = launch { runCatching { delay(ms) }.onSuccess {}.onFailure { log.info { "waiting interrupted" } } }
-
-            tailrec suspend fun loop(): Unit = when {
-                cr.isCompleted -> Unit
-                ShutdownHook.isActive() -> cr.cancel()
-                else -> {
-                    delay(250L)
-                    loop()
-                }
-            }
-
-            loop()
-            cr.join()
-        }
 }

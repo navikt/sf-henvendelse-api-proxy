@@ -6,8 +6,10 @@ import java.security.KeyStore
 import java.security.PrivateKey
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.sf.henvendelse.api.proxy.ShutdownHook
 import no.nav.sf.henvendelse.api.proxy.supportProxy
 import org.apache.commons.codec.binary.Base64.decodeBase64
 import org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString
@@ -119,6 +121,36 @@ object AccessTokenHandler {
     fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
     fun String.decodeB64(): ByteArray = decodeBase64(this)
     fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
+
+    tailrec fun loop() {
+        val stop = ShutdownHook.isActive()
+        when {
+            stop -> Unit
+            !stop -> {
+                log.info { "Refreshing access token" }
+                AccessTokenHandler.accessToken
+                conditionalWait(3500000) // 50 min
+                loop()
+            }
+        }
+    }
+
+    private fun conditionalWait(ms: Long) =
+        runBlocking {
+            val cr = launch { runCatching { delay(ms) }.onSuccess {}.onFailure { log.info { "waiting interrupted" } } }
+
+            tailrec suspend fun loop(): Unit = when {
+                cr.isCompleted -> Unit
+                ShutdownHook.isActive() -> cr.cancel()
+                else -> {
+                    delay(250L)
+                    loop()
+                }
+            }
+
+            loop()
+            cr.join()
+        }
 
     data class JWTClaim(
         val iss: String,
