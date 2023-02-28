@@ -75,6 +75,7 @@ object AccessTokenHandler {
             log.info { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
             return lastTokenPair
         }
+        log.info { "Renewing access token" }
         val expireMomentSinceEpochInSeconds = (System.currentTimeMillis() / 1000) + expTimeSecondsClaim
         val claim = JWTClaim(
             iss = SFClientID,
