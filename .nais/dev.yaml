@@ -64,8 +64,6 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
-  envFrom:
-    - secret: pose-as-henv
   env:
     - name: SF_TOKENHOST
       value: 'https://test.salesforce.com/services/oauth2/token'

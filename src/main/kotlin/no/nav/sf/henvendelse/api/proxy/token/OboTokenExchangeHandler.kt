@@ -29,10 +29,6 @@ object OboTokenExchangeHandler {
     val sfClientId: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
     val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
 
-    val poseClientId: Lazy<String> = lazy { System.getenv("POSE_ID") }
-
-    val poseClientSecret: Lazy<String> = lazy { System.getenv("POSE_SECRET") }
-
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
     fun fetchAzureTokenOBO(jwtIn: JwtToken): JwtToken {
@@ -41,8 +37,6 @@ object OboTokenExchangeHandler {
         val key = azp_name + ":" + NAVident
         OBOcache.get(key)?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
-                log.info("Used cached token for $key")
-                File("/tmp/latestusedcachedkey").writeText(key)
                 return cachedToken
             }
         }
@@ -53,9 +47,9 @@ object OboTokenExchangeHandler {
                 listOf(
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to jwtIn.tokenAsString,
-                    "client_id" to clientId.value, // poseClientId.value,
+                    "client_id" to clientId.value,
                     "scope" to "api://${sfClientId.value}/.default",
-                    "client_secret" to clientSecret.value, // poseClientSecret.value,
+                    "client_secret" to clientSecret.value,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
@@ -66,11 +60,9 @@ object OboTokenExchangeHandler {
         }
 
         File("/tmp/azureOBOresult").writeText(res.toMessage())
-
         File("/tmp/azureOBObodyString").writeText(res.bodyString())
-
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
-        File("/tmp/azurejwtclaimset").writeText(jwt.jwtTokenClaims.toString())
+        File("/tmp/azureOBOjwtclaimset").writeText(jwt.jwtTokenClaims.toString())
         OBOcache[key] = jwt
         return jwt
     }

@@ -1,14 +1,25 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
+import java.io.File
 import mu.KotlinLogging
 
 object FetchStats {
     private val log = KotlinLogging.logger { }
 
-    var elapsedTimeAccessTokenRequest: Long = -1L
-    var elapsedTimeOboExchangeRequest: Long = -1L
-    var elapsedTimeTokenValidation: Long = -1L
-    var latestCallElapsedTime: Long = -1L
+    var elapsedTimeAccessTokenRequest = -1L
+    var elapsedTimeOboExchangeRequest = -1L
+    var elapsedTimeTokenValidation = -1L
+    var latestCallElapsedTime = -1L
+
+    var OBOfetches = 0L
+    var OBOcached = 0L
+
+    val cacheProcent: Float get() =
+        if (OBOfetches > 0) {
+            OBOcached.toFloat() / OBOfetches
+        } else {
+            0f
+        }
 
     fun resetFetchVars(callTime: Long) {
         log.info { "($callTime) stats reset" }
@@ -22,7 +33,8 @@ object FetchStats {
     fun logStats(callTime: Long) {
         log.info { "($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
                 " OboExchange $elapsedTimeOboExchangeRequest, Call $latestCallElapsedTime," +
-                " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}" }
-        log.info { "Call times per path stub: $callElapsedTime" }
+                " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}." +
+                " Obo cache percentage: ${String.format("%.2f", cacheProcent)}" }
+        File("/tmp/callperpath").writeText("Call times per path stub: $callElapsedTime")
     }
 }
