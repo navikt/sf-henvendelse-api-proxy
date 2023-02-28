@@ -37,6 +37,7 @@ object OboTokenExchangeHandler {
         val key = azp_name + ":" + NAVident
         OBOcache.get(key)?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
+                FetchStats.OBOcached++
                 return cachedToken
             }
         }
@@ -64,6 +65,7 @@ object OboTokenExchangeHandler {
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
         File("/tmp/azureOBOjwtclaimset").writeText(jwt.jwtTokenClaims.toString())
         OBOcache[key] = jwt
+        FetchStats.OBOfetches++
         return jwt
     }
 }
