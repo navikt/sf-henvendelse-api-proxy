@@ -42,7 +42,7 @@ class Application {
 
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
-        AccessTokenHandler.loop() // Refresh access token outside of calls
+        AccessTokenHandler.refreshLoop() // Refresh access token outside of calls
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))

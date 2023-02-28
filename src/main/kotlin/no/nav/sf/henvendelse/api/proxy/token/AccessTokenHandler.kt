@@ -26,7 +26,28 @@ object AccessTokenHandler {
     val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
+    tailrec fun loop() {
+        val stop = ShutdownHook.isActive()
+        when {
+            stop -> Unit
+            !stop -> {
+                log.info { "Refreshing access token" }
+                AccessTokenHandler.accessToken
+                // runBlocking { delay(3500000) }
+                conditionalWait(3500000) // 50 min
+                loop()
+            }
+        }
+    }
+
+    tailrec fun refreshLoop() {
+        log.info { "Refreshing access token" }
+        AccessTokenHandler.accessToken
+        runBlocking { delay(3500000) } // 50 min
+        refreshLoop()
+    }
+
+    private val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
     private val SFClientID = fetchVaultValue("SFClientID")
     private val SFUsername = fetchVaultValue("SFUsername")
     private val keystoreB64 = fetchVaultValue("KeystoreJKSB64")
@@ -44,12 +65,12 @@ object AccessTokenHandler {
 
     private var expireTime = System.currentTimeMillis()
 
-    fun fetchVaultValue(vaultKey: String): String {
+    private fun fetchVaultValue(vaultKey: String): String {
         val vaultPath = "/var/run/secrets/nais.io/vault"
         return File("$vaultPath/$vaultKey").readText(Charsets.UTF_8)
     }
 
-    fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
+    private fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
         if (System.currentTimeMillis() < expireTime) {
             log.info { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
             return lastTokenPair
@@ -101,13 +122,13 @@ object AccessTokenHandler {
         return Pair("", "")
     }
 
-    fun PrivateKeyFromBase64Store(ksB64: String, ksPwd: String, pkAlias: String, pkPwd: String): PrivateKey {
+    private fun PrivateKeyFromBase64Store(ksB64: String, ksPwd: String, pkAlias: String, pkPwd: String): PrivateKey {
         return KeyStore.getInstance("JKS").apply { load(ksB64.decodeB64().inputStream(), ksPwd.toCharArray()) }.run {
             getKey(pkAlias, pkPwd.toCharArray()) as PrivateKey
         }
     }
 
-    fun PrivateKey.sign(data: ByteArray): String {
+    private fun PrivateKey.sign(data: ByteArray): String {
         return this.let {
             java.security.Signature.getInstance("SHA256withRSA").apply {
                 initSign(it)
@@ -118,22 +139,9 @@ object AccessTokenHandler {
         }
     }
 
-    fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
-    fun String.decodeB64(): ByteArray = decodeBase64(this)
-    fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
-
-    tailrec fun loop() {
-        val stop = ShutdownHook.isActive()
-        when {
-            stop -> Unit
-            !stop -> {
-                log.info { "Refreshing access token" }
-                AccessTokenHandler.accessToken
-                conditionalWait(3500000) // 50 min
-                loop()
-            }
-        }
-    }
+    private fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
+    private fun String.decodeB64(): ByteArray = decodeBase64(this)
+    private fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
 
     private fun conditionalWait(ms: Long) =
         runBlocking {
@@ -152,16 +160,16 @@ object AccessTokenHandler {
             cr.join()
         }
 
-    data class JWTClaim(
+    private data class JWTClaim(
         val iss: String,
         val aud: String,
         val sub: String,
         val exp: String
     )
 
-    data class JWTClaimHeader(val alg: String)
+    private data class JWTClaimHeader(val alg: String)
 
-    data class AccessTokenResponse(
+    private data class AccessTokenResponse(
         val access_token: String,
         val scope: String,
         val instance_url: String,
