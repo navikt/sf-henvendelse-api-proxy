@@ -16,7 +16,7 @@ object FetchStats {
 
     val cacheProcent: Float get() =
         if (OBOfetches > 0) {
-            OBOcached.toFloat() / OBOfetches
+            OBOcached.toFloat() * 100 / (OBOfetches + OBOcached)
         } else {
             0f
         }
