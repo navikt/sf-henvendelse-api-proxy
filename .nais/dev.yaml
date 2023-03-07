@@ -74,4 +74,4 @@ spec:
     - name: AUDIENCE_TOKEN_SERVICE
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
     - name: SALESFORCE_AZURE_CLIENT_ID
-      value: 'dev-external:teamcrm:salesforce' #6d2d8031-f17d-4ed6-83f5-e554d5c07eca
+      value: 6d2d8031-f17d-4ed6-83f5-e554d5c07eca
