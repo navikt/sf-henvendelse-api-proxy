@@ -33,8 +33,7 @@ object AccessTokenHandler {
             !stop -> {
                 log.info { "Refreshing access token" }
                 AccessTokenHandler.accessToken
-                // runBlocking { delay(3500000) }
-                conditionalWait(3500000) // 50 min
+                conditionalWait(1800000) // 30 min
                 loop()
             }
         }
@@ -43,7 +42,7 @@ object AccessTokenHandler {
     tailrec fun refreshLoop() {
         log.info { "Refreshing access token" }
         AccessTokenHandler.accessToken
-        runBlocking { delay(3500000) } // 50 min
+        runBlocking { delay(1800000) } // 30 min
         refreshLoop()
     }
 

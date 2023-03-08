@@ -68,5 +68,5 @@ spec:
       value: 'https://security-token-service.nais.adeo.no'
     - name: AUDIENCE_TOKEN_SERVICE
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
-    - name: SALESFORCE_AZURE_CLIENT_ID
-      value: eeb46d29-5cf1-482f-a8fa-218bbc6be363
+    - name: SALESFORCE_AZURE_ALIAS
+      value: prod-external.teamcrm.salesforce

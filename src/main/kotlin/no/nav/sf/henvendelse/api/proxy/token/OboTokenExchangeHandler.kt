@@ -1,6 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import java.io.File
 import java.time.Instant
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
@@ -23,20 +22,12 @@ object OboTokenExchangeHandler {
 
     val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
     val clientSecret: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
-    val sfClientId: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_CLIENT_ID") }
     val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
-
-    val alias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
+    val sfAlias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
 
     val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
     fun fetchAzureTokenOBO(jwtIn: JwtToken): JwtToken {
-        try {
-            val result = testAlternativeFetchAzureTokenOBO(jwtIn)
-            File("/tmp/jwtAlt").writeText(result.jwtTokenClaims.allClaims.toString())
-        } catch (e: Exception) {
-            File("/tmp/alternativestack").writeText(e.message ?: "")
-        }
         val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)
         val azp_name = jwtIn.jwtTokenClaims.getStringClaim(claim_azp_name)
         val key = azp_name + ":" + NAVident
@@ -54,41 +45,7 @@ object OboTokenExchangeHandler {
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to jwtIn.tokenAsString,
                     "client_id" to clientId.value,
-                    "scope" to "api://${sfClientId.value}/.default",
-                    "client_secret" to clientSecret.value,
-                    "requested_token_use" to "on_behalf_of"
-                ).toBody()
-            )
-
-        lateinit var res: Response
-        FetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
-            res = client.value(req)
-        }
-        val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
-        OBOcache[key] = jwt
-        FetchStats.OBOfetches++
-        return jwt
-    }
-
-    fun testAlternativeFetchAzureTokenOBO(jwtIn: JwtToken): JwtToken {
-        val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)
-        val azp_name = jwtIn.jwtTokenClaims.getStringClaim(claim_azp_name)
-        val key = azp_name + ":" + NAVident
-        OBOcache.get(key)?.let { cachedToken ->
-            if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
-                FetchStats.OBOcached++
-                return cachedToken
-            }
-        }
-
-        val req = Request(Method.POST, azureTokenEndPoint.value)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(
-                listOf(
-                    "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                    "assertion" to jwtIn.tokenAsString,
-                    "client_id" to clientId.value,
-                    "scope" to "api://${alias.value}/.default",
+                    "scope" to "api://${sfAlias.value}/.default",
                     "client_secret" to clientSecret.value,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
