@@ -35,7 +35,7 @@ class Application {
     private val log = KotlinLogging.logger { }
     private var callTime = 0L
 
-    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization")
+    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
@@ -66,12 +66,10 @@ class Application {
                 val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
                 val sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                 val navIdentHeader = req.header("Nav-Ident")
+                val xCorrelationId = req.header("X-Correlation-ID") ?: ""
                 val navConsumerId = req.header("nav-consumer-id") ?: ""
                 val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                 val isMachineToken = token.isMachineToken(callTime)
-
-                val xCorrelationIdAlt1 = req.header("X-Correlation-Id") ?: ""
-                val xCorrelationIdAlt2 = req.header("X-Correlation-ID") ?: ""
 
                 if (claimNAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
@@ -79,7 +77,7 @@ class Application {
                     callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime) - xca1 $xCorrelationIdAlt1 xca2 $xCorrelationIdAlt2 machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    log.info { "Ident from header ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     claimNAVident = navIdentHeader
                     callSourceCount.inc("header-$navConsumerId.$xProxyRef")
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
@@ -101,7 +99,8 @@ class Application {
                         req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
                                 listOf(
                                     Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
-                                    Pair("X-ACTING-NAV-IDENT", claimNAVident)
+                                    Pair("X-ACTING-NAV-IDENT", claimNAVident),
+                                    Pair("X-Correlation-ID", xCorrelationId)
                                 ) + oboHeader
                     val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 
