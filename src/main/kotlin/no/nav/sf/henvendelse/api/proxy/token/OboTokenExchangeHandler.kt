@@ -1,6 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import com.google.gson.Gson
 import java.io.File
 import java.time.Instant
 import kotlin.system.measureTimeMillis
