@@ -16,12 +16,7 @@ const val env_AZURE_APP_CLIENT_ID = "AZURE_APP_CLIENT_ID"
 const val env_AUDIENCE_TOKEN_SERVICE_URL = "AUDIENCE_TOKEN_SERVICE_URL"
 const val env_AUDIENCE_TOKEN_SERVICE_ALIAS = "AUDIENCE_TOKEN_SERVICE_ALIAS"
 const val env_AUDIENCE_TOKEN_SERVICE = "AUDIENCE_TOKEN_SERVICE"
-const val env_AUDIENCE_ISSO_URL = "AUDIENCE_ISSO_URL"
-const val env_AUDIENCE_ISSO_ALIAS = "AUDIENCE_ISSO_ALIAS"
-const val env_AUDIENCE_ISSO = "AUDIENCE_ISSO"
 const val env_SALESFORCE_AZURE_CLIENT_ID = "SALESFORCE_AZURE_CLIENT_ID"
-
-const val claim_NAME = "name"
 
 object TokenValidator {
 
@@ -31,7 +26,7 @@ object TokenValidator {
 
     private val azureAlias = "azure"
     private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
-    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',') // + "a37c2c66-ca41-4445-b9f3-1cdc266c9559"
+    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',')
 
     private val log = KotlinLogging.logger { }
 

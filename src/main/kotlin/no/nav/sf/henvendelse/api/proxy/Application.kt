@@ -6,7 +6,6 @@ import java.io.StringWriter
 import java.lang.Integer.max
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
-import net.minidev.json.JSONArray
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.FetchStats
 import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
@@ -61,7 +60,7 @@ class Application {
                 val token = firstValidToken.get()
 
                 var oboToken = ""
-                var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
+                var claimNAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
 
                 val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString() ?: ""
                 val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
@@ -69,35 +68,26 @@ class Application {
                 val navIdentHeader = req.header("Nav-Ident")
                 val navConsumerId = req.header("nav-consumer-id")?.first() ?: ""
                 val xProxyRef = req.header("X-Proxy-Ref")?.first() ?: ""
+                val isMachineToken = token.isMachineToken(callTime)
 
-                val rolesClaim = token.jwtTokenClaims.get(claim_roles)
-                if (rolesClaim != null) {
-                    log.info("Got roles claim class ${rolesClaim.javaClass.name}")
-                    val firstRolesClaim = (rolesClaim as JSONArray)[0]
-                    log.info("Got roles claim entry $firstRolesClaim")
-                    if (firstRolesClaim.toString() == "access_as_application") {
-                        File("/tmp/machinetoken").writeText(token.tokenAsString)
-                    }
-                }
-
-                if (NAVident.isNotEmpty()) {
+                if (claimNAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
-                    NAVident = navIdentHeader
+                    log.info { "Ident from header ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    claimNAVident = navIdentHeader
                     callSourceCount.inc("header-$navConsumerId.$xProxyRef")
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
                 } else if (azpName.isNotEmpty()) {
-                    log.info { "Ident as machine source ($callTime) - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
-                    NAVident = azpName
+                    log.info { "Ident as machine source ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    claimNAVident = azpName
                     callSourceCount.inc("m2m-$navConsumerId.$xProxyRef")
                     File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
                 }
 
-                if (NAVident.isEmpty()) {
+                if (claimNAVident.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callTime)" + req.toMessage())
                     Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callTime)")
                 } else {
@@ -108,7 +98,7 @@ class Application {
                         req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
                                 listOf(
                                     Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
-                                    Pair("X-ACTING-NAV-IDENT", NAVident)
+                                    Pair("X-ACTING-NAV-IDENT", claimNAVident)
                                 ) + oboHeader
                     val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 

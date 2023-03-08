@@ -4,6 +4,8 @@ import java.io.File
 import java.net.URI
 import java.util.Arrays
 import java.util.stream.Collectors
+import mu.KotlinLogging
+import net.minidev.json.JSONArray
 import no.nav.security.token.support.core.jwt.JwtToken
 import org.apache.http.HttpHost
 import org.apache.http.client.config.CookieSpecs
@@ -11,6 +13,8 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClients
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
+
+private val log = KotlinLogging.logger { }
 
 fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let { p ->
     when {
@@ -67,6 +71,19 @@ fun JwtToken.logStatsInTmp() {
     } catch (e: Exception) {
         File("/tmp/exception").writeText(e.message.toString())
     }
+}
+
+fun JwtToken.isMachineToken(callTime: Long): Boolean {
+    val rolesClaim = this.jwtTokenClaims.get(claim_roles)
+    if (rolesClaim != null) {
+        val firstRolesClaim = (rolesClaim as JSONArray)[0]
+        if (firstRolesClaim.toString() == "access_as_application") {
+            log.info("($callTime) Confirmed machine token")
+            File("/tmp/machinetoken").writeText(this.tokenAsString)
+            return true
+        }
+    }
+    return false
 }
 
 fun getTokensFromHeader(authorizationHeader: String?): List<JwtToken> {

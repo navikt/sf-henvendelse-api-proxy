@@ -75,3 +75,5 @@ spec:
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
     - name: SALESFORCE_AZURE_CLIENT_ID
       value: 6d2d8031-f17d-4ed6-83f5-e554d5c07eca
+    - name: SALESFORCE_AZURE_ALIAS
+      value: dev-external.teamcrm.salesforce
