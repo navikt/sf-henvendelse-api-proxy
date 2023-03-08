@@ -111,6 +111,7 @@ class Application {
                         }
                     FetchStats.callElapsedTime[pathStump] = FetchStats.latestCallElapsedTime
                     FetchStats.logStats(callTime)
+                    File("/tmp/response").writeText(response.toMessage())
                     response
                 }
             }
