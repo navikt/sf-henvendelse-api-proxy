@@ -70,13 +70,16 @@ class Application {
                 val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                 val isMachineToken = token.isMachineToken(callTime)
 
+                val xCorrelationIdAlt1 = req.header("X-Correlation-Id") ?: ""
+                val xCorrelationIdAlt2 = req.header("X-Correlation-ID") ?: ""
+
                 if (claimNAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
                     oboToken = OboTokenExchangeHandler.fetchAzureTokenOBO(token).tokenAsString
                     callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
                 } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    log.info { "Ident from header ($callTime) - xca1 $xCorrelationIdAlt1 xca2 $xCorrelationIdAlt2 machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     claimNAVident = navIdentHeader
                     callSourceCount.inc("header-$navConsumerId.$xProxyRef")
                     File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
