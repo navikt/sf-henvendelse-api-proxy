@@ -35,7 +35,7 @@ class Application {
     private val log = KotlinLogging.logger { }
     private var callTime = 0L
 
-    private val restrictedHeaders = listOf("host", "content-length", "authorization")
+    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization")
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
@@ -66,8 +66,8 @@ class Application {
                 val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
                 val sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                 val navIdentHeader = req.header("Nav-Ident")
-                val navConsumerId = req.header("nav-consumer-id")?.first() ?: ""
-                val xProxyRef = req.header("X-Proxy-Ref")?.first() ?: ""
+                val navConsumerId = req.header("nav-consumer-id") ?: ""
+                val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                 val isMachineToken = token.isMachineToken(callTime)
 
                 if (claimNAVident.isNotEmpty()) {
