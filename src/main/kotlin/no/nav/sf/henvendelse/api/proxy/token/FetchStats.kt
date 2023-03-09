@@ -21,8 +21,7 @@ object FetchStats {
             0f
         }
 
-    fun resetFetchVars(callTime: Long) {
-        log.info { "($callTime) stats reset" }
+    fun resetFetchVars() {
         elapsedTimeAccessTokenRequest = 0L
         elapsedTimeOboExchangeRequest = 0L
         elapsedTimeTokenValidation = 0L

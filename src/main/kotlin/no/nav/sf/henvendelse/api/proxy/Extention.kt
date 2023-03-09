@@ -27,9 +27,9 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let 
                     .setDefaultRequestConfig(
                         RequestConfig.custom()
                             .setProxy(HttpHost(up.host, up.port, up.scheme))
-                            .setConnectTimeout(5000)
-                            .setSocketTimeout(5000)
-                            .setConnectionRequestTimeout(5000)
+                            .setConnectTimeout(6000)
+                            .setSocketTimeout(6000)
+                            .setConnectionRequestTimeout(6000)
                             .setRedirectsEnabled(false)
                             .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                             .build()

@@ -15,19 +15,25 @@ import org.http4k.core.Response
 import org.http4k.core.body.toBody
 import org.json.JSONObject
 
+/**
+ * A handler for azure on-behalf-of exchange flow.
+ * @see [v2_oauth2_on_behalf_of_flow](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow)
+ *
+ * Exchanges an azure on-behalf-of-token with audience to this app for one with audience to salesforce. Caches the result
+ */
 object OboTokenExchangeHandler {
     private val log = KotlinLogging.logger { }
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
-    val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
-    val clientSecret: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
-    val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
-    val sfAlias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
+    private val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
+    private val clientSecret: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
+    private val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
+    private val sfAlias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
 
-    val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
+    private val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
-    fun fetchAzureTokenOBO(jwtIn: JwtToken): JwtToken {
+    fun exchange(jwtIn: JwtToken): JwtToken {
         val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)
         val azp_name = jwtIn.jwtTokenClaims.getStringClaim(claim_azp_name)
         val key = azp_name + ":" + NAVident

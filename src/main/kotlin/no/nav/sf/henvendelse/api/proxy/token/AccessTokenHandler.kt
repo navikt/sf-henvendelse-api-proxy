@@ -6,10 +6,8 @@ import java.security.KeyStore
 import java.security.PrivateKey
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.nav.sf.henvendelse.api.proxy.ShutdownHook
 import no.nav.sf.henvendelse.api.proxy.supportProxy
 import org.apache.commons.codec.binary.Base64.decodeBase64
 import org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString
@@ -20,31 +18,26 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.body.toBody
 
+/**
+ * A handler for oauth2 access flow to salesforce.
+ * @see [sf.remoteaccess_oauth_jwt_flow](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_jwt_flow.htm&type=5)
+ *
+ * Fetches and caches access token, also retrieves instance url
+ */
 object AccessTokenHandler {
-    private val log = KotlinLogging.logger { }
-
     val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    tailrec fun loop() {
-        val stop = ShutdownHook.isActive()
-        when {
-            stop -> Unit
-            !stop -> {
-                log.info { "Refreshing access token" }
-                AccessTokenHandler.accessToken
-                conditionalWait(1800000) // 30 min
-                loop()
-            }
-        }
-    }
-
     tailrec fun refreshLoop() {
-        log.info { "Refreshing access token" }
-        AccessTokenHandler.accessToken
+        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
+            log.info { "Refreshing access token" }
+            AccessTokenHandler.accessToken
+        }
         runBlocking { delay(1800000) } // 30 min
         refreshLoop()
     }
+
+    private val log = KotlinLogging.logger { }
 
     private val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
     private val SFClientID = fetchVaultValue("SFClientID")
@@ -71,10 +64,9 @@ object AccessTokenHandler {
 
     private fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
         if (System.currentTimeMillis() < expireTime) {
-            log.info { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
+            log.debug { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
             return lastTokenPair
         }
-        log.info { "Renewing access token" }
         val expireMomentSinceEpochInSeconds = (System.currentTimeMillis() / 1000) + expTimeSecondsClaim
         val claim = JWTClaim(
             iss = SFClientID,
@@ -142,23 +134,6 @@ object AccessTokenHandler {
     private fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
     private fun String.decodeB64(): ByteArray = decodeBase64(this)
     private fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
-
-    private fun conditionalWait(ms: Long) =
-        runBlocking {
-            val cr = launch { runCatching { delay(ms) }.onSuccess {}.onFailure { log.info { "waiting interrupted" } } }
-
-            tailrec suspend fun loop(): Unit = when {
-                cr.isCompleted -> Unit
-                ShutdownHook.isActive() -> cr.cancel()
-                else -> {
-                    delay(250L)
-                    loop()
-                }
-            }
-
-            loop()
-            cr.join()
-        }
 
     private data class JWTClaim(
         val iss: String,
