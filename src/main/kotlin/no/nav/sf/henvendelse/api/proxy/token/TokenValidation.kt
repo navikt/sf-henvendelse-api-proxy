@@ -19,7 +19,6 @@ const val env_AUDIENCE_TOKEN_SERVICE = "AUDIENCE_TOKEN_SERVICE"
 const val env_SALESFORCE_AZURE_CLIENT_ID = "SALESFORCE_AZURE_CLIENT_ID"
 
 object TokenValidator {
-
     private val tokenServiceAlias = System.getenv(env_AUDIENCE_TOKEN_SERVICE_ALIAS)
     private val tokenServiceUrl = System.getenv(env_AUDIENCE_TOKEN_SERVICE_URL)
     private val tokenServiceAudience = System.getenv(env_AUDIENCE_TOKEN_SERVICE).split(',')

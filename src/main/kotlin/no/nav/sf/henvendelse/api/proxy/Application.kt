@@ -111,9 +111,8 @@ class Application {
                         measureTimeMillis {
                             response = client.value(request)
                         }
-                    FetchStats.callElapsedTime[pathStump] = FetchStats.latestCallElapsedTime
-                    FetchStats.logStats(callTime)
-                    log.info { "status=${response.status.code}, method=${req.method.name}, host=${req.header("host")}, path=${req.uri}" }
+                    FetchStats.logStats(req.uri, callTime)
+                    log.info { "Summary ($callTime) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
                     File("/tmp/response").writeText(response.toMessage())
                     response
                 }
