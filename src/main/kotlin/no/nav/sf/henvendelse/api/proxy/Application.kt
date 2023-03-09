@@ -111,7 +111,7 @@ class Application {
                         measureTimeMillis {
                             response = client.value(request)
                         }
-                    FetchStats.logStats(req.uri, callTime)
+                    FetchStats.logStats(response.status.code, req.uri, callTime)
                     log.info { "Summary ($callTime) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
                     File("/tmp/response").writeText(response.toMessage())
                     response

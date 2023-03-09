@@ -1,6 +1,7 @@
 package no.nav.sf.henvendelse.api.proxy
 
 import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.Counter
 import io.prometheus.client.Gauge
 import io.prometheus.client.hotspot.DefaultExports
 
@@ -8,9 +9,17 @@ object Metrics {
 
     val cRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
 
-    val apiCalls: Gauge = registerLabelGauge("api_calls", "ingress")
+    val successCalls: Counter = registerLabelCounter("calls_success", "path")
 
-    val testApiCalls: Gauge = registerLabelGauge("test_api_calls", "ingress")
+    val failedCalls: Counter = registerLabelCounter("calls_failed", "status_path")
+
+    fun registerCounter(name: String): Counter {
+        return Counter.build().name(name).help(name).register()
+    }
+
+    fun registerLabelCounter(name: String, label: String): Counter {
+        return Counter.build().name(name).help(name).labelNames(label).register()
+    }
 
     fun registerGauge(name: String): Gauge {
         return Gauge.build().name(name).help(name).register()
