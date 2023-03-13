@@ -3,10 +3,10 @@ package no.nav.sf.henvendelse.api.proxy
 import io.prometheus.client.exporter.common.TextFormat
 import java.io.File
 import java.io.StringWriter
-import java.lang.Integer.max
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
+import no.nav.sf.henvendelse.api.proxy.token.ByAlias
 import no.nav.sf.henvendelse.api.proxy.token.FetchStats
 import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
@@ -19,7 +19,6 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
-import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.routing.static
 import org.http4k.server.Http4kServer
@@ -73,6 +72,11 @@ class Application {
 
                 if (NAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
+                    try {
+                        File("/tmp/result-alias").writeText("Valid by alias ${ByAlias.containsValidToken(req)}")
+                    } catch (e: Exception) {
+                        File("/tmp/exception-alias").writeText(e.message.toString())
+                    }
                     oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                     callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
@@ -106,7 +110,6 @@ class Application {
 
                     File("/tmp/forwardmessage").writeText(request.toMessage())
                     lateinit var response: Response
-                    val pathStump = req.path("rest")?.let { rest -> rest.substring(0, max(20, rest.length - 1)) } ?: "null"
                     FetchStats.latestCallElapsedTime =
                         measureTimeMillis {
                             response = client.value(request)
