@@ -19,7 +19,7 @@ object ByAlias {
     private val azureAlias = "azure"
     private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
     private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',')
-    private val naisClientIdAlias = System.getenv("NAIS_CLIENT_ID").replace(':', '.')
+    private val naisClientIdAlias = System.getenv("NAIS_CLIENT_ID")
 
     private val log = KotlinLogging.logger { }
 
