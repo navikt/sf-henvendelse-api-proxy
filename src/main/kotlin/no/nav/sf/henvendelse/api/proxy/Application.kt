@@ -3,10 +3,12 @@ package no.nav.sf.henvendelse.api.proxy
 import io.prometheus.client.exporter.common.TextFormat
 import java.io.File
 import java.io.StringWriter
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
-import no.nav.sf.henvendelse.api.proxy.token.ByAlias
 import no.nav.sf.henvendelse.api.proxy.token.FetchStats
 import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
@@ -72,11 +74,6 @@ class Application {
 
                 if (NAVident.isNotEmpty()) {
                     log.info { "Ident from obo ($callTime)" }
-                    try {
-                        File("/tmp/result-alias").writeText("Valid by alias ${ByAlias.containsValidToken(req)}")
-                    } catch (e: Exception) {
-                        File("/tmp/exception-alias").writeText(e.message.toString())
-                    }
                     oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                     callSourceCount.inc("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
@@ -116,7 +113,17 @@ class Application {
                         }
                     FetchStats.logStats(response.status.code, req.uri, callTime)
                     log.info { "Summary ($callTime) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
-                    File("/tmp/response").writeText(response.toMessage())
+
+                    if (response.status.code != 200) {
+                        File("/tmp/failedresponse").appendText("${DateTimeFormatter
+                            .ofPattern("yyyy-MM-dd HH:mm:ss")
+                            .withZone(ZoneId.of("CET"))
+                            .format(Instant.now())}\n" +
+                                "${response.status.code} ${response.status} ${req.uri}\n" +
+                                "${request.headers.filter{ it.first.toLowerCase() != "authorization" }.map { "${it.first} : ${it.second}"}.joinToString("\n")}\n\n"
+                        )
+                    }
+
                     response
                 }
             }
