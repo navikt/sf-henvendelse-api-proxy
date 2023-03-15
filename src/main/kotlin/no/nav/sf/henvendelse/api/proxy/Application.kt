@@ -34,7 +34,7 @@ const val NAIS_METRICS = "/internal/metrics"
 
 class Application {
     private val log = KotlinLogging.logger { }
-    private var callTime = 0L
+    private var callIndex = 0L
 
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
@@ -50,8 +50,8 @@ class Application {
     fun api(): HttpHandler = routes(
         "/static" bind static(Classpath("/static")),
         "/api/{rest:.*}" bind { req: Request ->
-            callTime++
-            log.info { "Incoming call ($callTime) ${req.uri}" }
+            callIndex++
+            log.info { "Incoming call ($callIndex) ${req.uri}" }
             FetchStats.resetFetchVars()
             val firstValidToken = TokenValidator.firstValidToken(req)
             if (!firstValidToken.isPresent) {
@@ -70,28 +70,28 @@ class Application {
                 val xCorrelationId = req.header("X-Correlation-ID") ?: ""
                 val navConsumerId = req.header("nav-consumer-id") ?: ""
                 val xProxyRef = req.header("X-Proxy-Ref") ?: ""
-                val isMachineToken = token.isMachineToken(callTime)
+                val isMachineToken = token.isMachineToken(callIndex)
 
-                if (NAVident.isNotEmpty()) {
-                    log.info { "Ident from obo ($callTime)" }
+                if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
+                    log.info { "Ident from obo ($callIndex)" }
                     oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                     callSourceCount.inc("obo-$azpName")
-                    File("/tmp/message-obo").writeText("($callTime)" + req.toMessage())
-                } else if (navIdentHeader != null) {
-                    log.info { "Ident from header ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
+                } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
+                    log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = navIdentHeader
                     callSourceCount.inc("header-$navConsumerId.$xProxyRef")
-                    File("/tmp/message-header").writeText("($callTime)" + req.toMessage())
-                } else if (azpName.isNotEmpty()) {
-                    log.info { "Ident as machine source ($callTime) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                    File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
+                } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
+                    log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = azpName
                     callSourceCount.inc("m2m-$navConsumerId.$xProxyRef")
-                    File("/tmp/message-m2m").writeText("($callTime)" + req.toMessage())
+                    File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                 }
 
                 if (NAVident.isEmpty()) {
-                    File("/tmp/message-missing").writeText("($callTime)" + req.toMessage())
-                    Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callTime)")
+                    File("/tmp/message-missing").writeText("($callIndex)" + req.toMessage())
+                    Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callIndex)")
                 } else {
                     // token.logStatsInTmp()
                     val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
@@ -111,8 +111,8 @@ class Application {
                         measureTimeMillis {
                             response = client.value(request)
                         }
-                    FetchStats.logStats(response.status.code, req.uri, callTime)
-                    log.info { "Summary ($callTime) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
+                    FetchStats.logStats(response.status.code, req.uri, callIndex)
+                    log.info { "Summary ($callIndex) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
 
                     if (response.status.code != 200) {
                         File("/tmp/failedresponse").appendText("${DateTimeFormatter
