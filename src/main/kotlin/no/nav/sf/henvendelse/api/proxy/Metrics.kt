@@ -13,6 +13,8 @@ object Metrics {
 
     val failedCalls: Counter = registerLabelCounter("calls_failed", "status_path")
 
+    val callSource: Counter = registerLabelCounter("call_source", "key")
+
     fun registerCounter(name: String): Counter {
         return Counter.build().name(name).help(name).register()
     }

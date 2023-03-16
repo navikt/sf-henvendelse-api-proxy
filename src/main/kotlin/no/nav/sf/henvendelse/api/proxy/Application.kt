@@ -75,17 +75,17 @@ class Application {
                 if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
                     log.info { "Ident from obo ($callIndex)" }
                     oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
-                    callSourceCount.inc("obo-$azpName")
+                    FetchStats.registerCallSource("obo-$azpName")
                     File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                 } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
                     log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = navIdentHeader
-                    callSourceCount.inc("header-$navConsumerId.$xProxyRef")
+                    FetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
                     File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                 } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
                     log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = azpName
-                    callSourceCount.inc("m2m-$navConsumerId.$xProxyRef")
+                    FetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
                     File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                 }
 
@@ -145,12 +145,4 @@ class Application {
                 }
         }
     )
-
-    private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
-
-    private fun MutableMap<String, Int>.inc(key: String) {
-        if (!this.containsKey(key)) this[key] = 0
-        this[key] = this[key]!! + 1
-        File("/tmp/callSourceCount").writeText(this.toString())
-    }
 }

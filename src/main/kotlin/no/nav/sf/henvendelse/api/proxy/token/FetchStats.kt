@@ -3,6 +3,7 @@ package no.nav.sf.henvendelse.api.proxy.token
 import java.io.File
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.Metrics
+import no.nav.sf.henvendelse.api.proxy.token.FetchStats.inc
 import org.http4k.core.Uri
 
 object FetchStats {
@@ -28,6 +29,19 @@ object FetchStats {
         elapsedTimeOboExchangeRequest = 0L
         elapsedTimeTokenValidation = 0L
         latestCallElapsedTime = 0L
+    }
+
+    fun registerCallSource(key: String) {
+        callSourceCount.inc(key)
+        File("/tmp/callSourceCount").writeText(callSourceCount.toString())
+        Metrics.callSource.labels(key).inc()
+    }
+
+    private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
+
+    private fun MutableMap<String, Int>.inc(key: String) {
+        if (!this.containsKey(key)) this[key] = 0
+        this[key] = this[key]!! + 1
     }
 
     private val pathsWithPathVars = listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
