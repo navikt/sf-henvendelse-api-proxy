@@ -53,6 +53,19 @@ object FetchStats {
                 " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}." +
                 " Obo cache percentage: ${String.format("%.2f", cacheProcent)}" }
 
+        Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
+        Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
+        Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
+        Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
+        Metrics.elapsedTimeTokenHandling.set(Metrics.elapsedTimeAccessTokenRequest.get() +
+                Metrics.elapsedTimeTokenValidation.get() +
+                Metrics.elapsedTimeOboExchangeRequest.get()
+        )
+        Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
+                Metrics.elapsedTimeCall.get()
+        )
+        Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
+
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
         FetchStats.elapsedTimePerPath[path] = FetchStats.latestCallElapsedTime
         if (status == 200) {

@@ -67,7 +67,11 @@ class Application {
                 val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
                 val sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                 val navIdentHeader = req.header("Nav-Ident")
+
+                // Case insensitive fetch - dialogv1-proxy sends header as X-Correlation-Id
+                // Needs to be translated to X-Correlation-ID in call to salesforce
                 val xCorrelationId = req.header("X-Correlation-ID") ?: ""
+
                 val navConsumerId = req.header("nav-consumer-id") ?: ""
                 val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                 val isMachineToken = token.isMachineToken(callIndex)
@@ -93,7 +97,6 @@ class Application {
                     File("/tmp/message-missing").writeText("($callIndex)" + req.toMessage())
                     Response(Status.BAD_REQUEST).body("Missing Nav identifier ($callIndex)")
                 } else {
-                    // token.logStatsInTmp()
                     val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
                     val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
                     val headers: Headers =
