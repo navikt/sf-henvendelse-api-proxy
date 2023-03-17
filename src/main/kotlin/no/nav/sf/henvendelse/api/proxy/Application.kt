@@ -75,21 +75,25 @@ class Application {
                 val navConsumerId = req.header("nav-consumer-id") ?: ""
                 val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                 val isMachineToken = token.isMachineToken(callIndex)
+                var src = ""
 
                 if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
                     log.info { "Ident from obo ($callIndex)" }
                     oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                     FetchStats.registerCallSource("obo-$azpName")
+                    src = azpName
                     File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                 } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
                     log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = navIdentHeader
                     FetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
+                    src = "$navConsumerId.$xProxyRef"
                     File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                 } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
                     log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
                     NAVident = azpName
                     FetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
+                    src = "$navConsumerId.$xProxyRef"
                     File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                 }
 
@@ -115,7 +119,7 @@ class Application {
                             response = client.value(request)
                         }
                     FetchStats.logStats(response.status.code, req.uri, callIndex)
-                    log.info { "Summary ($callIndex) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}" }
+                    log.info { "Summary ($callIndex) : status=${response.status.code}, method=${req.method.name}, uri=${req.uri}, src=$src" }
 
                     if (response.status.code != 200) {
                         File("/tmp/failedresponse").appendText("${DateTimeFormatter
