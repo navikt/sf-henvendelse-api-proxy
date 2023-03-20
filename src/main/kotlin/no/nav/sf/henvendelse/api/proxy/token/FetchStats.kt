@@ -66,12 +66,15 @@ object FetchStats {
         )
         Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
 
+        // Metrics.elapsedTimeCallHistogram.observe(Metrics.elapsedTimeCall.get())
+        // Metrics.elapsedTimeTotalHistogram.observe(Metrics.elapsedTimeTotal.get())
+
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
         FetchStats.elapsedTimePerPath[path] = FetchStats.latestCallElapsedTime
         if (status == 200) {
             Metrics.successCalls.labels(path).inc()
         } else {
-            Metrics.failedCalls.labels("$status-$path").inc()
+            Metrics.failedCalls.labels(status.toString()).inc()
         }
         File("/tmp/callperpath").writeText("Latest elapsed time per path: $elapsedTimePerPath")
     }
