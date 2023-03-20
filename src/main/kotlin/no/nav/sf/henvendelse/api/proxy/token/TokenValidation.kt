@@ -1,5 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
+import java.io.File
 import java.net.URL
 import java.util.Optional
 import kotlin.system.measureTimeMillis
@@ -45,6 +46,9 @@ object TokenValidator {
         lateinit var result: Optional<JwtToken>
         FetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+        }
+        if (!result.isPresent) {
+            File("/tmp/novalidtoken").writeText(request.toMessage())
         }
         return result
     }
