@@ -66,8 +66,8 @@ object FetchStats {
         )
         Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
 
-        // Metrics.elapsedTimeCallHistogram.observe(Metrics.elapsedTimeCall.get())
-        // Metrics.elapsedTimeTotalHistogram.observe(Metrics.elapsedTimeTotal.get())
+        Metrics.elapsedTimeCallHistogram.observe(Metrics.elapsedTimeCall.get())
+        Metrics.elapsedTimeTotalHistogram.observe(Metrics.elapsedTimeTotal.get())
 
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
         FetchStats.elapsedTimePerPath[path] = FetchStats.latestCallElapsedTime
