@@ -43,7 +43,7 @@ object Metrics {
     }
 
     fun registerHistogram(name: String): Histogram {
-        return Histogram.build().name(name).help(name).buckets(500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
+        return Histogram.build().name(name).help(name).buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
     }
 
     init {
