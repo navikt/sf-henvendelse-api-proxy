@@ -1,3 +1,13 @@
 package no.nav.sf.henvendelse.api.proxy
 
-class ApplicationTest
+import mu.KotlinLogging
+import org.junit.jupiter.api.Test
+
+class ApplicationTest {
+    private val log = KotlinLogging.logger { }
+
+    @Test
+    fun instansiateMetrics() {
+        Metrics.elapsedTimeTotal.inc()
+    }
+}
