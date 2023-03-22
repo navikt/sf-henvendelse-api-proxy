@@ -20,10 +20,9 @@ object Metrics {
     val elapsedTimeCall: Gauge = registerGauge("elapsed_time_call")
     val elapsedTimeTokenHandling: Gauge = registerGauge("elapsed_time_token_handling")
     val elapsedTimeTotal: Gauge = registerGauge("elapsed_time_total")
-    val elapsedTimePerPath: Gauge = registerLabelGauge("elapsed_time_per_path", "path")
 
-    var elapsedTimeCallHistogram: Histogram = registerHistogram("elapsed_time_call_ms", "call")
-    var elapsedTimeTotalHistogram: Histogram = registerHistogram("elapsed_time_total_ms", "total")
+    var elapsedTimeCallHistogram: Histogram = registerHistogram("elapsed_time_call_ms")
+    var elapsedTimeTotalHistogram: Histogram = registerHistogram("elapsed_time_total_ms")
 
     val cachedOboTokenProcent: Gauge = registerGauge("cached_obo_token_procent")
 
@@ -43,8 +42,8 @@ object Metrics {
         return Gauge.build().name(name).help(name).labelNames(label).register()
     }
 
-    fun registerHistogram(name: String, label: String): Histogram {
-        return Histogram.build().name(name).help(name).labelNames(label).buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
+    fun registerHistogram(name: String): Histogram {
+        return Histogram.build().name(name).help(name).buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
     }
 
     init {

@@ -71,7 +71,6 @@ object FetchStats {
 
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
         FetchStats.elapsedTimePerPath[path] = FetchStats.latestCallElapsedTime
-        Metrics.elapsedTimePerPath.labels(path).set(FetchStats.latestCallElapsedTime.toDouble())
         if (status == 200) {
             Metrics.successCalls.labels(path).inc()
         } else {
