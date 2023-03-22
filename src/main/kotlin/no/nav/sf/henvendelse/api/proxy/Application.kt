@@ -122,7 +122,11 @@ class Application {
                             measureTimeMillis {
                                 response = client.value(request)
                             }
-                        FetchStats.logStats(response.status.code, req.uri, callIndex)
+                        try {
+                            FetchStats.logStats(response.status.code, req.uri, callIndex)
+                        } catch (e: Exception) {
+                            log.error { "Failed to update metrics:" + e.message }
+                        }
                         log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${FetchStats.latestCallElapsedTime}, method=${req.method.name}, uri=${req.uri}, src=$src" }
 
                         if (response.status.code != 200) {
