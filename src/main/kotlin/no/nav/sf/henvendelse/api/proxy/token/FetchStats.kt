@@ -76,6 +76,5 @@ object FetchStats {
         } else {
             Metrics.failedCalls.labels(status.toString()).inc()
         }
-        File("/tmp/callperpath").writeText("Latest elapsed time per path: $elapsedTimePerPath")
     }
 }
