@@ -57,7 +57,7 @@ object FetchStats {
         Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
         Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
         Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
-        Metrics.elapsedTimeCall.labels(path).set(latestCallElapsedTime.toDouble())
+        Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeTokenHandling.set(Metrics.elapsedTimeAccessTokenRequest.get() +
                 Metrics.elapsedTimeTokenValidation.get() +
                 Metrics.elapsedTimeOboExchangeRequest.get()
