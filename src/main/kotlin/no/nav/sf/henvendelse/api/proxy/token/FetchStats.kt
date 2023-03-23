@@ -66,7 +66,7 @@ object FetchStats {
         )
         Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
         Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
-        Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get() )
+        Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get())
         if (status == 200) {
             Metrics.successCalls.labels(path).inc()
         } else {
