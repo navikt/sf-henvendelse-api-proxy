@@ -69,8 +69,6 @@ class Application {
                     var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
 
                     val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString() ?: ""
-                    val azp = token.jwtTokenClaims.get(claim_azp)?.toString() ?: ""
-                    val sub = token.jwtTokenClaims.get(claim_sub)?.toString() ?: ""
                     val navIdentHeader = req.header("Nav-Ident")
 
                     // Case insensitive fetch - dialogv1-proxy sends header as X-Correlation-Id
@@ -82,22 +80,22 @@ class Application {
                     var src = ""
 
                     if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
-                        log.info { "Ident from obo ($callIndex)" }
+                        src = azpName
+                        log.info { "Ident from obo ($callIndex) src=$azpName" }
                         oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                         FetchStats.registerCallSource("obo-$azpName")
-                        src = azpName
                         File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                     } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
-                        log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                        src = "$navConsumerId.$xProxyRef"
+                        log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = navIdentHeader
                         FetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
-                        src = "$navConsumerId.$xProxyRef"
                         File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                     } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
-                        log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - from $navConsumerId $xProxyRef - token with azpname $azpName, azp $azp, sub $sub" }
+                        src = "$navConsumerId.$xProxyRef"
+                        log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = azpName
                         FetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
-                        src = "$navConsumerId.$xProxyRef"
                         File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                     }
 
