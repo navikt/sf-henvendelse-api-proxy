@@ -31,7 +31,11 @@ object OboTokenExchangeHandler {
     private val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
     private val sfAlias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
 
-    private val OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
+    private var OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
+
+    fun refreshCache() {
+        OBOcache.filterValues { it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now() }.toMutableMap()
+    }
 
     fun exchange(jwtIn: JwtToken): JwtToken {
         val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)

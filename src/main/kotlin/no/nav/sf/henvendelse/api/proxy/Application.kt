@@ -82,6 +82,7 @@ class Application {
                     if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
                         src = azpName
                         log.info { "Ident from obo ($callIndex) src=$azpName" }
+                        OboTokenExchangeHandler.refreshCache()
                         oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                         FetchStats.registerCallSource("obo-$azpName")
                         File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
