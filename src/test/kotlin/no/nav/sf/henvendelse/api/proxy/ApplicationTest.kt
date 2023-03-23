@@ -9,5 +9,6 @@ class ApplicationTest {
     @Test
     fun instansiateMetrics() {
         Metrics.elapsedTimeTotal.inc()
+        Metrics.elapsedTimeCall.labels("path").set(2.0)
     }
 }

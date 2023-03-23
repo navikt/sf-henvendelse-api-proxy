@@ -45,7 +45,6 @@ object FetchStats {
     }
 
     private val pathsWithPathVars = listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
-    private val elapsedTimePerPath: MutableMap<String, Long> = mutableMapOf()
 
     fun logStats(status: Int, uri: Uri, callTime: Long) {
         log.info { "Timings ($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
@@ -57,18 +56,17 @@ object FetchStats {
         Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
         Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
         Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
-        Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
+        Metrics.elapsedTimeCall.labels(path).set(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeTokenHandling.set(Metrics.elapsedTimeAccessTokenRequest.get() +
                 Metrics.elapsedTimeTokenValidation.get() +
                 Metrics.elapsedTimeOboExchangeRequest.get()
         )
         Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
-                Metrics.elapsedTimeCall.get()
+                latestCallElapsedTime.toDouble()
         )
         Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
         Metrics.elapsedTimeCallHistogram.observe(Metrics.elapsedTimeCall.get())
         Metrics.elapsedTimeTotalHistogram.observe(Metrics.elapsedTimeTotal.get())
-        FetchStats.elapsedTimePerPath[path] = FetchStats.latestCallElapsedTime
         if (status == 200) {
             Metrics.successCalls.labels(path).inc()
         } else {
