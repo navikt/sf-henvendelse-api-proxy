@@ -10,8 +10,8 @@ spec:
   port: 8080
   webproxy: true
   replicas:
-    min: 3
-    max: 5
+    min: 5
+    max: 10
   liveness:
     path: /internal/isAlive
     initialDelay: 5
