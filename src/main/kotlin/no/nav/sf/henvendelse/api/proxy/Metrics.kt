@@ -17,7 +17,8 @@ object Metrics {
     val elapsedTimeAccessTokenRequest: Gauge = registerGauge("elapsed_time_access_token_request")
     val elapsedTimeOboExchangeRequest: Gauge = registerGauge("elapsed_time_obo_exchange_request")
     val elapsedTimeTokenValidation: Gauge = registerGauge("elapsed_time_token_validation")
-    val elapsedTimeCall: Gauge = registerLabelGauge("elapsed_time_call", "path")
+    val elapsedTimeCall: Gauge = registerGauge("elapsed_time_call")
+    val elapsedTimeCallPerPath: Gauge = registerLabelGauge("elapsed_time_call_per_path", "path")
     val elapsedTimeTokenHandling: Gauge = registerGauge("elapsed_time_token_handling")
     val elapsedTimeTotal: Gauge = registerGauge("elapsed_time_total")
 
