@@ -25,6 +25,7 @@ object Metrics {
     var elapsedTimeCallHistogram: Histogram = registerHistogram("elapsed_time_call_ms")
     var elapsedTimeTotalHistogram: Histogram = registerHistogram("elapsed_time_total_ms")
 
+    val cacheSize: Gauge = registerGauge("cache_size")
     val cachedOboTokenProcent: Gauge = registerGauge("cached_obo_token_procent")
 
     fun registerCounter(name: String): Counter {

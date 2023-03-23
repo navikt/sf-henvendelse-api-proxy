@@ -4,6 +4,7 @@ import java.time.Instant
 import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
+import no.nav.sf.henvendelse.api.proxy.Metrics
 import no.nav.sf.henvendelse.api.proxy.claim_NAVident
 import no.nav.sf.henvendelse.api.proxy.claim_azp_name
 import no.nav.sf.henvendelse.api.proxy.supportProxy
@@ -35,6 +36,7 @@ object OboTokenExchangeHandler {
 
     fun refreshCache() {
         OBOcache.filterValues { it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now() }.toMutableMap()
+        Metrics.cacheSize.set(OBOcache.size.toDouble())
     }
 
     fun exchange(jwtIn: JwtToken): JwtToken {
