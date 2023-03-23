@@ -57,16 +57,16 @@ object FetchStats {
         Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
         Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
         Metrics.elapsedTimeCall.labels(path).set(latestCallElapsedTime.toDouble())
-        Metrics.elapsedTimeTokenHandling.set(Metrics.elapsedTimeAccessTokenRequest.get() +
-                Metrics.elapsedTimeTokenValidation.get() +
-                Metrics.elapsedTimeOboExchangeRequest.get()
+        Metrics.elapsedTimeTokenHandling.set(elapsedTimeAccessTokenRequest.toDouble() +
+                elapsedTimeTokenValidation.toDouble() +
+                elapsedTimeOboExchangeRequest.toDouble()
         )
         Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
                 latestCallElapsedTime.toDouble()
         )
         Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
-        Metrics.elapsedTimeCallHistogram.observe(Metrics.elapsedTimeCall.get())
-        Metrics.elapsedTimeTotalHistogram.observe(Metrics.elapsedTimeTotal.get())
+        Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
+        Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble())
         if (status == 200) {
             Metrics.successCalls.labels(path).inc()
         } else {
