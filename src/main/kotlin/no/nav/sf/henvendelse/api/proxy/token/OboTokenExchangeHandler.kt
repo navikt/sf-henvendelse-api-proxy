@@ -34,12 +34,15 @@ object OboTokenExchangeHandler {
 
     private var OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
+    private var droppedCacheElements = 0L
+
     fun refreshCache() {
         OBOcache = OBOcache.filterValues {
-            it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()
+            val stillEligable = it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()
+            if (!stillEligable) droppedCacheElements++
+            stillEligable
         }.toMutableMap()
-
-        Metrics.cacheSize.set(OBOcache.size.toDouble())
+        log.info { "Dropped cache elements during lifetime $droppedCacheElements" }
     }
 
     fun exchange(jwtIn: JwtToken): JwtToken {
@@ -52,6 +55,7 @@ object OboTokenExchangeHandler {
                 return cachedToken
             }
         }
+        Metrics.cacheSize.set(OBOcache.size.toDouble())
 
         val req = Request(Method.POST, azureTokenEndPoint.value)
             .header("Content-Type", "application/x-www-form-urlencoded")

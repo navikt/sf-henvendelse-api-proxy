@@ -3,9 +3,6 @@ package no.nav.sf.henvendelse.api.proxy
 import io.prometheus.client.exporter.common.TextFormat
 import java.io.File
 import java.io.StringWriter
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -71,7 +68,7 @@ class Application {
                 if (!firstValidToken.isPresent) {
                     Response(Status.UNAUTHORIZED).body("Not authorized")
                 } else {
-                    File("/tmp/message").writeText(req.toMessage())
+                    // File("/tmp/message").writeText(req.toMessage())
                     val token = firstValidToken.get()
 
                     var oboToken = ""
@@ -95,19 +92,19 @@ class Application {
                             oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                         }
                         FetchStats.registerCallSource("obo-$azpName")
-                        File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
+                        // File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                     } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = navIdentHeader
                         FetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
-                        File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
+                        // File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                     } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = azpName
                         FetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
-                        File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
+                        // File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                     }
 
                     if (NAVident.isEmpty()) {
@@ -125,7 +122,7 @@ class Application {
                                     ) + oboHeader
                         val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 
-                        File("/tmp/forwardmessage").writeText(request.toMessage())
+                        // File("/tmp/forwardmessage").writeText(request.toMessage())
                         lateinit var response: Response
                         FetchStats.latestCallElapsedTime =
                             measureTimeMillis {
@@ -137,17 +134,6 @@ class Application {
                             log.error { "Failed to update metrics:" + e.message }
                         }
                         log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${FetchStats.latestCallElapsedTime}, method=${req.method.name}, uri=${req.uri}, src=$src" }
-
-                        if (response.status.code != 200) {
-                            File("/tmp/failedresponse").appendText("${DateTimeFormatter
-                                .ofPattern("yyyy-MM-dd HH:mm:ss")
-                                .withZone(ZoneId.of("CET"))
-                                .format(Instant.now())}\n" +
-                                    "${response.status.code} ${response.status} ${req.uri}\n" +
-                                    "${request.headers.filter{ it.first.toLowerCase() != "authorization" }.map { "${it.first} : ${it.second}"}.joinToString("\n")}\n\n"
-                            )
-                        }
-
                         response
                     }
                 }
