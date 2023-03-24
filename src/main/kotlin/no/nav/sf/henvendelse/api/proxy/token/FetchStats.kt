@@ -11,6 +11,7 @@ object FetchStats {
 
     var elapsedTimeAccessTokenRequest = -1L
     var elapsedTimeOboExchangeRequest = -1L
+    var elapsedTimeOboHandling = -1L
     var elapsedTimeTokenValidation = -1L
     var latestCallElapsedTime = -1L
 
@@ -27,6 +28,7 @@ object FetchStats {
     fun resetFetchVars() {
         elapsedTimeAccessTokenRequest = 0L
         elapsedTimeOboExchangeRequest = 0L
+        elapsedTimeOboHandling = 0L
         elapsedTimeTokenValidation = 0L
         latestCallElapsedTime = 0L
     }
@@ -48,19 +50,20 @@ object FetchStats {
 
     fun logStats(status: Int, uri: Uri, callTime: Long) {
         log.info { "Timings ($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
-                " OboExchange $elapsedTimeOboExchangeRequest, Call $latestCallElapsedTime," +
+                " OboHandling: $elapsedTimeOboHandling (rq: $elapsedTimeOboExchangeRequest), Call $latestCallElapsedTime," +
                 " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}." +
                 " Obo cache percentage: ${String.format("%.2f", cacheProcent)}" }
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
 
         Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
         Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
+        Metrics.elapsedTimeOboHandling.set(elapsedTimeOboHandling.toDouble())
         Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
         Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeCallPerPath.labels(path).set(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeTokenHandling.set(elapsedTimeAccessTokenRequest.toDouble() +
                 elapsedTimeTokenValidation.toDouble() +
-                elapsedTimeOboExchangeRequest.toDouble()
+                elapsedTimeOboHandling.toDouble()
         )
         Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
                 latestCallElapsedTime.toDouble()

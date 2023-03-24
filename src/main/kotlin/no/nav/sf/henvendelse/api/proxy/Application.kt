@@ -7,6 +7,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
@@ -43,7 +45,14 @@ class Application {
 
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
-        AccessTokenHandler.refreshLoop() // Refresh access token outside of calls
+        refreshLoop() // Refresh access token and cache outside of calls
+    }
+
+    tailrec fun refreshLoop() {
+        AccessTokenHandler.refreshToken()
+        OboTokenExchangeHandler.refreshCache()
+        runBlocking { delay(900000) } // 15 min
+        refreshLoop()
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
@@ -82,8 +91,9 @@ class Application {
                     if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
                         src = azpName
                         log.info { "Ident from obo ($callIndex) src=$azpName" }
-                        OboTokenExchangeHandler.refreshCache()
-                        oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
+                        FetchStats.elapsedTimeOboHandling = measureTimeMillis {
+                            oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
+                        }
                         FetchStats.registerCallSource("obo-$azpName")
                         File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                     } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token

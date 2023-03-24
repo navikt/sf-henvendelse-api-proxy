@@ -28,13 +28,11 @@ object AccessTokenHandler {
     val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    tailrec fun refreshLoop() {
-        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
-            log.info { "Refreshing access token" }
+    fun refreshToken() {
+        if ((AccessTokenHandler.expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
+            AccessTokenHandler.log.info { "Refreshing access token" }
             AccessTokenHandler.accessToken
         }
-        runBlocking { delay(1800000) } // 30 min
-        refreshLoop()
     }
 
     private val log = KotlinLogging.logger { }
