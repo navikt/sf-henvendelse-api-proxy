@@ -57,14 +57,15 @@ class Application {
     fun api(): HttpHandler = routes(
         "/static" bind static(Classpath("/static")),
         "/api/{rest:.*}" bind { req: Request ->
+            val fetchStats = FetchStats()
             val xCorrelationId = req.header("X-Correlation-ID") ?: ""
             val xRequestId = req.header("X-Request-ID") ?: ""
             val navCallId = req.header("Nav-Call-Id") ?: ""
             withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id:" to navCallId, "Correlation-Id" to xCorrelationId)) {
                 callIndex++
                 log.info { "Incoming call ($callIndex) ${req.uri}" }
-                FetchStats.resetFetchVars()
                 val firstValidToken = TokenValidator.firstValidToken(req)
+                fetchStats.elapsedTimeTokenValidation = TokenValidator.latestValidationTime
                 if (!firstValidToken.isPresent) {
                     Response(Status.UNAUTHORIZED).body("Not authorized")
                 } else {
@@ -88,22 +89,22 @@ class Application {
                     if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
                         src = azpName
                         log.info { "Ident from obo ($callIndex) src=$azpName" }
-                        FetchStats.elapsedTimeOboHandling = measureTimeMillis {
-                            oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
+                        fetchStats.elapsedTimeOboHandling = measureTimeMillis {
+                            // oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                         }
-                        FetchStats.registerCallSource("obo-$azpName")
+                        fetchStats.registerCallSource("obo-$azpName")
                         // File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                     } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = navIdentHeader
-                        FetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
+                        fetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
                         // File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                     } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = azpName
-                        FetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
+                        fetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
                         // File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                     }
 
@@ -124,16 +125,16 @@ class Application {
 
                         // File("/tmp/forwardmessage").writeText(request.toMessage())
                         lateinit var response: Response
-                        FetchStats.latestCallElapsedTime =
+                        fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
                                 response = client.value(request)
                             }
                         try {
-                            FetchStats.logStats(response.status.code, req.uri, callIndex)
+                            fetchStats.logStats(response.status.code, req.uri, callIndex)
                         } catch (e: Exception) {
                             log.error { "Failed to update metrics:" + e.message }
                         }
-                        log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${FetchStats.latestCallElapsedTime}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                        log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         response
                     }
                 }

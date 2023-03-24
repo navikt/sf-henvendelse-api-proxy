@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import java.io.File
 import java.security.KeyStore
 import java.security.PrivateKey
-import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -94,9 +93,7 @@ object AccessTokenHandler {
         for (retry in 1..4) {
             try {
                 lateinit var response: Response
-                FetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis {
-                    response = client.value(accessTokenRequest)
-                }
+                response = client.value(accessTokenRequest)
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)

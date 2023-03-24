@@ -1,23 +1,24 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import java.io.File
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.Metrics
-import no.nav.sf.henvendelse.api.proxy.token.FetchStats.inc
 import org.http4k.core.Uri
 
-object FetchStats {
+class FetchStats {
     private val log = KotlinLogging.logger { }
 
-    var elapsedTimeAccessTokenRequest = -1L
-    var elapsedTimeOboExchangeRequest = -1L
-    var elapsedTimeOboHandling = -1L
-    var elapsedTimeTokenValidation = -1L
-    var latestCallElapsedTime = -1L
+    var elapsedTimeAccessTokenRequest = 0L
+    var elapsedTimeOboExchangeRequest = 0L
+    var elapsedTimeOboHandling = 0L
+    var elapsedTimeTokenValidation = 0L
+    var latestCallElapsedTime = 0L
 
     var OBOfetches = 0L
     var OBOcached = 0L
 
+    fun latestCallTimeSlow(): Boolean = (latestCallElapsedTime > 3000)
+
+    /*
     val cacheProcent: Float get() =
         if (OBOfetches > 0) {
             OBOcached.toFloat() * 100 / (OBOfetches + OBOcached)
@@ -25,34 +26,31 @@ object FetchStats {
             0f
         }
 
-    fun resetFetchVars() {
-        elapsedTimeAccessTokenRequest = 0L
-        elapsedTimeOboExchangeRequest = 0L
-        elapsedTimeOboHandling = 0L
-        elapsedTimeTokenValidation = 0L
-        latestCallElapsedTime = 0L
-    }
+     */
 
     fun registerCallSource(key: String) {
-        callSourceCount.inc(key)
-        File("/tmp/callSourceCount").writeText(callSourceCount.toString())
+        // callSourceCount.inc(key)
+        // File("/tmp/callSourceCount").writeText(callSourceCount.toString())
         Metrics.callSource.labels(key).inc()
     }
 
-    private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
-
+    // private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
+    /*
     private fun MutableMap<String, Int>.inc(key: String) {
         if (!this.containsKey(key)) this[key] = 0
         this[key] = this[key]!! + 1
     }
+
+     */
 
     private val pathsWithPathVars = listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
     fun logStats(status: Int, uri: Uri, callTime: Long) {
         log.info { "Timings ($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
                 " OboHandling: $elapsedTimeOboHandling (rq: $elapsedTimeOboExchangeRequest), Call $latestCallElapsedTime," +
-                " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}." +
-                " Obo cache percentage: ${String.format("%.2f", cacheProcent)}" }
+                " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}."
+        }
+        // " Obo cache percentage: ${String.format("%.2f", cacheProcent)}"
         val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
 
         Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
@@ -68,7 +66,7 @@ object FetchStats {
         Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
                 latestCallElapsedTime.toDouble()
         )
-        Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
+        // Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
         Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get())
         if (status == 200) {

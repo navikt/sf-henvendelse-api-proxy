@@ -45,13 +45,13 @@ object OboTokenExchangeHandler {
         log.info { "Dropped cache elements during lifetime $droppedCacheElements" }
     }
 
-    fun exchange(jwtIn: JwtToken): JwtToken {
+    fun exchange(jwtIn: JwtToken, fetchStats: FetchStats): JwtToken {
         val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)
         val azp_name = jwtIn.jwtTokenClaims.getStringClaim(claim_azp_name)
         val key = azp_name + ":" + NAVident
         OBOcache.get(key)?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
-                FetchStats.OBOcached++
+                fetchStats.OBOcached++
                 return cachedToken
             }
         }
@@ -71,12 +71,12 @@ object OboTokenExchangeHandler {
             )
 
         lateinit var res: Response
-        FetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
+        fetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
             res = client.value(req)
         }
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
         OBOcache[key] = jwt
-        FetchStats.OBOfetches++
+        fetchStats.OBOfetches++
         return jwt
     }
 }
