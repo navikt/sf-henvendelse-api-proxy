@@ -61,7 +61,7 @@ class Application {
             val xCorrelationId = req.header("X-Correlation-ID") ?: ""
             val xRequestId = req.header("X-Request-ID") ?: ""
             val navCallId = req.header("Nav-Call-Id") ?: ""
-            withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id:" to navCallId, "Correlation-Id" to xCorrelationId)) {
+            withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "Correlation-Id" to xCorrelationId)) {
                 callIndex++
                 log.info { "Incoming call ($callIndex) ${req.uri}" }
                 val firstValidToken = TokenValidator.firstValidToken(req)
@@ -134,7 +134,9 @@ class Application {
                         } catch (e: Exception) {
                             log.error { "Failed to update metrics:" + e.message }
                         }
-                        log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                        withLoggingContext(mapOf("status" to response.status.code.toString(), "call_ms" to navCallId, "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src)) {
+                            log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                        }
                         response
                     }
                 }
