@@ -35,7 +35,10 @@ object OboTokenExchangeHandler {
     private var OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
     fun refreshCache() {
-        OBOcache.filterValues { it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now() }.toMutableMap()
+        OBOcache = OBOcache.filterValues {
+            it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()
+        }.toMutableMap()
+
         Metrics.cacheSize.set(OBOcache.size.toDouble())
     }
 
