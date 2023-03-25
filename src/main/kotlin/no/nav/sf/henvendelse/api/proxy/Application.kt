@@ -51,7 +51,7 @@ class Application {
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        if (devContext) performTestCalls()
+        if (devContext) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         AccessTokenHandler.refreshToken()
         OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
@@ -76,6 +76,15 @@ class Application {
             }
         log.info { "Testcall performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
         File("/tmp/latesttestcall").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response.toMessage()}")
+
+        val request2 = Request(Method.GET, dstUrl).headers(headers)
+        lateinit var response2: Response
+        fetchStats.latestCallElapsedTime =
+            measureTimeMillis {
+                response = clientWOProxy.value(request)
+            }
+        log.info { "Testcall wo p, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
+        File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
