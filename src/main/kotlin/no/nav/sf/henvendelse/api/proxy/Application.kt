@@ -51,7 +51,7 @@ class Application {
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        if (devContext) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
+        /* if (devContext) */ try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         AccessTokenHandler.refreshToken()
         OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
