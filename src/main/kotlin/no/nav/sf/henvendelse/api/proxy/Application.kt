@@ -108,7 +108,7 @@ class Application {
     fun performMultiCall(request: Request): Response {
         val first = threadCall(request)
         val second = threadCall(request)
-        while (!first.isCompleted && !second.isCompleted) { }
+        while (!first.isCompleted && !second.isCompleted) { Thread.sleep(25) }
         return if (first.isCompleted) first.getCompleted() else second.getCompleted()
     }
 
