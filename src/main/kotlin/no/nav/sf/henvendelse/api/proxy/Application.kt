@@ -81,7 +81,7 @@ class Application {
         lateinit var response2: Response
         fetchStats.latestCallElapsedTime =
             measureTimeMillis {
-                response = clientWOProxy.value(request)
+                response2 = clientWOProxy.value(request2)
             }
         log.info { "Testcall wo p, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
         File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
