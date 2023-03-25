@@ -60,6 +60,8 @@ spec:
           namespace: teamcrm
           cluster: prod-external
   env:
+    - name: CONTEXT
+      value: 'PROD'
     - name: SF_TOKENHOST
       value: 'https://login.salesforce.com/services/oauth2/token'
     - name: AUDIENCE_TOKEN_SERVICE_URL

@@ -42,16 +42,40 @@ class Application {
 
     private val clientWOProxy: Lazy<HttpHandler> = lazy { ApacheClient.withoutProxy() }
 
-    fun start() { log.info { "Starting" }
+    val devContext = System.getenv("CONTEXT") == "DEV"
+
+    fun start() { log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
         apiServer(NAIS_DEFAULT_PORT).start()
         refreshLoop() // Refresh access token and cache outside of calls
     }
 
     tailrec fun refreshLoop() {
+        runBlocking { delay(60000) } // 1 min
+        if (devContext) performTestCalls()
         AccessTokenHandler.refreshToken()
         OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
         refreshLoop()
+    }
+
+    fun performTestCalls() {
+        val fetchStats = FetchStats()
+
+        val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/api/henvendelseinfo/henvendelseliste?aktorid=2755132512806"
+        val headers: Headers =
+                    listOf(
+                        Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
+                        Pair("X-ACTING-NAV-IDENT", "H159337"),
+                        Pair("X-Correlation-ID", "testcall")
+                    )
+        val request = Request(Method.GET, dstUrl).headers(headers)
+        lateinit var response: Response
+        fetchStats.latestCallElapsedTime =
+            measureTimeMillis {
+                response = client.value(request)
+            }
+        log.info { "Testcall performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
+        File("/tmp/latesttestcall").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response.toMessage()}")
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
@@ -136,7 +160,7 @@ class Application {
                         } catch (e: Exception) {
                             log.error { "Failed to update metrics:" + e.message }
                         }
-                        withLoggingContext(mapOf("status" to response.status.code.toString(), "call_ms" to fetchStats.latestCallElapsedTime.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src)) {
+                        withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src, "uri" to req.uri.toString())) {
                             log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response

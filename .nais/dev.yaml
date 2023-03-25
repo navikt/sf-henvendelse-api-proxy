@@ -65,6 +65,8 @@ spec:
           namespace: teamcrm
           cluster: dev-external
   env:
+    - name: CONTEXT
+      value: 'DEV'
     - name: SF_TOKENHOST
       value: 'https://test.salesforce.com/services/oauth2/token'
     - name: AUDIENCE_TOKEN_SERVICE_URL
