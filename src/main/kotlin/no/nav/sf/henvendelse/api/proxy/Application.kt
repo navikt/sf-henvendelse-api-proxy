@@ -54,7 +54,7 @@ class Application {
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        /* if (devContext) */ try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
+        if (devContext) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         AccessTokenHandler.refreshToken()
         OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
@@ -98,7 +98,7 @@ class Application {
                 response2 = performMultiCall(request2)
             }
         log.info { "Testcall multi, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
-        File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
+        File("/tmp/latesttestcallmulti").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
     }
 
     fun threadCall(request: Request): Deferred<Response> = GlobalScope.async {
@@ -187,7 +187,7 @@ class Application {
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
-                                response = client.value(request) // performMultiCall(request)
+                                response = performMultiCall(request)
                             }
                         try {
                             fetchStats.logStats(response.status.code, req.uri, callIndex)
@@ -195,7 +195,7 @@ class Application {
                             log.error { "Failed to update metrics:" + e.message }
                         }
                         withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src, "uri" to req.uri.toString())) {
-                            log.info { "Summary (m) ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                            log.info { "Summary (mul) ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
                     }
