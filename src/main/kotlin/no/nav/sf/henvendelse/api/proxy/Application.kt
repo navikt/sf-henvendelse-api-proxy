@@ -4,6 +4,9 @@ import io.prometheus.client.exporter.common.TextFormat
 import java.io.File
 import java.io.StringWriter
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -61,7 +64,7 @@ class Application {
     fun performTestCalls() {
         val fetchStats = FetchStats()
 
-        val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/api/henvendelseinfo/henvendelseliste?aktorid=2755132512806"
+        val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/api/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
         val headers: Headers =
                     listOf(
                         Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
@@ -74,9 +77,10 @@ class Application {
             measureTimeMillis {
                 response = client.value(request)
             }
-        log.info { "Testcall performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
+        log.info { "Testcall ref performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
         File("/tmp/latesttestcall").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response.toMessage()}")
 
+        /*
         val request2 = Request(Method.GET, dstUrl).headers(headers)
         lateinit var response2: Response
         fetchStats.latestCallElapsedTime =
@@ -85,6 +89,27 @@ class Application {
             }
         log.info { "Testcall wo p, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
         File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
+         */
+
+        val request2 = Request(Method.GET, dstUrl).headers(headers)
+        lateinit var response2: Response
+        fetchStats.latestCallElapsedTime =
+            measureTimeMillis {
+                response2 = performMultiCall(request2)
+            }
+        log.info { "Testcall multi, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
+        File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
+    }
+
+    fun threadCall(request: Request): Deferred<Response> = GlobalScope.async {
+        client.value(request)
+    }
+
+    fun performMultiCall(request: Request): Response {
+        val first = threadCall(request)
+        val second = threadCall(request)
+        while (!first.isCompleted && !second.isCompleted) { }
+        return if (first.isCompleted) first.getCompleted() else second.getCompleted()
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
@@ -162,7 +187,7 @@ class Application {
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
-                                response = client.value(request)
+                                response = client.value(request) // performMultiCall(request)
                             }
                         try {
                             fetchStats.logStats(response.status.code, req.uri, callIndex)
@@ -170,7 +195,7 @@ class Application {
                             log.error { "Failed to update metrics:" + e.message }
                         }
                         withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src, "uri" to req.uri.toString())) {
-                            log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                            log.info { "Summary (m) ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
                     }
