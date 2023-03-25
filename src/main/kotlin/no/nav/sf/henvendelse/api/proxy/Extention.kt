@@ -30,6 +30,20 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler {
         .build())
 }
 
+fun ApacheClient.withoutProxy(): HttpHandler {
+    return ApacheClient(client = HttpClients.custom()
+        .setDefaultRequestConfig(
+            RequestConfig.custom()
+                .setConnectTimeout(40000)
+                .setSocketTimeout(40000)
+                .setConnectionRequestTimeout(40000)
+                .setRedirectsEnabled(false)
+                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                .build()
+        )
+        .build())
+}
+
 fun JwtToken.isMachineToken(callIndex: Long): Boolean {
     val rolesClaim = this.jwtTokenClaims.get(claim_roles)
     if (rolesClaim != null && rolesClaim is JSONArray) {

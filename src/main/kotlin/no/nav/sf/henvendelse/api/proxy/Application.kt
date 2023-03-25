@@ -40,6 +40,8 @@ class Application {
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
+    private val clientWOProxy: Lazy<HttpHandler> = lazy { ApacheClient.withoutProxy() }
+
     fun start() { log.info { "Starting" }
         apiServer(NAIS_DEFAULT_PORT).start()
         refreshLoop() // Refresh access token and cache outside of calls
@@ -134,7 +136,7 @@ class Application {
                         } catch (e: Exception) {
                             log.error { "Failed to update metrics:" + e.message }
                         }
-                        withLoggingContext(mapOf("status" to response.status.code.toString(), "call_ms" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src)) {
+                        withLoggingContext(mapOf("status" to response.status.code.toString(), "call_ms" to fetchStats.latestCallElapsedTime.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src)) {
                             log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
