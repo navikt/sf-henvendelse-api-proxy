@@ -64,7 +64,7 @@ class Application {
     fun performTestCalls() {
         val fetchStats = FetchStats()
 
-        val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/api/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
+        val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
         val headers: Headers =
                     listOf(
                         Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
