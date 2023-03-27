@@ -75,19 +75,9 @@ class Application {
             measureTimeMillis {
                 response = client.value(request)
             }
+        val ref = fetchStats.latestCallElapsedTime
         log.info { "Testcall ref performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
         File("/tmp/latesttestcall").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response.toMessage()}")
-
-        /*
-        val request2 = Request(Method.GET, dstUrl).headers(headers)
-        lateinit var response2: Response
-        fetchStats.latestCallElapsedTime =
-            measureTimeMillis {
-                response2 = clientWOProxy.value(request2)
-            }
-        log.info { "Testcall wo p, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
-        File("/tmp/latesttestcallwoproxy").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
-         */
 
         val request2 = Request(Method.GET, dstUrl).headers(headers)
         lateinit var response2: Response
@@ -95,7 +85,7 @@ class Application {
             measureTimeMillis {
                 response2 = performMultiCall(request2)
             }
-        log.info { "Testcall multi, performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
+        log.info { "Testcall multi, performed, call_ms = ${fetchStats.latestCallElapsedTime}. Diff ${fetchStats.latestCallElapsedTime - ref}" }
         File("/tmp/latesttestcallmulti").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
     }
 
