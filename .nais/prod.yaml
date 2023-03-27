@@ -10,8 +10,8 @@ spec:
   port: 8080
   webproxy: true
   replicas:
-    min: 7
-    max: 9
+    min: 10
+    max: 15
   liveness:
     path: /internal/isAlive
     initialDelay: 5
@@ -30,8 +30,8 @@ spec:
       cpu: 6000m
       memory: 8192Mi
     requests:
-      cpu: 1000m
-      memory: 2048Mi
+      cpu: 500m
+      memory: 768Mi
   vault:
     enabled: true
     paths:
