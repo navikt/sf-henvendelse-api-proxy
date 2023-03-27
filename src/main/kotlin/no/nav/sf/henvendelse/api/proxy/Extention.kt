@@ -20,7 +20,7 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler {
         .setDefaultRequestConfig(
             RequestConfig.custom()
                 .setProxy(HttpHost(proxyUri.host, proxyUri.port, proxyUri.scheme))
-                .setConnectTimeout(20000) // High but not the default limitless wait for connection (max time establishing)
+                .setConnectTimeout(20000) // High - but not the default limitless wait for connection (max time establishing)
                 .setSocketTimeout(20000) // (Max time between data packets)
                 .setConnectionRequestTimeout(20000) // (Max time to be served from connection pool)
                 .setRedirectsEnabled(false)

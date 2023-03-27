@@ -13,7 +13,6 @@ import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.FetchStats
-import no.nav.sf.henvendelse.api.proxy.token.OboTokenExchangeHandler
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import org.http4k.client.ApacheClient
 import org.http4k.core.Headers
@@ -54,7 +53,7 @@ class Application {
         runBlocking { delay(60000) } // 1 min
         if (devContext) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         AccessTokenHandler.refreshToken()
-        OboTokenExchangeHandler.refreshCache()
+        // OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
         refreshLoop()
     }
