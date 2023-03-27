@@ -20,27 +20,13 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler {
         .setDefaultRequestConfig(
             RequestConfig.custom()
                 .setProxy(HttpHost(proxyUri.host, proxyUri.port, proxyUri.scheme))
-                .setConnectTimeout(40000)
-                .setSocketTimeout(40000)
-                .setConnectionRequestTimeout(40000)
+                .setConnectTimeout(20000) // High but not the default limitless wait for connection (max time establishing)
+                .setSocketTimeout(20000) // (Max time between data packets)
+                .setConnectionRequestTimeout(20000) // (Max time to be served from connection pool)
                 .setRedirectsEnabled(false)
                 .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                 .build()
-        ).setMaxConnPerRoute(40).setMaxConnTotal(200)
-        .build())
-}
-
-fun ApacheClient.withoutProxy(): HttpHandler {
-    return ApacheClient(client = HttpClients.custom()
-        .setDefaultRequestConfig(
-            RequestConfig.custom()
-                .setConnectTimeout(40000)
-                .setSocketTimeout(40000)
-                .setConnectionRequestTimeout(40000)
-                .setRedirectsEnabled(false)
-                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                .build()
-        )
+        ).setMaxConnPerRoute(100).setMaxConnTotal(500)
         .build())
 }
 

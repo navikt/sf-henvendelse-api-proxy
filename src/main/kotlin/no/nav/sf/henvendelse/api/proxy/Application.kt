@@ -43,8 +43,6 @@ class Application {
 
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
-    private val clientWOProxy: Lazy<HttpHandler> = lazy { ApacheClient.withoutProxy() }
-
     val devContext = System.getenv("CONTEXT") == "DEV"
 
     fun start() { log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
