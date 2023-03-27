@@ -55,6 +55,7 @@ class Application {
         AccessTokenHandler.refreshToken()
         // OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
+
         refreshLoop()
     }
 
