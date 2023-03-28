@@ -112,7 +112,7 @@ class Application {
                 if (!firstValidToken.isPresent) {
                     Response(Status.UNAUTHORIZED).body("Not authorized")
                 } else {
-                    // File("/tmp/message").writeText(req.toMessage())
+                    if (devContext) File("/tmp/message").writeText(req.toMessage())
                     val token = firstValidToken.get()
 
                     var oboToken = ""
@@ -136,19 +136,19 @@ class Application {
                             // oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
                         }
                         fetchStats.registerCallSource("obo-$azpName")
-                        // File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
+                        if (devContext) File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
                     } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident from header ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = navIdentHeader
                         fetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
-                        // File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
+                        if (devContext) File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
                     } else if (azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
                         src = "$navConsumerId.$xProxyRef"
                         log.info { "Ident as machine source ($callIndex) - machinetoken $isMachineToken - src=$src" }
                         NAVident = azpName
                         fetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
-                        // File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
+                        if (devContext) File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
                     }
 
                     if (NAVident.isEmpty()) {
@@ -166,7 +166,7 @@ class Application {
                                     ) + oboHeader
                         val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 
-                        // File("/tmp/forwardmessage").writeText(request.toMessage())
+                        if (devContext) File("/tmp/forwardmessage").writeText(request.toMessage())
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
@@ -178,7 +178,7 @@ class Application {
                             log.error { "Failed to update metrics:" + e.message }
                         }
                         withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src, "uri" to req.uri.toString())) {
-                            log.info { "Summary (mul) ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                            log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
                     }
