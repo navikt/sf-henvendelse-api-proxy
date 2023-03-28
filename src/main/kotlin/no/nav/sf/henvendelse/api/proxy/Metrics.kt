@@ -4,6 +4,7 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Counter
 import io.prometheus.client.Gauge
 import io.prometheus.client.Histogram
+import io.prometheus.client.Summary
 import io.prometheus.client.hotspot.DefaultExports
 
 object Metrics {
@@ -26,6 +27,9 @@ object Metrics {
     var elapsedTimeCallHistogram: Histogram = registerHistogram("elapsed_time_call_ms")
     var elapsedTimeTotalHistogram: Histogram = registerHistogram("elapsed_time_total_ms")
 
+    var summaryTestRef: Summary = registerSummary("reference_test")
+    var summaryTestTwinCall: Summary = registerSummary("twincall_test")
+
     val cacheSize: Gauge = registerGauge("cache_size")
     val cachedOboTokenProcent: Gauge = registerGauge("cached_obo_token_procent")
 
@@ -47,6 +51,10 @@ object Metrics {
 
     fun registerHistogram(name: String): Histogram {
         return Histogram.build().name(name).help(name).buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
+    }
+
+    fun registerSummary(name: String): Summary {
+        return Summary.build().name(name).help(name).register()
     }
 
     init {

@@ -71,29 +71,24 @@ class Application {
                     )
         val request = Request(Method.GET, dstUrl).headers(headers)
         lateinit var response: Response
-        fetchStats.latestCallElapsedTime =
+        val ref =
             measureTimeMillis {
                 response = client.value(request)
             }
-        val ref = fetchStats.latestCallElapsedTime
-        log.info { "Testcall ref performed, call_ms = ${fetchStats.latestCallElapsedTime}" }
-        File("/tmp/latesttestcall").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response.toMessage()}")
-
-        val request2 = Request(Method.GET, dstUrl).headers(headers)
-        lateinit var response2: Response
-        fetchStats.latestCallElapsedTime =
+        val twincall =
             measureTimeMillis {
-                response2 = performMultiCall(request2)
+                response = performTwinCall(request)
             }
-        log.info { "Testcall multi, performed, call_ms = ${fetchStats.latestCallElapsedTime}. Diff ${fetchStats.latestCallElapsedTime - ref}" }
-        File("/tmp/latesttestcallmulti").writeText("call_ms = ${fetchStats.latestCallElapsedTime}\nResponse:\n${response2.toMessage()}")
+        log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
+        Metrics.summaryTestRef.observe(ref.toDouble())
+        Metrics.summaryTestTwinCall.observe(twincall.toDouble())
     }
 
     fun threadCall(request: Request): Deferred<Response> = GlobalScope.async {
         client.value(request)
     }
 
-    fun performMultiCall(request: Request): Response {
+    fun performTwinCall(request: Request): Response {
         val first = threadCall(request)
         val second = threadCall(request)
         while (!first.isCompleted && !second.isCompleted) { Thread.sleep(25) }
@@ -175,7 +170,7 @@ class Application {
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
-                                response = performMultiCall(request)
+                                response = performTwinCall(request)
                             }
                         try {
                             fetchStats.logStats(response.status.code, req.uri, callIndex)
