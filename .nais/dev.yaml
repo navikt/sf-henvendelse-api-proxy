@@ -22,6 +22,10 @@ spec:
     initialDelay: 5
     periodSeconds: 5
     failureThreshold: 30
+  preStopHook:
+    http:
+      path: /internal/stop
+      port: 8080
   prometheus:
     enabled: true
     path: /internal/metrics

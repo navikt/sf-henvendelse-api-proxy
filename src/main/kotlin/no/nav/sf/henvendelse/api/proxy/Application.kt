@@ -33,6 +33,7 @@ const val NAIS_DEFAULT_PORT = 8080
 const val NAIS_ISALIVE = "/internal/isAlive"
 const val NAIS_ISREADY = "/internal/isReady"
 const val NAIS_METRICS = "/internal/metrics"
+const val NAIS_PRESTOP = "/internal/stop"
 
 class Application {
     private val log = KotlinLogging.logger { }
@@ -121,9 +122,6 @@ class Application {
                     val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString() ?: ""
                     val navIdentHeader = req.header("Nav-Ident")
 
-                    // Case insensitive fetch - dialogv1-proxy sends header as X-Correlation-Id
-                    // Needs to be translated to X-Correlation-ID in call to salesforce
-
                     val navConsumerId = req.header("nav-consumer-id") ?: ""
                     val xProxyRef = req.header("X-Proxy-Ref") ?: ""
                     val isMachineToken = token.isMachineToken(callIndex)
@@ -157,6 +155,8 @@ class Application {
                     } else {
                         val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}"
                         val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
+                        // X-Correlation-ID (all headers) is read case insensitive - dialogv1-proxy sends header as X-Correlation-Id
+                        // Needs to be translated to X-Correlation-ID in call to salesforce
                         val headers: Headers =
                             req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
                                     listOf(
@@ -200,6 +200,14 @@ class Application {
                 .getOrDefault("").let {
                     if (it.isNotEmpty()) Response(Status.OK).body(it) else Response(Status.NO_CONTENT)
                 }
+        },
+        NAIS_PRESTOP bind Method.GET to {
+            log.info { "Registered prestop hook" }
+            Thread.sleep(3000)
+            log.info { "Prestop after 3 sec" }
+            Thread.sleep(1000)
+            log.info { "Prestop after final" }
+            Response(Status.OK)
         }
     )
 }
