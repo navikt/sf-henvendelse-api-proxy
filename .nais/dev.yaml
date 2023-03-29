@@ -22,10 +22,14 @@ spec:
     initialDelay: 5
     periodSeconds: 5
     failureThreshold: 30
+#  preStopHook:
+#    http:
+#      path: /internal/stop
+#      port: 8080
   preStopHook:
-    http:
-      path: /internal/stop
-      port: 8080
+    exec:
+      command: [ "/bin/bash", "/pre-stop.sh" ]
+  terminationGracePeriodSeconds: 60
   prometheus:
     enabled: true
     path: /internal/metrics
