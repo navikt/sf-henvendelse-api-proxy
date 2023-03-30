@@ -9,10 +9,13 @@ import org.apache.http.HttpHost
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 
 private val log = KotlinLogging.logger { }
+
+val connectionManager = PoolingHttpClientConnectionManager()
 
 fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler {
     val proxyUri = URI(httpsProxy)
