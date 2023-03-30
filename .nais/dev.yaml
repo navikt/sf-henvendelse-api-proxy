@@ -25,7 +25,6 @@ spec:
   preStopHook:
     exec:
       command: [ "/bin/bash", "/pre-stop.sh" ]
-  preStopHookPath: /internal/stop
   terminationGracePeriodSeconds: 60
   prometheus:
     enabled: true
