@@ -22,6 +22,11 @@ spec:
     initialDelay: 5
     periodSeconds: 5
     failureThreshold: 30
+  preStopHook:
+    exec:
+      command: [ "/bin/bash", "/pre-stop.sh" ]
+  preStopHookPath: /internal/stop
+  terminationGracePeriodSeconds: 60
   prometheus:
     enabled: true
     path: /internal/metrics

@@ -61,8 +61,6 @@ class Application {
     }
 
     fun performTestCalls() {
-        val fetchStats = FetchStats()
-
         val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
         val headers: Headers =
                     listOf(
@@ -177,7 +175,7 @@ class Application {
                         } catch (e: Exception) {
                             log.error { "Failed to update metrics:" + e.message }
                         }
-                        withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "call_over_three" to fetchStats.latestCallTimeSlow().toString(), "src" to src, "uri" to req.uri.toString())) {
+                        withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "src" to src, "uri" to req.uri.toString())) {
                             log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
