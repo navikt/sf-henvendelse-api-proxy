@@ -25,8 +25,8 @@ import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.routing.static
+import org.http4k.server.Apache4Server
 import org.http4k.server.Http4kServer
-import org.http4k.server.Netty
 import org.http4k.server.asServer
 
 const val NAIS_DEFAULT_PORT = 8080
@@ -95,7 +95,7 @@ class Application {
         return if (first.isCompleted) first.getCompleted() else second.getCompleted()
     }
 
-    fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
+    fun apiServer(port: Int): Http4kServer = api().asServer(Apache4Server(port))
 
     fun api(): HttpHandler = routes(
         "/static" bind static(Classpath("/static")),

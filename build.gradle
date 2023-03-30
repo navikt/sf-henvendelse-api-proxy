@@ -77,6 +77,7 @@ dependencies {
 
     implementation "org.http4k:http4k-core:$http4k_version"
     implementation "org.http4k:http4k-client-apache:$http4k_version"
+    implementation "org.http4k:http4k-server-apache4:3.252.0"
     implementation "org.http4k:http4k-server-netty:$http4k_version"
     implementation "org.http4k:http4k-server-ktorcio:$http4k_version"
 
