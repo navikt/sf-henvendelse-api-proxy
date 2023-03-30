@@ -46,6 +46,7 @@ class Application {
     val devContext = System.getenv("CONTEXT") == "DEV"
 
     fun start() { log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
+        log.debug { "Log level debug" }
         apiServer(NAIS_DEFAULT_PORT).start()
         refreshLoop() // Refresh access token and cache outside of calls
     }
