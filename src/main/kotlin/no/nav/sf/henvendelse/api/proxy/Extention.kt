@@ -28,7 +28,7 @@ fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler {
                 .setRedirectsEnabled(false)
                 .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                 .build()
-        ).setMaxConnPerRoute(25).setMaxConnTotal(50)
+        ).setMaxConnPerRoute(50).setMaxConnTotal(50)
         .build())
 }
 
