@@ -13,7 +13,6 @@ class IdleConnectionMonitorThread(private val connMgr: HttpClientConnectionManag
                     Thread.sleep(5000)
                     // Close expired connections
                     connMgr.closeExpiredConnections()
-                    connMgr
                     // Optionally, close connections
                     // that have been idle longer than 30 sec
                     connMgr.closeIdleConnections(30, TimeUnit.SECONDS)
