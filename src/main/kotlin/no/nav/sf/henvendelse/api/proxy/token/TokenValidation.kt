@@ -44,9 +44,9 @@ object TokenValidator {
 
     var latestValidationTime = 0L
 
-    fun firstValidToken(request: Request): Optional<JwtToken> {
+    fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken> {
         lateinit var result: Optional<JwtToken>
-        latestValidationTime = measureTimeMillis {
+        fetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
         }
         if (!result.isPresent) {

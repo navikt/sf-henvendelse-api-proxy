@@ -33,7 +33,6 @@ const val NAIS_DEFAULT_PORT = 8080
 const val NAIS_ISALIVE = "/internal/isAlive"
 const val NAIS_ISREADY = "/internal/isReady"
 const val NAIS_METRICS = "/internal/metrics"
-const val NAIS_PRESTOP = "/internal/stop"
 
 class Application {
     private val log = KotlinLogging.logger { }
@@ -107,8 +106,7 @@ class Application {
             withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "Correlation-Id" to xCorrelationId)) {
                 callIndex++
                 log.info { "Incoming call ($callIndex) ${req.uri}" }
-                val firstValidToken = TokenValidator.firstValidToken(req)
-                fetchStats.elapsedTimeTokenValidation = TokenValidator.latestValidationTime
+                val firstValidToken = TokenValidator.firstValidToken(req, fetchStats)
                 if (!firstValidToken.isPresent) {
                     Response(Status.UNAUTHORIZED).body("Not authorized")
                 } else {
@@ -199,14 +197,6 @@ class Application {
                 .getOrDefault("").let {
                     if (it.isNotEmpty()) Response(Status.OK).body(it) else Response(Status.NO_CONTENT)
                 }
-        },
-        NAIS_PRESTOP bind Method.GET to {
-            log.info { "Registered prestop hook" }
-            Thread.sleep(3000)
-            log.info { "Prestop after 3 sec" }
-            Thread.sleep(1000)
-            log.info { "Prestop after final" }
-            Response(Status.OK)
         }
     )
 }
