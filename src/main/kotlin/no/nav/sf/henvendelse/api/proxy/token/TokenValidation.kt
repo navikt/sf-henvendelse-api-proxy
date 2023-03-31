@@ -1,9 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import java.io.File
-import java.net.URL
-import java.util.Optional
-import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.security.token.support.core.configuration.IssuerProperties
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
@@ -11,6 +7,10 @@ import no.nav.security.token.support.core.http.HttpRequest
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler
 import org.http4k.core.Request
+import java.io.File
+import java.net.URL
+import java.util.Optional
+import kotlin.system.measureTimeMillis
 
 const val env_AZURE_APP_WELL_KNOWN_URL = "AZURE_APP_WELL_KNOWN_URL"
 const val env_AZURE_APP_CLIENT_ID = "AZURE_APP_CLIENT_ID"
@@ -32,8 +32,11 @@ object TokenValidator {
     private val callerList: MutableMap<String, Int> = mutableMapOf()
 
     private val multiIssuerConfiguration = MultiIssuerConfiguration(
-        mapOf(tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
-            azureAlias to IssuerProperties(URL(azureUrl), azureAudience)))
+        mapOf(
+            tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
+            azureAlias to IssuerProperties(URL(azureUrl), azureAudience)
+        )
+    )
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
 

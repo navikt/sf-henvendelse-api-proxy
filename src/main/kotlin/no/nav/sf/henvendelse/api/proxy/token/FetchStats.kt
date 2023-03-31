@@ -46,7 +46,8 @@ class FetchStats {
     private val pathsWithPathVars = listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
     fun logStats(status: Int, uri: Uri, callTime: Long) {
-        log.info { "Timings ($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
+        log.info {
+            "Timings ($callTime) : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
                 " OboHandling: $elapsedTimeOboHandling (rq: $elapsedTimeOboExchangeRequest), Call $latestCallElapsedTime," +
                 " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}."
         }
@@ -59,11 +60,13 @@ class FetchStats {
         Metrics.elapsedTimeOboExchangeRequest.set(elapsedTimeOboExchangeRequest.toDouble())
         Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeCallPerPath.labels(path).set(latestCallElapsedTime.toDouble())
-        Metrics.elapsedTimeTokenHandling.set(elapsedTimeAccessTokenRequest.toDouble() +
+        Metrics.elapsedTimeTokenHandling.set(
+            elapsedTimeAccessTokenRequest.toDouble() +
                 elapsedTimeTokenValidation.toDouble() +
                 elapsedTimeOboHandling.toDouble()
         )
-        Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() +
+        Metrics.elapsedTimeTotal.set(
+            Metrics.elapsedTimeTokenHandling.get() +
                 latestCallElapsedTime.toDouble()
         )
         // Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())

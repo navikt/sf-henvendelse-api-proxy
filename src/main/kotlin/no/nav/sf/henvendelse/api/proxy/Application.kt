@@ -1,9 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy
 
 import io.prometheus.client.exporter.common.TextFormat
-import java.io.File
-import java.io.StringWriter
-import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -28,6 +25,9 @@ import org.http4k.routing.static
 import org.http4k.server.ApacheServer
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
+import java.io.File
+import java.io.StringWriter
+import kotlin.system.measureTimeMillis
 
 const val NAIS_DEFAULT_PORT = 8080
 const val NAIS_ISALIVE = "/internal/isAlive"
@@ -44,7 +44,8 @@ class Application {
 
     val devContext = System.getenv("CONTEXT") == "DEV"
 
-    fun start() { log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
+    fun start() {
+        log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
         log.debug { "Log level debug" }
         apiServer(NAIS_DEFAULT_PORT).start()
         refreshLoop() // Refresh access token and cache outside of calls
@@ -63,11 +64,11 @@ class Application {
     fun performTestCalls() {
         val dstUrl = "${AccessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
         val headers: Headers =
-                    listOf(
-                        Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
-                        Pair("X-ACTING-NAV-IDENT", "H159337"),
-                        Pair("X-Correlation-ID", "testcall")
-                    )
+            listOf(
+                Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
+                Pair("X-ACTING-NAV-IDENT", "H159337"),
+                Pair("X-Correlation-ID", "testcall")
+            )
         val request = Request(Method.GET, dstUrl).headers(headers)
         lateinit var response: Response
         val ref =
@@ -162,11 +163,11 @@ class Application {
                         // Needs to be translated to X-Correlation-ID in call to salesforce
                         val headers: Headers =
                             req.headers.filter { !restrictedHeaders.contains(it.first.toLowerCase()) } +
-                                    listOf(
-                                        Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
-                                        Pair("X-ACTING-NAV-IDENT", NAVident),
-                                        Pair("X-Correlation-ID", xCorrelationId)
-                                    ) + oboHeader
+                                listOf(
+                                    Pair("Authorization", "Bearer ${AccessTokenHandler.accessToken}"),
+                                    Pair("X-ACTING-NAV-IDENT", NAVident),
+                                    Pair("X-Correlation-ID", xCorrelationId)
+                                ) + oboHeader
                         val request = Request(req.method, dstUrl).headers(headers).body(req.body)
 
                         if (devContext) File("/tmp/forwardmessage").writeText(request.toMessage())

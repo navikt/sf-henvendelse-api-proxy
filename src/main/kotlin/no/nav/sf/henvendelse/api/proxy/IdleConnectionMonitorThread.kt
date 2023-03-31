@@ -1,7 +1,7 @@
 package no.nav.sf.henvendelse.api.proxy
 
-import java.util.concurrent.TimeUnit
 import org.apache.http.conn.HttpClientConnectionManager
+import java.util.concurrent.TimeUnit
 
 class IdleConnectionMonitorThread(private val connMgr: HttpClientConnectionManager) : Thread() {
     @Volatile

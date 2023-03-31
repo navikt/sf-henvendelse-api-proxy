@@ -1,9 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import com.google.gson.Gson
-import java.io.File
-import java.security.KeyStore
-import java.security.PrivateKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -16,6 +13,9 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.body.toBody
+import java.io.File
+import java.security.KeyStore
+import java.security.PrivateKey
 
 /**
  * A handler for oauth2 access flow to salesforce.
@@ -78,7 +78,7 @@ object AccessTokenHandler {
             pkPwd = privateKeyPassword
         )
         val claimWithHeaderJsonUrlSafe = "${
-            gson.toJson(JWTClaimHeader("RS256")).encodeB64UrlSafe()
+        gson.toJson(JWTClaimHeader("RS256")).encodeB64UrlSafe()
         }.${gson.toJson(claim).encodeB64UrlSafe()}"
         val fullClaimSignature = privateKey.sign(claimWithHeaderJsonUrlSafe.toByteArray())
 
@@ -88,7 +88,8 @@ object AccessTokenHandler {
                 listOf(
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to "$claimWithHeaderJsonUrlSafe.$fullClaimSignature"
-                ).toBody())
+                ).toBody()
+            )
 
         for (retry in 1..4) {
             try {

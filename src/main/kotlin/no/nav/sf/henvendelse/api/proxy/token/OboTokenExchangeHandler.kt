@@ -1,7 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import java.time.Instant
-import kotlin.system.measureTimeMillis
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Metrics
@@ -15,6 +13,8 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.body.toBody
 import org.json.JSONObject
+import java.time.Instant
+import kotlin.system.measureTimeMillis
 
 /**
  * A handler for azure on-behalf-of exchange flow.
