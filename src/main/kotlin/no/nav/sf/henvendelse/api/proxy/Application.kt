@@ -103,7 +103,7 @@ class Application {
             val xCorrelationId = req.header("X-Correlation-ID") ?: ""
             val xRequestId = req.header("X-Request-ID") ?: ""
             val navCallId = req.header("Nav-Call-Id") ?: ""
-            withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "Correlation-Id" to xCorrelationId)) {
+            withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "correlationId" to xCorrelationId)) {
                 callIndex++
                 log.info { "Incoming call ($callIndex) ${req.uri}" }
                 val firstValidToken = TokenValidator.firstValidToken(req, fetchStats)
@@ -175,7 +175,7 @@ class Application {
                             log.error { "Failed to update metrics:" + e.message }
                         }
                         withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "src" to src, "uri" to req.uri.toString())) {
-                            log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, call_warn=${fetchStats.latestCallTimeSlow()}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+                            log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, method=${req.method.name}, uri=${req.uri}, src=$src" }
                         }
                         response
                     }
