@@ -91,7 +91,13 @@ class Application {
         val first = threadCall(request)
         val second = threadCall(request)
         while (!first.isCompleted && !second.isCompleted) { Thread.sleep(25) }
-        return if (first.isCompleted) first.getCompleted() else second.getCompleted()
+        return if (first.isCompleted) {
+            second.cancel()
+            first.getCompleted()
+        } else {
+            first.cancel()
+            second.getCompleted()
+        }
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Apache4Server(port))
