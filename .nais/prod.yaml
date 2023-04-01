@@ -63,6 +63,8 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
+        - application: itestapp
+          namespace: teamcrm
   env:
     - name: CONTEXT
       value: 'PROD'
