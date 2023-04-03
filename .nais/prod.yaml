@@ -54,6 +54,8 @@ spec:
   accessPolicy:
     inbound:
       rules:
+        - application: itestapp
+          namespace: teamcrm
         - application: gosys
           namespace: isa
         - application: modia-robot-api
@@ -63,8 +65,6 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
-        - application: itestapp
-          namespace: teamcrm
   env:
     - name: CONTEXT
       value: 'PROD'
