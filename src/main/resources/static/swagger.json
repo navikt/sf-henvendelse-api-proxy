@@ -8,7 +8,7 @@
         { "url": "https://sf-henvendelse-api-proxy.dev.intern.nav.no/api" },
         { "url": "https://sf-henvendelse-api-proxy.intern.nav.no/api" },
         { "url": "https://navdialog--uat.my.salesforce.com/services/apexrest" },
-        { "url": "http://sf-henvendelse-api-proxy.teamnks.svc.nais.local" }
+        { "url": "http://sf-henvendelse-api-proxy.teamnks.svc.nais.local/api" }
     ],
     "paths": {
         "/henvendelse/kodeverk/temagrupper": {
