@@ -43,9 +43,10 @@ class Application {
     private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
 
     val devContext = System.getenv("CONTEXT") == "DEV"
+    val twincallsEnabled = System.getenv("TWINCALL") == "ON"
 
     fun start() {
-        log.info { "Starting ${if (devContext) "DEV" else "PROD"}" }
+        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
         log.debug { "Log level debug" }
         apiServer(NAIS_DEFAULT_PORT).start()
         refreshLoop() // Refresh access token and cache outside of calls
@@ -53,7 +54,7 @@ class Application {
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        /* if (devContext) */ try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
+        if (twincallsEnabled) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         AccessTokenHandler.refreshToken()
         // OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
@@ -174,7 +175,7 @@ class Application {
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
-                                response = performTwinCall(request)
+                                response = if (twincallsEnabled) performTwinCall(request) else client.value(request)
                             }
                         try {
                             fetchStats.logStats(response.status.code, req.uri, callIndex)
