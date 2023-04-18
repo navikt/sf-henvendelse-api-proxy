@@ -175,7 +175,7 @@ class Application {
                         lateinit var response: Response
                         fetchStats.latestCallElapsedTime =
                             measureTimeMillis {
-                                response = if (twincallsEnabled) performTwinCall(request) else client.value(request)
+                                response = if (twincallsEnabled && req.method == Method.GET) performTwinCall(request) else client.value(request)
                             }
                         try {
                             fetchStats.logStats(response.status.code, req.uri, callIndex)
