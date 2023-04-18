@@ -70,8 +70,8 @@ spec:
   env:
     - name: CONTEXT
       value: 'DEV'
-    - name: TWINCALL # TWINCALL triggers two calls and returns the fastest response
-      value: 'ON'
+    - name: TWINCALL # TWINCALL ON triggers two calls and returns the fastest response
+      value: 'OFF'
     - name: SF_TOKENHOST
       value: 'https://test.salesforce.com/services/oauth2/token'
     - name: AUDIENCE_TOKEN_SERVICE_URL
