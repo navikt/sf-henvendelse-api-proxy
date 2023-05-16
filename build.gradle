@@ -36,10 +36,6 @@ application {
     mainClassName = 'no.nav.sf.henvendelse.api.proxy.BootstrapKt'
 }
 
-tasks.withType(JavaExec) {
-    jvmArgs = ['-Xms512m', '-Xmx2048m']
-}
-
 repositories {
     mavenCentral()
     jcenter()
