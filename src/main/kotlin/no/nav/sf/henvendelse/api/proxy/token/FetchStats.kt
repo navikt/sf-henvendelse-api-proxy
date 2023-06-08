@@ -18,30 +18,9 @@ class FetchStats {
 
     fun latestCallTimeSlow(): Boolean = (latestCallElapsedTime > 3000)
 
-    /*
-    val cacheProcent: Float get() =
-        if (OBOfetches > 0) {
-            OBOcached.toFloat() * 100 / (OBOfetches + OBOcached)
-        } else {
-            0f
-        }
-
-     */
-
     fun registerCallSource(key: String) {
-        // callSourceCount.inc(key)
-        // File("/tmp/callSourceCount").writeText(callSourceCount.toString())
         Metrics.callSource.labels(key).inc()
     }
-
-    // private val callSourceCount: MutableMap<String, Int> = mutableMapOf()
-    /*
-    private fun MutableMap<String, Int>.inc(key: String) {
-        if (!this.containsKey(key)) this[key] = 0
-        this[key] = this[key]!! + 1
-    }
-
-     */
 
     private val pathsWithPathVars = listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
@@ -69,7 +48,7 @@ class FetchStats {
             Metrics.elapsedTimeTokenHandling.get() +
                 latestCallElapsedTime.toDouble()
         )
-        // Metrics.cachedOboTokenProcent.set(cacheProcent.toDouble())
+
         Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
         Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get())
         if (status == 200) {
