@@ -23,14 +23,21 @@ import java.security.PrivateKey
  *
  * Fetches and caches access token, also retrieves instance url
  */
-object AccessTokenHandler {
-    val accessToken get() = fetchAccessTokenAndInstanceUrl().first
-    val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
+interface AccessTokenHandler {
+    val accessToken: String
+    val instanceUrl: String
 
-    fun refreshToken() {
-        if ((AccessTokenHandler.expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
-            AccessTokenHandler.log.info { "Refreshing access token" }
-            AccessTokenHandler.accessToken
+    fun refreshToken()
+}
+
+class DefaultAccessTokenHandler : AccessTokenHandler {
+    override val accessToken get() = fetchAccessTokenAndInstanceUrl().first
+    override val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
+
+    override fun refreshToken() {
+        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
+            log.info { "Refreshing access token" }
+            accessToken
         }
     }
 
@@ -48,7 +55,7 @@ object AccessTokenHandler {
 
     private val gson = Gson()
 
-    private const val expTimeSecondsClaim = 3600 // 60 min - expire time for the access token we ask salesforce for
+    private val expTimeSecondsClaim = 3600 // 60 min - expire time for the access token we ask salesforce for
 
     private var lastTokenPair = Pair("", "")
 

@@ -6,3 +6,5 @@ const val claim_azp = "azp"
 const val claim_sub = "sub"
 const val claim_roles = "roles"
 const val claim_name = "name"
+
+const val msg_Missing_Nav_identifier = "Missing Nav identifier"

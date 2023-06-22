@@ -18,14 +18,18 @@ const val env_AUDIENCE_TOKEN_SERVICE_URL = "AUDIENCE_TOKEN_SERVICE_URL"
 const val env_AUDIENCE_TOKEN_SERVICE_ALIAS = "AUDIENCE_TOKEN_SERVICE_ALIAS"
 const val env_AUDIENCE_TOKEN_SERVICE = "AUDIENCE_TOKEN_SERVICE"
 
-object TokenValidator {
+interface TokenValidator {
+    fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken>
+}
+
+class DefaultTokenValidator : TokenValidator {
     private val tokenServiceAlias = System.getenv(env_AUDIENCE_TOKEN_SERVICE_ALIAS)
     private val tokenServiceUrl = System.getenv(env_AUDIENCE_TOKEN_SERVICE_URL)
-    private val tokenServiceAudience = System.getenv(env_AUDIENCE_TOKEN_SERVICE).split(',')
+    private val tokenServiceAudience = System.getenv(env_AUDIENCE_TOKEN_SERVICE)?.split(',') ?: listOf()
 
     private val azureAlias = "azure"
     private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
-    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID).split(',')
+    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID)?.split(',') ?: listOf()
 
     private val log = KotlinLogging.logger { }
 
@@ -47,7 +51,7 @@ object TokenValidator {
 
     var latestValidationTime = 0L
 
-    fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken> {
+    override fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken> {
         lateinit var result: Optional<JwtToken>
         fetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
