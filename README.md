@@ -6,5 +6,5 @@ audience til Salesforce som brukes der for tilgangskontroll
 
 Godkjent att bruke machine token mot ikke-sensitiva endepunkter (kodeverk).
 
-Tillater också nais token med servicebruker for to legacy kopplingar (bisys, pesys) via legacy-proxyn
+Tillater också nais token med servicebruker for en legacy koppling (bisys) via legacy-proxyn
 henvendelse-api-dialogv1. Den kopplingen ønsker vi avvekla etterhvart
