@@ -21,7 +21,6 @@ import org.http4k.core.Uri
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
 import java.util.Optional
 
 class ApplicationTest {
@@ -39,20 +38,18 @@ class ApplicationTest {
     val INSTANCE_URL = "https://localhost:8080"
     val ACCESS_TOKEN = "accesstoken"
 
-    lateinit var jwtTokenClaims: JwtTokenClaims
+    // Configure claim content of simulated accepted token for each test case:
+    var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
 
     @BeforeEach
     fun setup() {
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .expirationTime(Date(Date().time + 60000))
-                .build()
-        )
+        every { mockTokenValidator.firstValidToken(any(), any()) } returns mockTokenOptional
+
         every { mockTokenOptional.isPresent } returns true
         every { mockTokenOptional.get() } returns mockToken
+
         every { mockToken.tokenAsString } returns "mockToken"
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
-        every { mockTokenValidator.firstValidToken(any(), any()) } returns mockTokenOptional
 
         every { mockAccessTokenHandler.instanceUrl } returns INSTANCE_URL
         every { mockAccessTokenHandler.accessToken } returns ACCESS_TOKEN
@@ -60,6 +57,11 @@ class ApplicationTest {
 
     @Test
     fun `If no nav identifier to be found anywhere, consider it a bad request`() {
+        jwtTokenClaims = JwtTokenClaims(
+            JWTClaimsSet.Builder()
+                .claim(claim_azp_name, "azp-name")
+                .build()
+        )
         val request = Request(Method.GET, "/api/some-endpoint")
 
         val response = application.handleApiRequest(request)
@@ -87,7 +89,7 @@ class ApplicationTest {
             )
         )
 
-        val response = application.handleApiRequest(request)
+        application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
@@ -121,8 +123,7 @@ class ApplicationTest {
                 )
             )
 
-        val response = application.handleApiRequest(request)
-        val expectedResponse = Response(Status.BAD_REQUEST).body(msg_Missing_Nav_identifier)
+        application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
@@ -158,8 +159,7 @@ class ApplicationTest {
                 )
             )
 
-        val response = application.handleApiRequest(request)
-        val expectedResponse = Response(Status.BAD_REQUEST).body(msg_Missing_Nav_identifier)
+        application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
