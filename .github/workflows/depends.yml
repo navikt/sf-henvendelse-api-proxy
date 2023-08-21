@@ -1,21 +1,27 @@
-# copied from https://github.com/marketplace/actions/gradle-dependency-submission
+# copied from
+# https://sikkerhet.nav.no/docs/verktoy/dependabot#oppsett-gradle-buildgradlekts--buildgradle
 
-name: Check dependencies
-
+name: Monitor dependencies with Dependabot
 on:
   push:
-      branches:
-          - dependy
-
+    branches:
+      - dependy
+    # disregard paths for now
+    #paths:
+    #  - "**.gradle.kts"
+    #  - "gradle.properties"
+  # workflow_dispatch is not relevant until we put this in master
+  #workflow_dispatch:
 jobs:
-  build:
-    name: Dependencies
-    runs-on: ubuntu-latest
+  dependabot:
+    name: Monitor dependencies with Dependabot
+    runs-on: ubuntu-20.04
     permissions: # The Dependency Submission API requires write permission
       contents: write
     steps:
-      - name: 'Checkout Repository'
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3 # ratchet:actions/checkout@v3
       - name: Run snapshot action
-        uses: mikepenz/gradle-dependency-submission@0.8.6
+        uses: mikepenz/gradle-dependency-submission@v0.8.6
+        with:
+          fail-on-error: true
+          gradle-dependency-path: "build.gradle.kts"
