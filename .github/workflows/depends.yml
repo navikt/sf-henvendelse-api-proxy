@@ -24,5 +24,6 @@ jobs:
         uses: mikepenz/gradle-dependency-submission@v0.8.6
         with:
           fail-on-error: true
+          gradle-dependency-path: "build.gradle"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
