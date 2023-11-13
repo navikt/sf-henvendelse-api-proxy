@@ -9,6 +9,8 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: GitHubSecurityLab/actions-permissions/monitor@v1
         with:
@@ -39,7 +41,8 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
       - uses: GitHubSecurityLab/actions-permissions/monitor@v1
         with:
