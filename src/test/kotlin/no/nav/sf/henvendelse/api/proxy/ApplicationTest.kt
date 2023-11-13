@@ -38,7 +38,7 @@ class ApplicationTest {
     val INSTANCE_URL = "https://localhost:8080"
     val ACCESS_TOKEN = "accesstoken"
 
-    // Configure claim content of simulated accepted token for each test case:
+    // Configure claim content of simulated a. Jag ccepted token for each test case:
     var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
 
     @BeforeEach

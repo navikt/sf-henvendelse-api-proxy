@@ -111,6 +111,7 @@ class Application(
     fun api(): HttpHandler = routes(
         "/static" bind static(Classpath("/static")),
         "/api/{rest:.*}" bind ::handleApiRequest,
+        "/authping" bind ::authPing,
         NAIS_ISALIVE bind Method.GET to { Response(Status.OK) },
         NAIS_ISREADY bind Method.GET to { Response(Status.OK) },
         NAIS_METRICS bind Method.GET to {
@@ -128,6 +129,12 @@ class Application(
                 }
         }
     )
+
+    fun authPing(req: Request): Response {
+        log.info { "Incoming call authping ${req.uri}" }
+        val firstValidToken = tokenValidator.firstValidToken(req, FetchStats())
+        return Response(Status.OK).body("Auth: ${firstValidToken.isPresent}")
+    }
 
     fun handleApiRequest(req: Request): Response {
         val fetchStats = FetchStats()

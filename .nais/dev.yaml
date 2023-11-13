@@ -56,6 +56,9 @@ spec:
       rules:
         - application: itestapp
           namespace: teamcrm
+        - application: itestapp
+          namespace: teamcrm
+          cluster: dev-gcp
         - application: gosys-q1
           namespace: isa
         - application: gosys-q2
