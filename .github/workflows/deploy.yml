@@ -37,8 +37,7 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: 'write'
+    permissions: write-all
     steps:
       - uses: actions/checkout@v3
       - uses: docker/login-action@v2
