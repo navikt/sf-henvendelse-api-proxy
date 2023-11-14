@@ -42,7 +42,7 @@ spec:
         kvPath: /kv/prod/fss/sf-henvendelse-api-proxy/teamnks
   ingresses:
     - "https://sf-henvendelse-api-proxy.intern.nav.no"
-    - "https://sf-henvendelse-api-proxy.dev-fss-pub.nais.io"
+    - "https://sf-henvendelse-api-proxy.prod-fss-pub.nais.io"
   azure:
     application:
       enabled: true
