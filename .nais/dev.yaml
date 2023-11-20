@@ -6,7 +6,7 @@ metadata:
   labels:
     team: teamnks
 spec:
-  image: {{ image }}
+  image: '{{ image }}'
   port: 8080
   webproxy: true
   replicas:
@@ -68,6 +68,9 @@ spec:
           namespace: personoversikt
         - application: modiapersonoversikt-api-q1
           namespace: personoversikt
+        - application: azure-token-generator
+          cluster: dev-gcp
+          namespace: aura
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
