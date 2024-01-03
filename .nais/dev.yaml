@@ -71,6 +71,8 @@ spec:
         - application: azure-token-generator
           cluster: dev-gcp
           namespace: aura
+        - application: pensjon-pen-q2
+          namespace: pensjon-q2
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
