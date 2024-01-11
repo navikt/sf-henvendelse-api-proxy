@@ -62,6 +62,8 @@ spec:
           namespace: personoversikt
         - application: modiapersonoversikt-api
           namespace: personoversikt
+        - application: pensjon-pen
+          namespace: pensjondeployer
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
