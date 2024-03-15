@@ -82,9 +82,11 @@ sourceSets {
     test.kotlin.srcDirs += 'src/test/kotlin'
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "11"
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+    kotlinOptions.jvmTarget = "17"
 }
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "11"
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
 }

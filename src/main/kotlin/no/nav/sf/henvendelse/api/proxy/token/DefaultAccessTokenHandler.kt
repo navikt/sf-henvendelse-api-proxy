@@ -100,8 +100,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
         for (retry in 1..4) {
             try {
-                lateinit var response: Response
-                response = client.value(accessTokenRequest)
+                val response: Response = client.value(accessTokenRequest)
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)

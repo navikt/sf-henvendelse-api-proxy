@@ -38,7 +38,7 @@ class ApplicationTest {
     val INSTANCE_URL = "https://localhost:8080"
     val ACCESS_TOKEN = "accesstoken"
 
-    // Configure claim content of simulated a. Jag ccepted token for each test case:
+    // Configure claim content of simulated accepted token for each test case:
     var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
 
     @BeforeEach
@@ -95,8 +95,6 @@ class ApplicationTest {
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        println(capturedRequest)
-
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
         assertEquals("A123456", capturedRequest.header("X-ACTING-NAV-IDENT"))
@@ -128,8 +126,6 @@ class ApplicationTest {
         val capturedRequestSlot: CapturingSlot<Request> = slot()
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
-
-        println(capturedRequest)
 
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
@@ -164,8 +160,6 @@ class ApplicationTest {
         val capturedRequestSlot: CapturingSlot<Request> = slot()
         verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
-
-        println(capturedRequest)
 
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))

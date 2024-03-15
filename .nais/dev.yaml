@@ -79,6 +79,8 @@ spec:
           namespace: pensjon-q2
         - application: pensjon-pen-q5
           namespace: pensjon-q5
+        - application: bisys
+          namespace: bidrag
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external

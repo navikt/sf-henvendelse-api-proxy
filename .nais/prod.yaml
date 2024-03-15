@@ -64,6 +64,8 @@ spec:
           namespace: personoversikt
         - application: pensjon-pen
           namespace: pensjondeployer
+        - application: bisys
+          namespace: bidrag
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
