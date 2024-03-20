@@ -4,16 +4,22 @@ import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.nav.sf.henvendelse.api.proxy.supportProxy
+import no.nav.sf.henvendelse.api.proxy.config_SF_TOKENHOST
+import no.nav.sf.henvendelse.api.proxy.env
+import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
+import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_JKS_B64
+import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_PASSWORD
+import no.nav.sf.henvendelse.api.proxy.secret_PRIVATE_KEY_ALIAS
+import no.nav.sf.henvendelse.api.proxy.secret_PRIVATE_KEY_PASSWORD
+import no.nav.sf.henvendelse.api.proxy.secret_SF_CLIENT_ID
+import no.nav.sf.henvendelse.api.proxy.secret_SF_USERNAME
 import org.apache.commons.codec.binary.Base64.decodeBase64
 import org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString
-import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.body.toBody
-import java.io.File
 import java.security.KeyStore
 import java.security.PrivateKey
 
@@ -23,13 +29,6 @@ import java.security.PrivateKey
  *
  * Fetches and caches access token, also retrieves instance url
  */
-interface AccessTokenHandler {
-    val accessToken: String
-    val instanceUrl: String
-
-    fun refreshToken()
-}
-
 class DefaultAccessTokenHandler : AccessTokenHandler {
     override val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     override val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
@@ -43,15 +42,15 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
     private val log = KotlinLogging.logger { }
 
-    private val SFTokenHost: Lazy<String> = lazy { System.getenv("SF_TOKENHOST") }
-    private val SFClientID = fetchVaultValue("SFClientID")
-    private val SFUsername = fetchVaultValue("SFUsername")
-    private val keystoreB64 = fetchVaultValue("KeystoreJKSB64")
-    private val keystorePassword = fetchVaultValue("KeystorePassword")
-    private val privateKeyAlias = fetchVaultValue("PrivateKeyAlias")
-    private val privateKeyPassword = fetchVaultValue("PrivateKeyPassword")
+    private val sfTokenHost = env(config_SF_TOKENHOST)
+    private val sfClientID = env(secret_SF_CLIENT_ID)
+    private val sfUsername = env(secret_SF_USERNAME)
+    private val keystoreB64 = env(secret_KEYSTORE_JKS_B64)
+    private val keystorePassword = env(secret_KEYSTORE_PASSWORD)
+    private val privateKeyAlias = env(secret_PRIVATE_KEY_ALIAS)
+    private val privateKeyPassword = env(secret_PRIVATE_KEY_PASSWORD)
 
-    private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
+    private val client: HttpHandler = supportProxy(env("HTTPS_PROXY"))
 
     private val gson = Gson()
 
@@ -61,11 +60,6 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
     private var expireTime = System.currentTimeMillis()
 
-    private fun fetchVaultValue(vaultKey: String): String {
-        val vaultPath = "/var/run/secrets/nais.io/vault"
-        return File("$vaultPath/$vaultKey").readText(Charsets.UTF_8)
-    }
-
     private fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
         if (System.currentTimeMillis() < expireTime) {
             log.debug { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
@@ -73,9 +67,9 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
         }
         val expireMomentSinceEpochInSeconds = (System.currentTimeMillis() / 1000) + expTimeSecondsClaim
         val claim = JWTClaim(
-            iss = SFClientID,
-            aud = SFTokenHost.value,
-            sub = SFUsername,
+            iss = sfClientID,
+            aud = sfTokenHost,
+            sub = sfUsername,
             exp = expireMomentSinceEpochInSeconds.toString()
         )
         val privateKey = PrivateKeyFromBase64Store(
@@ -89,7 +83,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
         }.${gson.toJson(claim).encodeB64UrlSafe()}"
         val fullClaimSignature = privateKey.sign(claimWithHeaderJsonUrlSafe.toByteArray())
 
-        val accessTokenRequest = Request(Method.POST, SFTokenHost.value)
+        val accessTokenRequest = Request(Method.POST, sfTokenHost)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(
                 listOf(
@@ -100,7 +94,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
         for (retry in 1..4) {
             try {
-                val response: Response = client.value(accessTokenRequest)
+                val response: Response = client(accessTokenRequest)
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
                     lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)

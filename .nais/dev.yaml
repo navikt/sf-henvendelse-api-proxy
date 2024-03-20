@@ -14,14 +14,8 @@ spec:
     max: 1
   liveness:
     path: /internal/isAlive
-    initialDelay: 5
-    periodSeconds: 5
-    failureThreshold: 30
   readiness:
     path: /internal/isReady
-    initialDelay: 5
-    periodSeconds: 5
-    failureThreshold: 30
   preStopHook:
     exec:
       command: [ "/bin/bash", "/pre-stop.sh" ]
@@ -35,11 +29,6 @@ spec:
     requests:
       cpu: 100m
       memory: 512Mi
-  vault:
-    enabled: true
-    paths:
-      - mountPath: /var/run/secrets/nais.io/vault
-        kvPath: /kv/preprod/fss/sf-henvendelse-api-proxy/teamnks
   ingresses:
     - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
     - "https://sf-henvendelse-api-proxy.dev-fss-pub.nais.io"
@@ -84,9 +73,9 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
+  envFrom:
+    - secret: sf-henvendelse-api
   env:
-    - name: CONTEXT
-      value: 'DEV'
     - name: TWINCALL # TWINCALL ON triggers two calls and returns the fastest response
       value: 'ON'
     - name: SF_TOKENHOST
@@ -99,3 +88,5 @@ spec:
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
     - name: SALESFORCE_AZURE_ALIAS
       value: dev-external.teamcrm.salesforce
+    - name: DEPLOY_CLUSTER
+      value: '{{ DEPLOY_CLUSTER }}'

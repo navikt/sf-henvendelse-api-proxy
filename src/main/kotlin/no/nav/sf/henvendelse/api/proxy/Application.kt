@@ -1,6 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy
 
-import io.prometheus.client.exporter.common.TextFormat
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -8,12 +7,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
+import no.nav.security.token.support.core.jwt.JwtToken
+import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
-import no.nav.sf.henvendelse.api.proxy.token.FetchStats
+import no.nav.sf.henvendelse.api.proxy.token.TokenFetchStats
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
-import org.http4k.client.ApacheClient
+import no.nav.sf.henvendelse.api.proxy.token.getAzpName
+import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
+import no.nav.sf.henvendelse.api.proxy.token.isMachineToken
+import no.nav.sf.henvendelse.api.proxy.token.isNavOBOToken
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -28,39 +32,51 @@ import org.http4k.server.ApacheServer
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import java.io.File
-import java.io.StringWriter
 import kotlin.system.measureTimeMillis
 
-const val NAIS_DEFAULT_PORT = 8080
-const val NAIS_ISALIVE = "/internal/isAlive"
-const val NAIS_ISREADY = "/internal/isReady"
-const val NAIS_METRICS = "/internal/metrics"
+const val HEADER_NAV_IDENT = "Nav-Ident"
+const val HEADER_X_REQUEST_ID = "X-Request-ID"
+const val HEADER_NAV_CALL_ID = "Nav-Call-Id"
+
+// Required by salesforce:
+const val HEADER_AUTHORIZATION = "Authorization"
+const val HEADER_X_CORRELATION_ID = "X-Correlation-ID"
+const val HEADER_X_ACTING_NAV_IDENT = "X-ACTING-NAV-IDENT"
 
 class Application(
-    val tokenValidator: TokenValidator = DefaultTokenValidator(),
-    val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
-    val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
+    private val tokenValidator: TokenValidator = DefaultTokenValidator(),
+    private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
+    val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY)),
+    private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss",
+    private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON"
 ) {
     private val log = KotlinLogging.logger { }
     private var callIndex = 0L
 
+    // Headers (lowercase of) that won't be forwarded. In case of received x-correlation-id it need to be sent as X-Correlation-ID (case sensitive)
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
-
-    val devContext = System.getenv("CONTEXT") == "DEV"
-    val twincallsEnabled = System.getenv("TWINCALL") == "ON"
 
     fun start() {
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
-        log.debug { "Log level debug" }
-        apiServer(NAIS_DEFAULT_PORT).start()
+        apiServer(8080).start()
         refreshLoop() // Refresh access token and cache outside of calls
     }
+
+    fun apiServer(port: Int): Http4kServer = api().asServer(ApacheServer(port))
+
+    fun api(): HttpHandler = routes(
+        "/api/{rest:.*}" bind ::handleApiRequest,
+        "/static" bind static(Classpath("/static")),
+        "/authping" bind ::authPing,
+        "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
+        "/internal/isReady" bind Method.GET to { Response(Status.OK) },
+        "/internal/metrics" bind Method.GET to Metrics.metricsHandler
+    )
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
         if (twincallsEnabled) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         accessTokenHandler.refreshToken()
-        // OboTokenExchangeHandler.refreshCache()
         runBlocking { delay(900000) } // 15 min
 
         refreshLoop()
@@ -70,27 +86,25 @@ class Application(
         val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
         val headers: Headers =
             listOf(
-                Pair("Authorization", "Bearer ${accessTokenHandler.accessToken}"),
-                Pair("X-ACTING-NAV-IDENT", "H159337"),
-                Pair("X-Correlation-ID", "testcall")
+                Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
+                Pair(HEADER_X_ACTING_NAV_IDENT, "H159337"),
+                Pair(HEADER_X_CORRELATION_ID, "testcall")
             )
         val request = Request(Method.GET, dstUrl).headers(headers)
         lateinit var response: Response
-        val ref =
-            measureTimeMillis {
-                response = client.value(request)
-            }
-        val twincall =
-            measureTimeMillis {
-                response = performTwinCall(request)
-            }
+        val ref = measureTimeMillis {
+            response = client(request)
+        }
+        val twincall = measureTimeMillis {
+            response = performTwinCall(request)
+        }
         log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
         Metrics.summaryTestRef.observe(ref.toDouble())
         Metrics.summaryTestTwinCall.observe(twincall.toDouble())
     }
 
     fun threadCall(request: Request): Deferred<Response> = GlobalScope.async {
-        client.value(request)
+        client(request)
     }
 
     fun performTwinCall(request: Request): Response {
@@ -106,117 +120,89 @@ class Application(
         }
     }
 
-    fun apiServer(port: Int): Http4kServer = api().asServer(ApacheServer(port))
-
-    fun api(): HttpHandler = routes(
-        "/static" bind static(Classpath("/static")),
-        "/api/{rest:.*}" bind ::handleApiRequest,
-        "/authping" bind ::authPing,
-        NAIS_ISALIVE bind Method.GET to { Response(Status.OK) },
-        NAIS_ISREADY bind Method.GET to { Response(Status.OK) },
-        NAIS_METRICS bind Method.GET to {
-            runCatching {
-                StringWriter().let { str ->
-                    TextFormat.write004(str, Metrics.cRegistry.metricFamilySamples())
-                    str
-                }.toString()
-            }
-                .onFailure {
-                    log.error { "/prometheus failed writing metrics - ${it.localizedMessage}" }
-                }
-                .getOrDefault("").let {
-                    if (it.isNotEmpty()) Response(Status.OK).body(it) else Response(Status.NO_CONTENT)
-                }
-        }
-    )
-
     fun authPing(req: Request): Response {
         log.info { "Incoming call authping ${req.uri}" }
-        val firstValidToken = tokenValidator.firstValidToken(req, FetchStats())
+        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStats(req, callIndex, devContext))
         return Response(Status.OK).body("Auth: ${firstValidToken.isPresent}")
     }
 
-    fun handleApiRequest(req: Request): Response {
-        val fetchStats = FetchStats()
-        val xCorrelationId = req.header("X-Correlation-ID") ?: ""
-        val xRequestId = req.header("X-Request-ID") ?: ""
-        val navCallId = req.header("Nav-Call-Id") ?: ""
-        withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "correlationId" to xCorrelationId)) {
-            log.info { "Incoming call ($callIndex) ${req.uri}" }
-            val firstValidToken = tokenValidator.firstValidToken(req, fetchStats)
+    fun handleApiRequest(request: Request): Response {
+        val tokenFetchStats = TokenFetchStats(request, callIndex++, devContext)
+
+        // Note from fix: X-Correlation-ID (all headers) is read case-insensitive from request
+        // dialogv1-proxy sends header as X-Correlation-Id which needs to be translated to X-Correlation-ID in call to salesforce
+        val xCorrelationId = request.header(HEADER_X_CORRELATION_ID) ?: ""
+        val xRequestId = request.header(HEADER_X_REQUEST_ID) ?: ""
+        val navCallId = request.header(HEADER_NAV_CALL_ID) ?: ""
+
+        withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "correlationId" to xCorrelationId, "callIndex" to callIndex.toString())) {
+            log.info { "Incoming call ${request.uri}" }
+            val firstValidToken = tokenValidator.firstValidToken(request, tokenFetchStats)
             if (!firstValidToken.isPresent) {
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
             } else {
-                if (devContext) File("/tmp/message").writeText(req.toMessage())
+                if (devContext) File("/tmp/message").writeText(request.toMessage())
                 val token = firstValidToken.get()
 
-                var oboToken = ""
-                var NAVident = token.jwtTokenClaims.get(claim_NAVident)?.toString() ?: ""
+                val navIdent = fetchNavIdent(request, token, tokenFetchStats)
 
-                val azpName = token.jwtTokenClaims.get(claim_azp_name)?.toString() ?: ""
-                val navIdentHeader = req.header("Nav-Ident")
-
-                val navConsumerId = req.header("nav-consumer-id") ?: ""
-                val xProxyRef = req.header("X-Proxy-Ref") ?: ""
-
-                var src = ""
-
-                if (NAVident.isNotEmpty()) { // Received NAVident from claim in token - we know it is an azure obo-token
-                    src = azpName
-                    log.info { "Ident from obo ($callIndex) src=$azpName" }
-                    fetchStats.elapsedTimeOboHandling = measureTimeMillis {
-                        // oboToken = OboTokenExchangeHandler.exchange(token).tokenAsString
-                    }
-                    fetchStats.registerCallSource("obo-$azpName")
-                    if (devContext) File("/tmp/message-obo").writeText("($callIndex)" + req.toMessage())
-                } else if (navIdentHeader != null) { // Request contains NAVident from header (but not in token) - we know it is a nais serviceuser token
-                    src = "$navConsumerId.$xProxyRef"
-                    log.info { "Ident from header ($callIndex) - src=$src" }
-                    NAVident = navIdentHeader
-                    fetchStats.registerCallSource("header-$navConsumerId.$xProxyRef")
-                    if (devContext) File("/tmp/message-header").writeText("($callIndex)" + req.toMessage())
-                } else if (token.isMachineToken(callIndex) && azpName.isNotEmpty()) { // We know token is azure token but not an obo-token - we know it is an azure m2m-token
-                    src = "$navConsumerId.$xProxyRef"
-                    log.info { "Ident as machine source ($callIndex) - src=$src" }
-                    NAVident = azpName
-                    fetchStats.registerCallSource("m2m-$navConsumerId.$xProxyRef")
-                    if (devContext) File("/tmp/message-m2m").writeText("($callIndex)" + req.toMessage())
-                }
-
-                if (NAVident.isEmpty()) {
-                    File("/tmp/message-missing").writeText("($callIndex)" + req.toMessage())
-                    return Response(Status.BAD_REQUEST).body(msg_Missing_Nav_identifier)
+                if (navIdent.isEmpty()) {
+                    File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
+                    return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
-                    val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${req.uri.toString().substring(4)}" // Remove "/api" from start of url
-                    val oboHeader = if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
-                    // X-Correlation-ID (all headers) is read case insensitive - dialogv1-proxy sends header as X-Correlation-Id
-                    // Needs to be translated to X-Correlation-ID in call to salesforce
+                    val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().substring(4)}" // Remove "/api" from start of url
                     val headers: Headers =
-                        req.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
+                        request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
                             listOf(
-                                Pair("Authorization", "Bearer ${accessTokenHandler.accessToken}"),
-                                Pair("X-ACTING-NAV-IDENT", NAVident),
-                                Pair("X-Correlation-ID", xCorrelationId)
-                            ) + oboHeader
-                    val request = Request(req.method, dstUrl).headers(headers).body(req.body)
+                                Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
+                                Pair(HEADER_X_ACTING_NAV_IDENT, navIdent),
+                                Pair(HEADER_X_CORRELATION_ID, xCorrelationId)
+                            )
 
-                    if (devContext) File("/tmp/forwardmessage").writeText(request.toMessage())
+                    val forwardRequest = Request(request.method, dstUrl).headers(headers).body(request.body)
+
+                    if (devContext) File("/tmp/forwardmessage").writeText(forwardRequest.toMessage())
                     lateinit var response: Response
-                    fetchStats.latestCallElapsedTime =
-                        measureTimeMillis {
-                            response = if (twincallsEnabled && req.method == Method.GET) performTwinCall(request) else client.value(request)
-                        }
-                    try {
-                        fetchStats.logStats(response.status.code, req.uri, callIndex)
-                    } catch (e: Exception) {
-                        log.error { "Failed to update metrics:" + e.message }
+                    tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
+                        response =
+                            if (twincallsEnabled && forwardRequest.method == Method.GET) {
+                                performTwinCall(forwardRequest)
+                            } else client(forwardRequest)
                     }
-                    withLoggingContext(mapOf("status" to response.status.code.toString(), "processing_time" to fetchStats.latestCallElapsedTime.toString(), "src" to src, "uri" to req.uri.toString())) {
-                        log.info { "Summary ($callIndex) : status=${response.status.code}, call_ms=${fetchStats.latestCallElapsedTime}, method=${req.method.name}, uri=${req.uri}, src=$src" }
+
+                    tokenFetchStats.logStats(response.status.code, forwardRequest.uri)
+
+                    withLoggingContext(
+                        mapOf(
+                            "status" to response.status.code.toString(),
+                            "processing_time" to tokenFetchStats.latestCallElapsedTime.toString(),
+                            "src" to tokenFetchStats.srcLabel,
+                            "uri" to forwardRequest.uri.toString()
+                        )
+                    ) {
+                        log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
                     }
                     return response
                 }
             }
         }
     }
+
+    fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStats): String =
+        if (token.isNavOBOToken()) {
+            tokenFetchStats.registerSourceLabel(token.getAzpName(), "Ident from obo", "obo")
+            token.getNAVIdent()
+        } else if (token.isMachineToken()) {
+            val navConsumerId = request.header("nav-consumer-id") ?: "Unidentified"
+            tokenFetchStats.registerSourceLabel(navConsumerId, "Ident as machine source", "m2m")
+            token.getAzpName()
+        } else if (request.header(HEADER_NAV_IDENT) != null) {
+            val navConsumerId = request.header("nav-consumer-id") ?: "Unidentified"
+            val xProxyRef = request.header("X-Proxy-Ref") ?: ""
+            tokenFetchStats.registerSourceLabel("$navConsumerId.$xProxyRef", "Ident from header", "header")
+            request.header(HEADER_NAV_IDENT) ?: ""
+        } else {
+            log.warn { "Not able do deduce navIdent from request" }
+            ""
+        }
 }

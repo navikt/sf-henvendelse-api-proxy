@@ -1,39 +1,30 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
-import mu.KotlinLogging
 import no.nav.security.token.support.core.configuration.IssuerProperties
 import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.core.http.HttpRequest
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler
+import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE
+import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_ALIAS
+import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_URL
+import no.nav.sf.henvendelse.api.proxy.env
+import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
+import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_WELL_KNOWN_URL
 import org.http4k.core.Request
 import java.io.File
 import java.net.URL
 import java.util.Optional
 import kotlin.system.measureTimeMillis
 
-const val env_AZURE_APP_WELL_KNOWN_URL = "AZURE_APP_WELL_KNOWN_URL"
-const val env_AZURE_APP_CLIENT_ID = "AZURE_APP_CLIENT_ID"
-const val env_AUDIENCE_TOKEN_SERVICE_URL = "AUDIENCE_TOKEN_SERVICE_URL"
-const val env_AUDIENCE_TOKEN_SERVICE_ALIAS = "AUDIENCE_TOKEN_SERVICE_ALIAS"
-const val env_AUDIENCE_TOKEN_SERVICE = "AUDIENCE_TOKEN_SERVICE"
-
-interface TokenValidator {
-    fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken>
-}
-
 class DefaultTokenValidator : TokenValidator {
-    private val tokenServiceAlias = System.getenv(env_AUDIENCE_TOKEN_SERVICE_ALIAS)
-    private val tokenServiceUrl = System.getenv(env_AUDIENCE_TOKEN_SERVICE_URL)
-    private val tokenServiceAudience = System.getenv(env_AUDIENCE_TOKEN_SERVICE)?.split(',') ?: listOf()
+    private val tokenServiceAlias = env(config_AUDIENCE_TOKEN_SERVICE_ALIAS)
+    private val tokenServiceUrl = env(config_AUDIENCE_TOKEN_SERVICE_URL)
+    private val tokenServiceAudience = env(config_AUDIENCE_TOKEN_SERVICE).split(',')
 
     private val azureAlias = "azure"
-    private val azureUrl = System.getenv(env_AZURE_APP_WELL_KNOWN_URL)
-    private val azureAudience = System.getenv(env_AZURE_APP_CLIENT_ID)?.split(',') ?: listOf()
-
-    private val log = KotlinLogging.logger { }
-
-    private val callerList: MutableMap<String, Int> = mutableMapOf()
+    private val azureUrl = env(env_AZURE_APP_WELL_KNOWN_URL)
+    private val azureAudience = env(env_AZURE_APP_CLIENT_ID).split(',')
 
     private val multiIssuerConfiguration = MultiIssuerConfiguration(
         mapOf(
@@ -44,16 +35,9 @@ class DefaultTokenValidator : TokenValidator {
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
 
-    fun containsValidToken(request: Request): Boolean {
-        val firstValidToken = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
-        return firstValidToken.isPresent
-    }
-
-    var latestValidationTime = 0L
-
-    override fun firstValidToken(request: Request, fetchStats: FetchStats): Optional<JwtToken> {
+    override fun firstValidToken(request: Request, tokenFetchStats: TokenFetchStats): Optional<JwtToken> {
         lateinit var result: Optional<JwtToken>
-        fetchStats.elapsedTimeTokenValidation = measureTimeMillis {
+        tokenFetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
         }
         if (!result.isPresent) {

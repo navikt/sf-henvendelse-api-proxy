@@ -3,10 +3,13 @@ package no.nav.sf.henvendelse.api.proxy.token
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Metrics
-import no.nav.sf.henvendelse.api.proxy.claim_NAVident
-import no.nav.sf.henvendelse.api.proxy.claim_azp_name
-import no.nav.sf.henvendelse.api.proxy.supportProxy
-import org.http4k.client.ApacheClient
+import no.nav.sf.henvendelse.api.proxy.config_SALESFORCE_AZURE_ALIAS
+import no.nav.sf.henvendelse.api.proxy.env
+import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
+import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_SECRET
+import no.nav.sf.henvendelse.api.proxy.env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT
+import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
+import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -23,14 +26,24 @@ import kotlin.system.measureTimeMillis
  * Exchanges an azure on-behalf-of-token with audience to this app for one with audience to salesforce. Caches the result
  */
 object OboTokenExchangeHandler {
+    /*
+    OBO exchange currently not in use
+    Example lines for usage:
+        var oboToken = ""
+        tokenFetchStats.elapsedTimeOboHandling = measureTimeMillis { oboToken = OboTokenExchangeHandler.exchange(token, tokenFetchStats).tokenAsString }
+
+        // Given above, the following can be added as headers to forward call:
+        if (oboToken.isNotEmpty()) { listOf(Pair("X-Nav-Token", oboToken)) } else { listOf() }
+     */
+
     private val log = KotlinLogging.logger { }
 
-    private val client: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(System.getenv("HTTPS_PROXY")) }
+    private val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY))
 
-    private val clientId: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_ID") }
-    private val clientSecret: Lazy<String> = lazy { System.getenv("AZURE_APP_CLIENT_SECRET") }
-    private val azureTokenEndPoint: Lazy<String> = lazy { System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") }
-    private val sfAlias: Lazy<String> = lazy { System.getenv("SALESFORCE_AZURE_ALIAS") }
+    private val clientId: String = env(env_AZURE_APP_CLIENT_ID)
+    private val clientSecret: String = env(env_AZURE_APP_CLIENT_SECRET)
+    private val azureTokenEndPoint: String = env(env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT)
+    private val sfAlias: String = env(config_SALESFORCE_AZURE_ALIAS)
 
     private var OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
@@ -45,38 +58,38 @@ object OboTokenExchangeHandler {
         log.info { "Dropped cache elements during lifetime $droppedCacheElements" }
     }
 
-    fun exchange(jwtIn: JwtToken, fetchStats: FetchStats): JwtToken {
-        val NAVident = jwtIn.jwtTokenClaims.getStringClaim(claim_NAVident)
-        val azp_name = jwtIn.jwtTokenClaims.getStringClaim(claim_azp_name)
-        val key = azp_name + ":" + NAVident
+    fun exchange(jwtIn: JwtToken, tokenFetchStats: TokenFetchStats): JwtToken {
+        val NAVident = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_NAV_IDENT)
+        val azp_name = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_AZP_NAME)
+        val key = "$azp_name:$NAVident"
         OBOcache.get(key)?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
-                fetchStats.OBOcached++
+                tokenFetchStats.OBOcached++
                 return cachedToken
             }
         }
         Metrics.cacheSize.set(OBOcache.size.toDouble())
 
-        val req = Request(Method.POST, azureTokenEndPoint.value)
+        val req = Request(Method.POST, azureTokenEndPoint)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(
                 listOf(
                     "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
                     "assertion" to jwtIn.tokenAsString,
-                    "client_id" to clientId.value,
-                    "scope" to "api://${sfAlias.value}/.default",
-                    "client_secret" to clientSecret.value,
+                    "client_id" to clientId,
+                    "scope" to "api://$sfAlias/.default",
+                    "client_secret" to clientSecret,
                     "requested_token_use" to "on_behalf_of"
                 ).toBody()
             )
 
         lateinit var res: Response
-        fetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
-            res = client.value(req)
+        tokenFetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
+            res = client(req)
         }
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
         OBOcache[key] = jwt
-        fetchStats.OBOfetches++
+        tokenFetchStats.OBOfetches++
         return jwt
     }
 }

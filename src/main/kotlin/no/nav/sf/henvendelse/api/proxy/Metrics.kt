@@ -5,11 +5,20 @@ import io.prometheus.client.Counter
 import io.prometheus.client.Gauge
 import io.prometheus.client.Histogram
 import io.prometheus.client.Summary
+import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot.DefaultExports
+import mu.KotlinLogging
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
+import java.io.StringWriter
 
 object Metrics {
+    init {
+        DefaultExports.initialize()
+    }
 
-    val cRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
+    private val log = KotlinLogging.logger { }
 
     val successCalls: Counter = registerLabelCounter("calls_success", "path")
     val failedCalls: Counter = registerLabelCounter("calls_failed", "status")
@@ -31,7 +40,26 @@ object Metrics {
     var summaryTestTwinCall: Summary = registerSummary("twincall_test")
 
     val cacheSize: Gauge = registerGauge("cache_size")
-    val cachedOboTokenProcent: Gauge = registerGauge("cached_obo_token_procent")
+
+    private val metricsAsText: String get() {
+        val str = StringWriter()
+        TextFormat.write004(str, CollectorRegistry.defaultRegistry.metricFamilySamples())
+        return str.toString()
+    }
+
+    val metricsHandler = { _: Request ->
+        try {
+            val result = metricsAsText
+            if (result.isEmpty()) {
+                Response(Status.NO_CONTENT)
+            } else {
+                Response(Status.OK).body(result)
+            }
+        } catch (e: Exception) {
+            log.error { "Failed writing metrics - ${e.message}" }
+            Response(Status.INTERNAL_SERVER_ERROR)
+        }
+    }
 
     fun registerCounter(name: String): Counter {
         return Counter.build().name(name).help(name).register()
@@ -55,9 +83,5 @@ object Metrics {
 
     fun registerSummary(name: String): Summary {
         return Summary.build().name(name).help(name).register()
-    }
-
-    init {
-        DefaultExports.initialize()
     }
 }

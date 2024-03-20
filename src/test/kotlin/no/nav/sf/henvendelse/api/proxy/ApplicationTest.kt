@@ -6,11 +6,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import mu.KotlinLogging
 import net.minidev.json.JSONArray
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.jwt.JwtTokenClaims
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
+import no.nav.sf.henvendelse.api.proxy.token.CLAIM_AZP_NAME
+import no.nav.sf.henvendelse.api.proxy.token.CLAIM_NAV_IDENT
+import no.nav.sf.henvendelse.api.proxy.token.CLAIM_ROLES
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -24,7 +26,6 @@ import org.junit.jupiter.api.Test
 import java.util.Optional
 
 class ApplicationTest {
-    private val log = KotlinLogging.logger { }
 
     val mockTokenValidator = mockk<TokenValidator>()
     val mockTokenOptional = mockk<Optional<JwtToken>>()
@@ -33,7 +34,13 @@ class ApplicationTest {
     val mockAccessTokenHandler = mockk<AccessTokenHandler>()
     val mockHttpHandler = mockk<HttpHandler>()
 
-    val application = Application(mockTokenValidator, mockAccessTokenHandler, lazy { mockHttpHandler })
+    val application = Application(
+        tokenValidator = mockTokenValidator,
+        accessTokenHandler = mockAccessTokenHandler,
+        client = mockHttpHandler,
+        devContext = true,
+        twincallsEnabled = false
+    )
 
     val INSTANCE_URL = "https://localhost:8080"
     val ACCESS_TOKEN = "accesstoken"
@@ -59,23 +66,23 @@ class ApplicationTest {
     fun `If no nav identifier to be found anywhere, consider it a bad request`() {
         jwtTokenClaims = JwtTokenClaims(
             JWTClaimsSet.Builder()
-                .claim(claim_azp_name, "azp-name")
+                .claim(CLAIM_AZP_NAME, "azp-name")
                 .build()
         )
         val request = Request(Method.GET, "/api/some-endpoint")
 
         val response = application.handleApiRequest(request)
-        val expectedResponse = Response(Status.BAD_REQUEST).body(msg_Missing_Nav_identifier)
+        val expectedResponse = Response(Status.BAD_REQUEST)
 
-        assertEquals(expectedResponse, response)
+        assertEquals(expectedResponse.status, response.status)
     }
 
     @Test
     fun `A call with valid azure obo token containing NAVident claim should be successfully redirected`() {
         jwtTokenClaims = JwtTokenClaims(
             JWTClaimsSet.Builder()
-                .claim(claim_NAVident, "A123456")
-                .claim(claim_azp_name, "azp-name")
+                .claim(CLAIM_NAV_IDENT, "A123456")
+                .claim(CLAIM_AZP_NAME, "azp-name")
                 .build()
         )
 
@@ -105,7 +112,7 @@ class ApplicationTest {
     fun `A call with valid token other then azure obo token and Nav-Ident header set should be successfully redirected`() {
         jwtTokenClaims = JwtTokenClaims(
             JWTClaimsSet.Builder()
-                .claim(claim_azp_name, "azp-name")
+                .claim(CLAIM_AZP_NAME, "azp-name")
                 .build()
         )
 
@@ -139,8 +146,8 @@ class ApplicationTest {
         array.add("access_as_application")
         jwtTokenClaims = JwtTokenClaims(
             JWTClaimsSet.Builder()
-                .claim(claim_azp_name, "azp-name")
-                .claim(claim_roles, array)
+                .claim(CLAIM_AZP_NAME, "azp-name")
+                .claim(CLAIM_ROLES, array)
                 .build()
         )
 

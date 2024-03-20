@@ -69,9 +69,9 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
+  envFrom:
+    - secret: sf-henvendelse-api
   env:
-    - name: CONTEXT
-      value: 'PROD'
     - name: TWINCALL # TWINCALL triggers two calls and returns the fastest response
       value: 'ON'
     - name: SF_TOKENHOST
@@ -84,3 +84,5 @@ spec:
       value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
     - name: SALESFORCE_AZURE_ALIAS
       value: prod-external.teamcrm.salesforce
+    - name: DEPLOY_CLUSTER
+      value: '{{ DEPLOY_CLUSTER }}'
