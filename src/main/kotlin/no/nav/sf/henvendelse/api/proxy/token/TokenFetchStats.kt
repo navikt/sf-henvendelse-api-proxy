@@ -21,10 +21,10 @@ class TokenFetchStats(private val request: Request, private val callIndex: Long,
     var srcLabel = ""
 
     fun registerSourceLabel(srcLabelInput: String, logMessage: String, authenticationTypePrefix: String) {
-        log.info("$logMessage - src=$srcLabel")
-        registerCallSource("$authenticationTypePrefix-$srcLabel")
-        if (devContext) File("/tmp/message-$authenticationTypePrefix").writeText("($callIndex)\n" + request.toMessage())
         srcLabel = srcLabelInput
+        log.info("$logMessage - src=$srcLabelInput")
+        registerCallSource("$authenticationTypePrefix-$srcLabelInput")
+        if (devContext) File("/tmp/message-$authenticationTypePrefix").writeText("($callIndex)\n" + request.toMessage())
     }
 
     fun registerCallSource(key: String) {
