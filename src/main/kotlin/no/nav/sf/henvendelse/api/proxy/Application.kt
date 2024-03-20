@@ -1,13 +1,11 @@
 package no.nav.sf.henvendelse.api.proxy
 
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
+import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
@@ -48,12 +46,13 @@ class Application(
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY)),
     private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss",
-    private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON"
+    private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
+    private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {
     private val log = KotlinLogging.logger { }
-    private var callIndex = 0L
+    private var lifeTimeCallIndex = 0L
 
-    // Headers (lowercase of) that won't be forwarded. In case of received x-correlation-id it need to be sent as X-Correlation-ID (case sensitive)
+    // Headers (lowercase of) that won't be forwarded. Fix: In case of received x-correlation-id it need to be sent as X-Correlation-ID (case sensitive)
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     fun start() {
@@ -75,59 +74,22 @@ class Application(
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        if (twincallsEnabled) try { performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
+        if (twincallsEnabled) try { twincallHandler.performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
         accessTokenHandler.refreshToken()
         runBlocking { delay(900000) } // 15 min
 
         refreshLoop()
     }
 
-    fun performTestCalls() {
-        val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
-        val headers: Headers =
-            listOf(
-                Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
-                Pair(HEADER_X_ACTING_NAV_IDENT, "H159337"),
-                Pair(HEADER_X_CORRELATION_ID, "testcall")
-            )
-        val request = Request(Method.GET, dstUrl).headers(headers)
-        lateinit var response: Response
-        val ref = measureTimeMillis {
-            response = client(request)
-        }
-        val twincall = measureTimeMillis {
-            response = performTwinCall(request)
-        }
-        log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
-        Metrics.summaryTestRef.observe(ref.toDouble())
-        Metrics.summaryTestTwinCall.observe(twincall.toDouble())
-    }
-
-    fun threadCall(request: Request): Deferred<Response> = GlobalScope.async {
-        client(request)
-    }
-
-    fun performTwinCall(request: Request): Response {
-        val first = threadCall(request)
-        val second = threadCall(request)
-        while (!first.isCompleted && !second.isCompleted) { Thread.sleep(25) }
-        return if (first.isCompleted) {
-            second.cancel()
-            first.getCompleted()
-        } else {
-            first.cancel()
-            second.getCompleted()
-        }
-    }
-
     fun authPing(req: Request): Response {
         log.info { "Incoming call authping ${req.uri}" }
-        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStats(req, callIndex, devContext))
+        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStats(req, lifeTimeCallIndex, devContext))
         return Response(Status.OK).body("Auth: ${firstValidToken.isPresent}")
     }
 
     fun handleApiRequest(request: Request): Response {
-        val tokenFetchStats = TokenFetchStats(request, callIndex++, devContext)
+        val callIndex = lifeTimeCallIndex++
+        val tokenFetchStats = TokenFetchStats(request, callIndex, devContext)
 
         // Note from fix: X-Correlation-ID (all headers) is read case-insensitive from request
         // dialogv1-proxy sends header as X-Correlation-Id which needs to be translated to X-Correlation-ID in call to salesforce
@@ -166,7 +128,7 @@ class Application(
                     tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
                         response =
                             if (twincallsEnabled && forwardRequest.method == Method.GET) {
-                                performTwinCall(forwardRequest)
+                                twincallHandler.performTwinCall(forwardRequest)
                             } else client(forwardRequest)
                     }
 

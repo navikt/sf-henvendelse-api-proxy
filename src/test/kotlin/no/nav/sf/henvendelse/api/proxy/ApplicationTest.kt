@@ -38,7 +38,7 @@ class ApplicationTest {
         tokenValidator = mockTokenValidator,
         accessTokenHandler = mockAccessTokenHandler,
         client = mockHttpHandler,
-        devContext = true,
+        devContext = false,
         twincallsEnabled = false
     )
 
@@ -142,7 +142,7 @@ class ApplicationTest {
 
     @Test
     fun `A call with an approved machine token (and no ident header) should use azp_name claim as ident and be successfully redirected`() {
-        var array = JSONArray()
+        val array = JSONArray()
         array.add("access_as_application")
         jwtTokenClaims = JwtTokenClaims(
             JWTClaimsSet.Builder()
