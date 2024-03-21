@@ -110,6 +110,8 @@ class Application(
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
+                    File("/tmp/token-missingNavIdent").writeText(token.isMachineToken().toString())
+                    File("/tmp/token-machineToken").writeText(token.tokenAsString)
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
                     val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().substring(4)}" // Remove "/api" from start of url
