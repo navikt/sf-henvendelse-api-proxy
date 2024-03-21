@@ -35,6 +35,7 @@ import kotlin.system.measureTimeMillis
 const val HEADER_NAV_IDENT = "Nav-Ident"
 const val HEADER_X_REQUEST_ID = "X-Request-ID"
 const val HEADER_NAV_CALL_ID = "Nav-Call-Id"
+const val HEADER_NAV_CONSUMER_ID = "Nav-Consumer-Id"
 
 // Required by salesforce:
 const val HEADER_AUTHORIZATION = "Authorization"
@@ -110,8 +111,6 @@ class Application(
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
-                    File("/tmp/token-missingNavIdent").writeText(token.isMachineToken().toString())
-                    File("/tmp/token-machineToken").writeText(token.tokenAsString)
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
                     val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().substring(4)}" // Remove "/api" from start of url
@@ -157,11 +156,11 @@ class Application(
             tokenFetchStats.registerSourceLabel(token.getAzpName(), "Ident from obo", "obo")
             token.getNAVIdent()
         } else if (token.isMachineToken()) {
-            val navConsumerId = request.header("nav-consumer-id") ?: "Unidentified"
+            val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
             tokenFetchStats.registerSourceLabel(navConsumerId, "Ident as machine source", "m2m")
             token.getAzpName()
         } else if (request.header(HEADER_NAV_IDENT) != null) {
-            val navConsumerId = request.header("nav-consumer-id") ?: "Unidentified"
+            val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
             val xProxyRef = request.header("X-Proxy-Ref") ?: ""
             tokenFetchStats.registerSourceLabel("$navConsumerId.$xProxyRef", "Ident from header", "header")
             request.header(HEADER_NAV_IDENT) ?: ""

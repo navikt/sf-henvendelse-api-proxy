@@ -1,7 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import mu.KotlinLogging
-import net.minidev.json.JSONArray
 import no.nav.security.token.support.core.jwt.JwtToken
 import java.io.File
 
@@ -13,7 +12,7 @@ private val log = KotlinLogging.logger { }
 
 fun JwtToken.isMachineToken(): Boolean {
     val rolesClaim = this.jwtTokenClaims.get(CLAIM_ROLES)
-    if (rolesClaim != null && rolesClaim is JSONArray) {
+    if (rolesClaim != null && (rolesClaim is ArrayList<*>)) {
         if (rolesClaim.map { it.toString() }.any { it == "access_as_application" }) {
             log.info("Confirmed machine token")
             File("/tmp/machinetoken").writeText(this.tokenAsString)
