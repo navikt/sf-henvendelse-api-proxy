@@ -62,8 +62,8 @@ class TokenFetchStatistics(private val request: Request, private val callIndex: 
             } else {
                 Metrics.failedCalls.labels(status.toString()).inc()
             }
-        } catch (e: Exception) {
-            log.error { "Failed to update metrics:" + e.message }
+        } catch (t: Throwable) {
+            log.error { "Failed to update metrics:" + t.message }
         }
     }
 }
