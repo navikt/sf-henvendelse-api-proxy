@@ -10,7 +10,7 @@ import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
-import no.nav.sf.henvendelse.api.proxy.token.TokenFetchStats
+import no.nav.sf.henvendelse.api.proxy.token.TokenFetchStatistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import no.nav.sf.henvendelse.api.proxy.token.getAzpName
 import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
@@ -84,13 +84,13 @@ class Application(
 
     fun authPing(req: Request): Response {
         log.info { "Incoming call authping ${req.uri}" }
-        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStats(req, lifeTimeCallIndex, devContext))
+        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStatistics(req, lifeTimeCallIndex, devContext))
         return Response(Status.OK).body("Auth: ${firstValidToken.isPresent}")
     }
 
     fun handleApiRequest(request: Request): Response {
         val callIndex = lifeTimeCallIndex++
-        val tokenFetchStats = TokenFetchStats(request, callIndex, devContext)
+        val tokenFetchStats = TokenFetchStatistics(request, callIndex, devContext)
 
         // Note from fix: X-Correlation-ID (all headers) is read case-insensitive from request
         // dialogv1-proxy sends header as X-Correlation-Id which needs to be translated to X-Correlation-ID in call to salesforce
@@ -151,7 +151,7 @@ class Application(
         }
     }
 
-    fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStats): String =
+    fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
         if (token.isNavOBOToken()) {
             tokenFetchStats.registerSourceLabel(token.getAzpName(), "Ident from obo", "obo")
             token.getNAVIdent()

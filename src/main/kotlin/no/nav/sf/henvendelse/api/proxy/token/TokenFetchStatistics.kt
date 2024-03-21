@@ -6,7 +6,7 @@ import org.http4k.core.Request
 import org.http4k.core.Uri
 import java.io.File
 
-class TokenFetchStats(private val request: Request, private val callIndex: Long, private val devContext: Boolean) {
+class TokenFetchStatistics(private val request: Request, private val callIndex: Long, private val devContext: Boolean) {
     private val log = KotlinLogging.logger { }
 
     var elapsedTimeAccessTokenRequest = 0L
@@ -15,8 +15,8 @@ class TokenFetchStats(private val request: Request, private val callIndex: Long,
     var elapsedTimeTokenValidation = 0L
     var latestCallElapsedTime = 0L
 
-    var OBOfetches = 0L
-    var OBOcached = 0L
+    var oboFetches = 0L
+    var oboCached = 0L
 
     var srcLabel = ""
 
@@ -27,9 +27,7 @@ class TokenFetchStats(private val request: Request, private val callIndex: Long,
         if (devContext) File("/tmp/message-$authenticationTypePrefix").writeText("($callIndex)\n" + request.toMessage())
     }
 
-    fun registerCallSource(key: String) {
-        Metrics.callSource.labels(key).inc()
-    }
+    private fun registerCallSource(key: String) = Metrics.callSource.labels(key).inc()
 
     private val pathsWithPathVars =
         listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
@@ -42,7 +40,7 @@ class TokenFetchStats(private val request: Request, private val callIndex: Long,
                     " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}."
             }
 
-            val path = pathsWithPathVars.filter { uri.path.contains(it) }.firstOrNull() ?: uri.path
+            val path = pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path
 
             Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
             Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
@@ -55,10 +53,7 @@ class TokenFetchStats(private val request: Request, private val callIndex: Long,
                     elapsedTimeTokenValidation.toDouble() +
                     elapsedTimeOboHandling.toDouble()
             )
-            Metrics.elapsedTimeTotal.set(
-                Metrics.elapsedTimeTokenHandling.get() +
-                    latestCallElapsedTime.toDouble()
-            )
+            Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() + latestCallElapsedTime.toDouble())
 
             Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
             Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get())
