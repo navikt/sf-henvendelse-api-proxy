@@ -24,7 +24,7 @@ class TokenFetchStatistics(private val request: Request, private val callIndex: 
         srcLabel = srcLabelInput
         log.info("$logMessage - src=$srcLabelInput")
         registerCallSource("$authenticationTypePrefix-$srcLabelInput")
-        if (devContext) File("/tmp/message-$authenticationTypePrefix").writeText("($callIndex)\n" + request.toMessage())
+        if (devContext || authenticationTypePrefix == "header") File("/tmp/message-$authenticationTypePrefix").writeText("($callIndex)\n" + request.toMessage())
     }
 
     private fun registerCallSource(key: String) = Metrics.callSource.labels(key).inc()

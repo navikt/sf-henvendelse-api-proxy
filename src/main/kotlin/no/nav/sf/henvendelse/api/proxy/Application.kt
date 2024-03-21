@@ -45,7 +45,7 @@ const val HEADER_X_ACTING_NAV_IDENT = "X-ACTING-NAV-IDENT"
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
-    val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY)),
+    private val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY)),
     private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss",
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
@@ -66,8 +66,8 @@ class Application(
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind ::handleApiRequest,
-        "/static" bind static(Classpath("/static")),
         "/authping" bind ::authPing,
+        "/static" bind static(Classpath("/static")),
         "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
         "/internal/isReady" bind Method.GET to { Response(Status.OK) },
         "/internal/metrics" bind Method.GET to Metrics.metricsHandler
@@ -151,7 +151,7 @@ class Application(
         }
     }
 
-    fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
+    private fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
         if (token.isNavOBOToken()) {
             tokenFetchStats.registerSourceLabel(token.getAzpName(), "Ident from obo", "obo")
             token.getNAVIdent()
