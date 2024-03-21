@@ -14,14 +14,8 @@ spec:
     max: 12
   liveness:
     path: /internal/isAlive
-    initialDelay: 5
-    periodSeconds: 5
-    failureThreshold: 30
   readiness:
     path: /internal/isReady
-    initialDelay: 5
-    periodSeconds: 5
-    failureThreshold: 30
   preStopHook:
     exec:
       command: [ "/bin/bash", "/pre-stop.sh" ]
@@ -35,11 +29,6 @@ spec:
     requests:
       cpu: 200m
       memory: 768Mi
-  vault:
-    enabled: true
-    paths:
-      - mountPath: /var/run/secrets/nais.io/vault
-        kvPath: /kv/prod/fss/sf-henvendelse-api-proxy/teamnks
   ingresses:
     - "https://sf-henvendelse-api-proxy.intern.nav.no"
     - "https://sf-henvendelse-api-proxy.prod-fss-pub.nais.io"
