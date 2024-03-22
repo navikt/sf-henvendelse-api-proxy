@@ -109,39 +109,7 @@ class ApplicationTest {
     }
 
     @Test
-    fun `A call with valid token other then azure obo token and Nav-Ident header set should be successfully redirected`() {
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .claim(CLAIM_AZP_NAME, "azp-name")
-                .build()
-        )
-
-        every { mockToken.jwtTokenClaims } returns jwtTokenClaims
-
-        every { mockHttpHandler.invoke(capture(slot())) } returns Response(Status.OK)
-
-        val request = Request(Method.GET, "/api/some-endpoint")
-            .headers(
-                listOf(
-                    Pair("Nav-Ident", "Nav-Ident"),
-                    Pair("X-Correlation-ID", "X-Correlation-ID")
-                )
-            )
-
-        application.handleApiRequest(request)
-
-        val capturedRequestSlot: CapturingSlot<Request> = slot()
-        verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
-        val capturedRequest = capturedRequestSlot.captured
-
-        assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
-        assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
-        assertEquals("Nav-Ident", capturedRequest.header("X-ACTING-NAV-IDENT"))
-        assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
-    }
-
-    @Test
-    fun `A call with an approved machine token (and no ident header) should use azp_name claim as ident and be successfully redirected`() {
+    fun `A call with an approved machine token should use azp_name claim as ident and be successfully redirected`() {
         val array = JSONArray()
         array.add("access_as_application")
         jwtTokenClaims = JwtTokenClaims(
@@ -171,6 +139,38 @@ class ApplicationTest {
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
         assertEquals("azp-name", capturedRequest.header("X-ACTING-NAV-IDENT"))
+        assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
+    }
+
+    @Test
+    fun `A call with valid token other then azure obo token or machine token and Nav-Ident header set should be successfully redirected`() {
+        jwtTokenClaims = JwtTokenClaims(
+            JWTClaimsSet.Builder()
+                .claim(CLAIM_AZP_NAME, "azp-name")
+                .build()
+        )
+
+        every { mockToken.jwtTokenClaims } returns jwtTokenClaims
+
+        every { mockHttpHandler.invoke(capture(slot())) } returns Response(Status.OK)
+
+        val request = Request(Method.GET, "/api/some-endpoint")
+            .headers(
+                listOf(
+                    Pair("Nav-Ident", "Nav-Ident"),
+                    Pair("X-Correlation-ID", "X-Correlation-ID")
+                )
+            )
+
+        application.handleApiRequest(request)
+
+        val capturedRequestSlot: CapturingSlot<Request> = slot()
+        verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
+        val capturedRequest = capturedRequestSlot.captured
+
+        assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
+        assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
+        assertEquals("Nav-Ident", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
     }
 }

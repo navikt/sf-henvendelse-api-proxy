@@ -36,23 +36,28 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
     }
 
     fun performTestCalls() {
-        val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
-        val headers: Headers =
-            listOf(
-                Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
-                Pair(HEADER_X_ACTING_NAV_IDENT, "H159337"),
-                Pair(HEADER_X_CORRELATION_ID, "testcall")
-            )
-        val request = Request(Method.GET, dstUrl).headers(headers)
-        lateinit var response: Response
-        val ref = measureTimeMillis {
-            response = client(request)
+        try {
+            val dstUrl =
+                "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
+            val headers: Headers =
+                listOf(
+                    Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
+                    Pair(HEADER_X_ACTING_NAV_IDENT, "H159337"),
+                    Pair(HEADER_X_CORRELATION_ID, "testcall")
+                )
+            val request = Request(Method.GET, dstUrl).headers(headers)
+            lateinit var response: Response
+            val ref = measureTimeMillis {
+                response = client(request)
+            }
+            val twincall = measureTimeMillis {
+                response = performTwinCall(request)
+            }
+            log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
+            Metrics.summaryTestRef.observe(ref.toDouble())
+            Metrics.summaryTestTwinCall.observe(twincall.toDouble())
+        } catch (e: Exception) {
+            log.warn { "Exception at test call, ${e.message}" }
         }
-        val twincall = measureTimeMillis {
-            response = performTwinCall(request)
-        }
-        log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
-        Metrics.summaryTestRef.observe(ref.toDouble())
-        Metrics.summaryTestTwinCall.observe(twincall.toDouble())
     }
 }

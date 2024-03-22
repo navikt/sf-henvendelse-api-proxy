@@ -66,7 +66,6 @@ class Application(
 
     fun api(): HttpHandler = routes(
         "/api/{rest:.*}" bind ::handleApiRequest,
-        "/authping" bind ::authPing,
         "/static" bind static(Classpath("/static")),
         "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
         "/internal/isReady" bind Method.GET to { Response(Status.OK) },
@@ -75,17 +74,11 @@ class Application(
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        if (twincallsEnabled) try { twincallHandler.performTestCalls() } catch (e: Exception) { log.warn { "Exception at test call, ${e.message}" } }
+        if (twincallsEnabled) twincallHandler.performTestCalls()
         accessTokenHandler.refreshToken()
         runBlocking { delay(900000) } // 15 min
 
         refreshLoop()
-    }
-
-    fun authPing(req: Request): Response {
-        log.info { "Incoming call authping ${req.uri}" }
-        val firstValidToken = tokenValidator.firstValidToken(req, TokenFetchStatistics(req, lifeTimeCallIndex, devContext))
-        return Response(Status.OK).body("Auth: ${firstValidToken.isPresent}")
     }
 
     fun handleApiRequest(request: Request): Response {
@@ -143,10 +136,11 @@ class Application(
                             "uri" to forwardRequest.uri.toString()
                         )
                     ) {
-                        File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("REQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.removeHeader("Set-Cookie").toMessage()}")
                         log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
                     }
-                    return response.removeHeader("Set-Cookie")
+                    val responseWithoutCookieHeader = response.removeHeader("Set-Cookie")
+                    File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("REQUEST\n${request.toMessage()}\n\nRESPONSE\n${responseWithoutCookieHeader.toMessage()}")
+                    return responseWithoutCookieHeader
                 }
             }
         }
