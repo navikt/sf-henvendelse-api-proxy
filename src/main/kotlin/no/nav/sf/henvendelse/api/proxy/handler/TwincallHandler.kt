@@ -14,6 +14,7 @@ import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
+import java.io.File
 import kotlin.system.measureTimeMillis
 
 class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, private val client: HttpHandler, private val devContext: Boolean) {
@@ -48,6 +49,7 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
         val ref = measureTimeMillis {
             response = client(request)
         }
+        File("/tmp/testcallresponse").writeText(response.toMessage())
         val twincall = measureTimeMillis {
             response = performTwinCall(request)
         }
