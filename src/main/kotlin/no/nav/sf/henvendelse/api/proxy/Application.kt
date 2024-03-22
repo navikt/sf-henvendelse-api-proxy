@@ -30,6 +30,7 @@ import org.http4k.server.ApacheServer
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import java.io.File
+import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
 const val HEADER_NAV_IDENT = "Nav-Ident"
@@ -118,6 +119,7 @@ class Application(
                     val forwardRequest = Request(request.method, dstUrl).headers(headers).body(request.body)
 
                     if (devContext) File("/tmp/forwardmessage").writeText(forwardRequest.toMessage())
+
                     lateinit var response: Response
                     tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
                         response =
@@ -139,7 +141,7 @@ class Application(
                         log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
                     }
                     val responseWithoutCookieHeader = response.removeHeader("Set-Cookie")
-                    File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("REQUEST\n${request.toMessage()}\n\nRESPONSE\n${responseWithoutCookieHeader.toMessage()}")
+                    if (devContext) File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("${LocalDateTime.now()}\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${responseWithoutCookieHeader.toMessage()}")
                     return responseWithoutCookieHeader
                 }
             }

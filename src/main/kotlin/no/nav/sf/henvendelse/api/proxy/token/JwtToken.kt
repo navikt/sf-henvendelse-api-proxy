@@ -2,7 +2,6 @@ package no.nav.sf.henvendelse.api.proxy.token
 
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
-import java.io.File
 
 const val CLAIM_NAV_IDENT = "NAVident"
 const val CLAIM_AZP_NAME = "azp_name"
@@ -15,7 +14,6 @@ fun JwtToken.isMachineToken(): Boolean {
     if (rolesClaim != null && (rolesClaim is ArrayList<*>)) {
         if (rolesClaim.map { it.toString() }.any { it == "access_as_application" }) {
             log.info("Confirmed machine token")
-            File("/tmp/machinetoken").writeText(this.tokenAsString)
             return true
         }
     }

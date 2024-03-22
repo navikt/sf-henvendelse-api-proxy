@@ -27,26 +27,26 @@ import java.util.Optional
 
 class ApplicationTest {
 
-    val mockTokenValidator = mockk<TokenValidator>()
-    val mockTokenOptional = mockk<Optional<JwtToken>>()
-    val mockToken = mockk<JwtToken>()
+    private val mockTokenValidator = mockk<TokenValidator>()
+    private val mockTokenOptional = mockk<Optional<JwtToken>>()
+    private val mockToken = mockk<JwtToken>()
 
-    val mockAccessTokenHandler = mockk<AccessTokenHandler>()
-    val mockHttpHandler = mockk<HttpHandler>()
+    private val mockAccessTokenHandler = mockk<AccessTokenHandler>()
+    private val mockClient = mockk<HttpHandler>()
 
-    val application = Application(
+    private val application = Application(
         tokenValidator = mockTokenValidator,
         accessTokenHandler = mockAccessTokenHandler,
-        client = mockHttpHandler,
+        client = mockClient,
         devContext = false,
         twincallsEnabled = false
     )
 
-    val INSTANCE_URL = "https://localhost:8080"
-    val ACCESS_TOKEN = "accesstoken"
+    private val INSTANCE_URL = "https://localhost:8080"
+    private val ACCESS_TOKEN = "accesstoken"
 
     // Configure claim content of simulated accepted token for each test case:
-    var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
+    private var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
 
     @BeforeEach
     fun setup() {
@@ -88,7 +88,7 @@ class ApplicationTest {
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
-        every { mockHttpHandler.invoke(capture(slot())) } returns Response(Status.OK)
+        every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
         val request = Request(Method.GET, "/api/some-endpoint").headers(
             listOf(
@@ -99,7 +99,7 @@ class ApplicationTest {
         application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
-        verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
+        verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
@@ -121,7 +121,7 @@ class ApplicationTest {
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
-        every { mockHttpHandler.invoke(capture(slot())) } returns Response(Status.OK)
+        every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
         val request = Request(Method.GET, "/api/some-endpoint")
             .headers(
@@ -133,7 +133,7 @@ class ApplicationTest {
         application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
-        verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
+        verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
@@ -152,7 +152,7 @@ class ApplicationTest {
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
-        every { mockHttpHandler.invoke(capture(slot())) } returns Response(Status.OK)
+        every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
         val request = Request(Method.GET, "/api/some-endpoint")
             .headers(
@@ -165,7 +165,7 @@ class ApplicationTest {
         application.handleApiRequest(request)
 
         val capturedRequestSlot: CapturingSlot<Request> = slot()
-        verify { mockHttpHandler.invoke(capture(capturedRequestSlot)) }
+        verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
         assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
