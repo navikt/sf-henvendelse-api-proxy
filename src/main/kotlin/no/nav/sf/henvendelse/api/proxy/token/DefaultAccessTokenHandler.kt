@@ -56,7 +56,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
     private val expTimeSecondsClaim = 3600 // 60 min - expire time for the access token we ask salesforce for
 
-    private var lastTokenPair = Pair("", "")
+    private var lastTokenPair = "" to ""
 
     private var expireTime = System.currentTimeMillis()
 
@@ -97,7 +97,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
                 val response: Response = client(accessTokenRequest)
                 if (response.status.code == 200) {
                     val accessTokenResponse = gson.fromJson(response.bodyString(), AccessTokenResponse::class.java)
-                    lastTokenPair = Pair(accessTokenResponse.access_token, accessTokenResponse.instance_url)
+                    lastTokenPair = accessTokenResponse.access_token to accessTokenResponse.instance_url
                     expireTime = (expireMomentSinceEpochInSeconds - 10) * 1000
                     return lastTokenPair
                 }
@@ -107,7 +107,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
             }
         }
         log.error("Attempt to fetch access token given up")
-        return Pair("", "")
+        return "" to ""
     }
 
     private fun PrivateKeyFromBase64Store(ksB64: String, ksPwd: String, pkAlias: String, pkPwd: String): PrivateKey {

@@ -41,9 +41,9 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
                 "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
             val headers: Headers =
                 listOf(
-                    Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
-                    Pair(HEADER_X_ACTING_NAV_IDENT, "H159337"),
-                    Pair(HEADER_X_CORRELATION_ID, "testcall")
+                    HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
+                    HEADER_X_ACTING_NAV_IDENT to "H159337",
+                    HEADER_X_CORRELATION_ID to "testcall"
                 )
             val request = Request(Method.GET, dstUrl).headers(headers)
             lateinit var response: Response

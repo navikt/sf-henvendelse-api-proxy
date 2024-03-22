@@ -92,7 +92,7 @@ class ApplicationTest {
 
         val request = Request(Method.GET, "/api/some-endpoint").headers(
             listOf(
-                Pair("X-Correlation-ID", "X-Correlation-ID")
+                "X-Correlation-ID" to "X-Correlation-ID"
             )
         )
 
@@ -126,7 +126,7 @@ class ApplicationTest {
         val request = Request(Method.GET, "/api/some-endpoint")
             .headers(
                 listOf(
-                    Pair("X-Correlation-ID", "X-Correlation-ID")
+                    "X-Correlation-ID" to "X-Correlation-ID"
                 )
             )
 
@@ -157,8 +157,8 @@ class ApplicationTest {
         val request = Request(Method.GET, "/api/some-endpoint")
             .headers(
                 listOf(
-                    Pair("Nav-Ident", "Nav-Ident"),
-                    Pair("X-Correlation-ID", "X-Correlation-ID")
+                    "Nav-Ident" to "Nav-Ident",
+                    "X-Correlation-ID" to "X-Correlation-ID"
                 )
             )
 

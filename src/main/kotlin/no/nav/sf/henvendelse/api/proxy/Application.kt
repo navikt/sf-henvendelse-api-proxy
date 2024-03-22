@@ -111,9 +111,9 @@ class Application(
                     val headers: Headers =
                         request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
                             listOf(
-                                Pair(HEADER_AUTHORIZATION, "Bearer ${accessTokenHandler.accessToken}"),
-                                Pair(HEADER_X_ACTING_NAV_IDENT, navIdent),
-                                Pair(HEADER_X_CORRELATION_ID, xCorrelationId)
+                                HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
+                                HEADER_X_ACTING_NAV_IDENT to navIdent,
+                                HEADER_X_CORRELATION_ID to xCorrelationId
                             )
 
                     val forwardRequest = Request(request.method, dstUrl).headers(headers).body(request.body)
