@@ -143,6 +143,7 @@ class Application(
                             "uri" to forwardRequest.uri.toString()
                         )
                     ) {
+                        File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("REQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
                         log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
                     }
                     return response
