@@ -29,3 +29,5 @@ fun JwtToken.isNavOBOToken() = this.hasClaim(CLAIM_NAV_IDENT)
 fun JwtToken.getAzpName() = this.getClaim(CLAIM_AZP_NAME)
 
 fun JwtToken.getNAVIdent() = this.getClaim(CLAIM_NAV_IDENT)
+
+fun JwtToken.isBisysOBOToken() = this.isNavOBOToken() && this.getAzpName().contains("bisys")

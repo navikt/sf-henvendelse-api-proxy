@@ -62,7 +62,7 @@ object OboTokenExchangeHandler {
         val NAVident = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_NAV_IDENT)
         val azp_name = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_AZP_NAME)
         val key = "$azp_name:$NAVident"
-        OBOcache.get(key)?.let { cachedToken ->
+        OBOcache[key]?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
                 tokenFetchStats.oboCached++
                 return cachedToken
