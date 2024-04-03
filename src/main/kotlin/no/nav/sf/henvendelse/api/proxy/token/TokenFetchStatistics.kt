@@ -40,7 +40,8 @@ class TokenFetchStatistics(private val request: Request, private val callIndex: 
                     " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + elapsedTimeOboExchangeRequest + latestCallElapsedTime}."
             }
 
-            val path = pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path
+            val path = (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
+                .replace("/services/apexrest", "")
 
             Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
             Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
