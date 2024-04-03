@@ -62,7 +62,7 @@ class TokenFetchStatistics(private val request: Request, private val callIndex: 
             } else {
                 Metrics.failedCalls.labels(status.toString()).inc()
             }
-            Metrics.calls.labels(path, status.toString(), srcLabel)
+            Metrics.calls.labels(path, status.toString(), srcLabel).inc()
         } catch (t: Throwable) {
             log.error { "Failed to update metrics:" + t.message }
         }
