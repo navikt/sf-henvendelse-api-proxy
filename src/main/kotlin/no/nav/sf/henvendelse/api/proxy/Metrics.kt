@@ -20,6 +20,7 @@ object Metrics {
 
     private val log = KotlinLogging.logger { }
 
+    val calls: Counter = registerLabelCounter("calls", "path", "status", "source")
     val successCalls: Counter = registerLabelCounter("calls_success", "path")
     val failedCalls: Counter = registerLabelCounter("calls_failed", "status")
     val callSource: Counter = registerLabelCounter("call_source", "key")
@@ -65,16 +66,16 @@ object Metrics {
         return Counter.build().name(name).help(name).register()
     }
 
-    fun registerLabelCounter(name: String, label: String): Counter {
-        return Counter.build().name(name).help(name).labelNames(label).register()
+    fun registerLabelCounter(name: String, vararg labels: String): Counter {
+        return Counter.build().name(name).help(name).labelNames(*labels).register()
     }
 
     fun registerGauge(name: String): Gauge {
         return Gauge.build().name(name).help(name).register()
     }
 
-    fun registerLabelGauge(name: String, label: String): Gauge {
-        return Gauge.build().name(name).help(name).labelNames(label).register()
+    fun registerLabelGauge(name: String, vararg labels: String): Gauge {
+        return Gauge.build().name(name).help(name).labelNames(*labels).register()
     }
 
     fun registerHistogram(name: String): Histogram {
