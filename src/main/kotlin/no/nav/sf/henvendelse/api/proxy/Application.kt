@@ -104,6 +104,15 @@ class Application(
 
                 val navIdent = fetchNavIdent(request, token, tokenFetchStats)
 
+                // Code below is to see what variants of x-correlation-id header are present (to se if fix is still necessary)
+                request.headers.filter { it.first.equals(HEADER_X_CORRELATION_ID, ignoreCase = true) }.forEach {
+                    if (!Metrics.xcorHeaders.contains(it.first)) {
+                        Metrics.xcorHeaders.add(it.first)
+                        File("/tmp/xcorHeaders").writeText(Metrics.xcorHeaders.toString())
+                        File("/tmp/xcorHeadersExamples").appendText(it.first + " " + tokenFetchStats.srcLabel)
+                    }
+                }
+
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")

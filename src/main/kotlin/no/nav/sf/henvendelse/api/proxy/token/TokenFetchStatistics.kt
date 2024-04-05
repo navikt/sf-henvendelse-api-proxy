@@ -64,6 +64,10 @@ class TokenFetchStatistics(private val request: Request, private val callIndex: 
                 Metrics.failedCalls.labels(status.toString()).inc()
             }
             Metrics.calls.labels(path, status.toString(), srcLabel).inc()
+
+            if (srcLabel.contains("m2m")) {
+                Metrics.machineCalls.labels(path).inc()
+            }
         } catch (t: Throwable) {
             log.error { "Failed to update metrics:" + t.message }
         }
