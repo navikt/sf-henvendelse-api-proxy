@@ -164,6 +164,7 @@ class Application(
         } else if (token.isMachineToken()) {
             val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
             tokenFetchStats.registerSourceLabel(navConsumerId, "Ident as machine source", "m2m")
+            tokenFetchStats.machine = true
             token.getAzpName()
         } else if (request.header(HEADER_NAV_IDENT) != null) {
             val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
