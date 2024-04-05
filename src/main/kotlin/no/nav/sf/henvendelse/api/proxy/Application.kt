@@ -14,7 +14,6 @@ import no.nav.sf.henvendelse.api.proxy.token.TokenFetchStatistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import no.nav.sf.henvendelse.api.proxy.token.getAzpName
 import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
-import no.nav.sf.henvendelse.api.proxy.token.isBisysOBOToken
 import no.nav.sf.henvendelse.api.proxy.token.isMachineToken
 import no.nav.sf.henvendelse.api.proxy.token.isNavOBOToken
 import org.http4k.core.Headers
@@ -150,7 +149,7 @@ class Application(
                     ) {
                         log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
                     }
-                    val finalResponse = if (token.isBisysOBOToken()) response.removeHeader("Set-Cookie") else response
+                    val finalResponse = response.removeHeader("Set-Cookie") // if (token.isBisysOBOToken()) response.removeHeader("Set-Cookie") else response
                     if (devContext) File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("${LocalDateTime.now()}\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${finalResponse.toMessage()}")
                     return finalResponse
                 }
