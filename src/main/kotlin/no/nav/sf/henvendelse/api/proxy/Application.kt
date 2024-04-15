@@ -24,6 +24,7 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
+import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.routing.static
 import org.http4k.server.ApacheServer
@@ -97,6 +98,8 @@ class Application(
             val firstValidToken = tokenValidator.firstValidToken(request, tokenFetchStats)
             if (!firstValidToken.isPresent) {
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
+            } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.get().isMachineToken()) {
+                return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
                 if (devContext) File("/tmp/message").writeText(request.toMessage())
                 val token = firstValidToken.get()
