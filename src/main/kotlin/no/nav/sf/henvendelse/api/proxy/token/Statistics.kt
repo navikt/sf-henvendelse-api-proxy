@@ -6,7 +6,7 @@ import no.nav.sf.henvendelse.api.proxy.Metrics
 import org.http4k.core.Uri
 
 /**
- * TokenFetchStatistics - stores and handles data for logging and measurements, instansiated per request
+ * Statistics - Stores and handles data for logging and measurements, instantiated per request.
  */
 class Statistics {
     private val log = KotlinLogging.logger { }
