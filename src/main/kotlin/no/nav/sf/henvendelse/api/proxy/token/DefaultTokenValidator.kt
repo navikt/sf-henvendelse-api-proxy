@@ -35,7 +35,7 @@ class DefaultTokenValidator : TokenValidator {
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
 
-    override fun firstValidToken(request: Request, tokenFetchStats: TokenFetchStatistics): Optional<JwtToken> {
+    override fun firstValidToken(request: Request, tokenFetchStats: Statistics): Optional<JwtToken> {
         lateinit var result: Optional<JwtToken>
         tokenFetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken

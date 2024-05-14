@@ -69,7 +69,7 @@ class ApplicationTest {
                 .claim(CLAIM_AZP_NAME, "azp-name")
                 .build()
         )
-        val request = Request(Method.GET, "/api/some-endpoint")
+        val request = Request(Method.GET, "$API_BASE_PATH/some-endpoint")
 
         val response = application.handleApiRequest(request)
         val expectedResponse = Response(Status.BAD_REQUEST)
@@ -90,7 +90,7 @@ class ApplicationTest {
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "/api/some-endpoint").headers(
+        val request = Request(Method.GET, "$API_BASE_PATH/some-endpoint").headers(
             listOf(
                 "X-Correlation-ID" to "X-Correlation-ID"
             )
@@ -102,7 +102,7 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/some-endpoint"), capturedRequest.uri)
+        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
         assertEquals("A123456", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
@@ -123,7 +123,7 @@ class ApplicationTest {
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "/api/kodeverk/some-endpoint")
+        val request = Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
             .headers(
                 listOf(
                     "X-Correlation-ID" to "X-Correlation-ID"
@@ -136,7 +136,7 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/kodeverk/some-endpoint"), capturedRequest.uri)
+        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
         assertEquals("azp-name", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
@@ -157,7 +157,7 @@ class ApplicationTest {
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "/api/kodeverk/some-endpoint")
+        val request = Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
             .headers(
                 listOf(
                     "X-Correlation-ID" to "X-Correlation-ID"
@@ -170,7 +170,7 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL/services/apexrest/kodeverk/some-endpoint"), capturedRequest.uri)
+        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
         assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
         assertEquals("azp-name", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))

@@ -4,6 +4,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
+import no.nav.sf.henvendelse.api.proxy.APEX_REST_BASE_PATH
 import no.nav.sf.henvendelse.api.proxy.HEADER_AUTHORIZATION
 import no.nav.sf.henvendelse.api.proxy.HEADER_X_ACTING_NAV_IDENT
 import no.nav.sf.henvendelse.api.proxy.HEADER_X_CORRELATION_ID
@@ -38,7 +39,7 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
     fun performTestCalls() {
         try {
             val dstUrl =
-                "${accessTokenHandler.instanceUrl}/services/apexrest/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
+                "${accessTokenHandler.instanceUrl}$APEX_REST_BASE_PATH/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
             val headers: Headers =
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",

@@ -33,7 +33,7 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       - name: Setup Gradle to generate and submit dependency graphs
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v3
         with:
           dependency-graph: generate-and-submit
       - name: Build JAR

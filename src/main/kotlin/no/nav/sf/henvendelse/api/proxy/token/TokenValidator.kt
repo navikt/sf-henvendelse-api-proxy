@@ -5,5 +5,5 @@ import org.http4k.core.Request
 import java.util.Optional
 
 interface TokenValidator {
-    fun firstValidToken(request: Request, tokenFetchStats: TokenFetchStatistics): Optional<JwtToken>
+    fun firstValidToken(request: Request, tokenFetchStats: Statistics): Optional<JwtToken>
 }

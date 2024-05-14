@@ -1,10 +1,14 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import mu.KotlinLogging
+import no.nav.sf.henvendelse.api.proxy.APEX_REST_BASE_PATH
 import no.nav.sf.henvendelse.api.proxy.Metrics
 import org.http4k.core.Uri
 
-class TokenFetchStatistics {
+/**
+ * TokenFetchStatistics - stores and handles data for logging and measurements, instansiated per request
+ */
+class Statistics {
     private val log = KotlinLogging.logger { }
 
     var elapsedTimeTokenValidation = 0L // Time spent on validating token on incoming call
@@ -21,7 +25,7 @@ class TokenFetchStatistics {
     val pathsWithPathVars =
         listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
-    fun logStats(status: Int, uri: Uri) {
+    fun logAndUpdateMetrics(status: Int, uri: Uri) {
         try {
             log.info {
                 "Timings : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
@@ -34,20 +38,19 @@ class TokenFetchStatistics {
              * to use as a clean metric
              */
             val statsPath = (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
-                .replace("/services/apexrest", "")
+                .replace(APEX_REST_BASE_PATH, "")
 
             Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
             Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
             Metrics.elapsedTimeCall.set(latestCallElapsedTime.toDouble())
             Metrics.elapsedTimeCallPerPath.labels(statsPath).set(latestCallElapsedTime.toDouble())
-            Metrics.elapsedTimeTokenHandling.set(
-                elapsedTimeAccessTokenRequest.toDouble() +
-                    elapsedTimeTokenValidation.toDouble()
-            )
-            Metrics.elapsedTimeTotal.set(Metrics.elapsedTimeTokenHandling.get() + latestCallElapsedTime.toDouble())
+            val totalTimeTokenHandling = elapsedTimeAccessTokenRequest + elapsedTimeTokenValidation
+            Metrics.elapsedTimeTokenHandling.set(totalTimeTokenHandling.toDouble())
+            val totalTime = totalTimeTokenHandling + latestCallElapsedTime
+            Metrics.elapsedTimeTotal.set(totalTime.toDouble())
 
             Metrics.elapsedTimeCallHistogram.observe(latestCallElapsedTime.toDouble())
-            Metrics.elapsedTimeTotalHistogram.observe(latestCallElapsedTime.toDouble() + Metrics.elapsedTimeTokenHandling.get())
+            Metrics.elapsedTimeTotalHistogram.observe(totalTime.toDouble())
             if (status in 200..299) {
                 Metrics.successCalls.labels(statsPath).inc()
             } else {

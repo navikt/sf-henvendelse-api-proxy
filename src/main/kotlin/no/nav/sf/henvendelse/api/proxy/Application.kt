@@ -10,7 +10,7 @@ import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
-import no.nav.sf.henvendelse.api.proxy.token.TokenFetchStatistics
+import no.nav.sf.henvendelse.api.proxy.token.Statistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import no.nav.sf.henvendelse.api.proxy.token.getAzpName
 import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
@@ -32,15 +32,18 @@ import org.http4k.server.asServer
 import java.io.File
 import kotlin.system.measureTimeMillis
 
-const val HEADER_NAV_IDENT = "Nav-Ident"
+// Common headers from calling apps. Added to logging for traceability:
 const val HEADER_X_REQUEST_ID = "X-Request-ID"
 const val HEADER_NAV_CALL_ID = "Nav-Call-Id"
 const val HEADER_NAV_CONSUMER_ID = "Nav-Consumer-Id"
 
-// Required by salesforce api:
+// Required in forward request by salesforce api:
 const val HEADER_AUTHORIZATION = "Authorization"
 const val HEADER_X_CORRELATION_ID = "X-Correlation-ID"
 const val HEADER_X_ACTING_NAV_IDENT = "X-ACTING-NAV-IDENT"
+
+const val API_BASE_PATH = "/api"
+const val APEX_REST_BASE_PATH = "/services/apexrest"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
@@ -65,7 +68,7 @@ class Application(
     fun apiServer(port: Int): Http4kServer = api().asServer(ApacheServer(port))
 
     fun api(): HttpHandler = routes(
-        "/api/{rest:.*}" bind ::handleApiRequest,
+        "$API_BASE_PATH/{rest:.*}" bind ::handleApiRequest,
         "/static" bind static(Classpath("/static")),
         "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
         "/internal/isReady" bind Method.GET to { Response(Status.OK) },
@@ -83,48 +86,49 @@ class Application(
 
     fun handleApiRequest(request: Request): Response {
         val callIndex = lifeTimeCallIndex++
-        val tokenFetchStats = TokenFetchStatistics()
+        val stats = Statistics()
 
         withLoggingContext(
             mapOf(
                 HEADER_X_REQUEST_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
                 HEADER_NAV_CALL_ID to (request.header(HEADER_NAV_CALL_ID) ?: ""),
                 HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
+                HEADER_NAV_CONSUMER_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
                 "callIndex" to callIndex.toString()
             )
         ) {
             log.info { "Incoming call ${request.uri}" }
-            val firstValidToken = tokenValidator.firstValidToken(request, tokenFetchStats)
+            val firstValidToken = tokenValidator.firstValidToken(request, stats)
             if (!firstValidToken.isPresent) {
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
             } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.get().isMachineToken()) {
                 // Request is authorized with a machine token instead of an obo token, we only allow access to
-                // kodeverk endpoints in that case
+                // kodeverk endpoints in that case:
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
-                val navIdent = fetchNavIdent(firstValidToken.get(), tokenFetchStats)
+                val navIdent = fetchNavIdent(firstValidToken.get(), stats)
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
-                    val forwardRequest = createForwardRequest(request, navIdent, tokenFetchStats)
+                    val forwardRequest = createForwardRequest(request, navIdent, stats)
 
-                    val response = invokeRequest(forwardRequest, tokenFetchStats)
+                    val response = invokeRequest(forwardRequest, stats)
 
-                    tokenFetchStats.logStats(response.status.code, forwardRequest.uri)
+                    stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri)
 
                     withLoggingContext(
                         mapOf(
                             "status" to response.status.code.toString(),
-                            "processing_time" to tokenFetchStats.latestCallElapsedTime.toString(),
-                            "src" to tokenFetchStats.srcLabel,
+                            "processing_time" to stats.latestCallElapsedTime.toString(),
+                            "src" to stats.srcLabel,
                             "uri" to forwardRequest.uri.toString()
                         )
                     ) {
                         log.info {
-                            "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, " +
-                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}"
+                            "Summary : status=${response.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                         }
                     }
 
@@ -136,14 +140,12 @@ class Application(
         }
     }
 
-    private fun fetchNavIdent(token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
-        if (token.isNavOBOToken()) {
-            tokenFetchStats.srcLabel = token.getAzpName()
+    private fun fetchNavIdent(token: JwtToken, tokenFetchStats: Statistics): String {
+        tokenFetchStats.srcLabel = token.getAzpName()
+        return if (token.isNavOBOToken()) {
             Metrics.callSource.labels("obo-${tokenFetchStats.srcLabel}").inc()
             token.getNAVIdent()
         } else if (token.isMachineToken()) {
-            tokenFetchStats.srcLabel = token.getAzpName()
-            // tokenFetchStats.srcLabel = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
             Metrics.callSource.labels("m2m-${tokenFetchStats.srcLabel}").inc()
             tokenFetchStats.machine = true
             token.getAzpName()
@@ -151,13 +153,14 @@ class Application(
             log.warn { "Not able do deduce navIdent from request" }
             ""
         }
+    }
 
-    private fun createForwardRequest(request: Request, navIdent: String, tokenFetchStats: TokenFetchStatistics): Request {
-        // Refresh accessToken if needed
+    private fun createForwardRequest(request: Request, navIdent: String, tokenFetchStats: Statistics): Request {
+        // Measure a refresh of accessToken if needed
         tokenFetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis { accessTokenHandler.accessToken }
 
-        // Drop first 4 chars = "/api" from url and replace with salesforce path
-        val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().drop(4)}"
+        // Drop API_BASE_PATH from url and replace with salesforce path
+        val dstUrl = "${accessTokenHandler.instanceUrl}$APEX_REST_BASE_PATH${request.uri.toString().removePrefix(API_BASE_PATH)}"
         val headers: Headers =
             request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
                 listOf(
@@ -168,7 +171,7 @@ class Application(
         return Request(request.method, dstUrl).headers(headers).body(request.body)
     }
 
-    private fun invokeRequest(request: Request, tokenFetchStats: TokenFetchStatistics): Response {
+    private fun invokeRequest(request: Request, tokenFetchStats: Statistics): Response {
         lateinit var response: Response
         tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
             response =
