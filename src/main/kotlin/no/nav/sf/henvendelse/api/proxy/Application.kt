@@ -24,14 +24,12 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
-import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.routing.static
 import org.http4k.server.ApacheServer
 import org.http4k.server.Http4kServer
 import org.http4k.server.asServer
 import java.io.File
-import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
 
 const val HEADER_NAV_IDENT = "Nav-Ident"
@@ -39,7 +37,7 @@ const val HEADER_X_REQUEST_ID = "X-Request-ID"
 const val HEADER_NAV_CALL_ID = "Nav-Call-Id"
 const val HEADER_NAV_CONSUMER_ID = "Nav-Consumer-Id"
 
-// Required by salesforce:
+// Required by salesforce api:
 const val HEADER_AUTHORIZATION = "Authorization"
 const val HEADER_X_CORRELATION_ID = "X-Correlation-ID"
 const val HEADER_X_ACTING_NAV_IDENT = "X-ACTING-NAV-IDENT"
@@ -55,13 +53,13 @@ class Application(
     private val log = KotlinLogging.logger { }
     private var lifeTimeCallIndex = 0L
 
-    // Headers (lowercase of) that won't be forwarded. Fix: In case of received x-correlation-id it need to be sent as X-Correlation-ID (case sensitive)
-    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
+    // List of headers that will not be forwarded
+    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization")
 
     fun start() {
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
         apiServer(8080).start()
-        refreshLoop() // Refresh access token and cache outside of calls
+        refreshLoop() // Refresh access token and cache in advance outside of calls
     }
 
     fun apiServer(port: Int): Http4kServer = api().asServer(ApacheServer(port))
@@ -85,60 +83,34 @@ class Application(
 
     fun handleApiRequest(request: Request): Response {
         val callIndex = lifeTimeCallIndex++
-        val tokenFetchStats = TokenFetchStatistics(request, callIndex, devContext)
+        val tokenFetchStats = TokenFetchStatistics()
 
-        // Note from fix: X-Correlation-ID (all headers) is read case-insensitive from request
-        // dialogv1-proxy sends header as X-Correlation-Id which needs to be translated to X-Correlation-ID in call to salesforce
-        val xCorrelationId = request.header(HEADER_X_CORRELATION_ID) ?: ""
-        val xRequestId = request.header(HEADER_X_REQUEST_ID) ?: ""
-        val navCallId = request.header(HEADER_NAV_CALL_ID) ?: ""
-
-        withLoggingContext(mapOf("Request-Id" to xRequestId, "Call-Id" to navCallId, "correlationId" to xCorrelationId, "callIndex" to callIndex.toString())) {
+        withLoggingContext(
+            mapOf(
+                HEADER_X_REQUEST_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
+                HEADER_NAV_CALL_ID to (request.header(HEADER_NAV_CALL_ID) ?: ""),
+                HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
+                "callIndex" to callIndex.toString()
+            )
+        ) {
             log.info { "Incoming call ${request.uri}" }
             val firstValidToken = tokenValidator.firstValidToken(request, tokenFetchStats)
             if (!firstValidToken.isPresent) {
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
             } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.get().isMachineToken()) {
+                // Request is authorized with a machine token instead of an obo token, we only allow access to
+                // kodeverk endpoints in that case
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
-                if (devContext) File("/tmp/message").writeText(request.toMessage())
-                val token = firstValidToken.get()
-
-                val navIdent = fetchNavIdent(request, token, tokenFetchStats)
-
-                // Code below is to see what variants of x-correlation-id header are present (to se if fix is still necessary)
-                request.headers.filter { it.first.equals(HEADER_X_CORRELATION_ID, ignoreCase = true) }.forEach {
-                    if (!Metrics.xcorHeaders.contains(it.first)) {
-                        Metrics.xcorHeaders.add(it.first)
-                        File("/tmp/xcorHeaders").writeText(Metrics.xcorHeaders.toString())
-                        File("/tmp/xcorHeadersExamples").appendText(it.first + " " + tokenFetchStats.srcLabel)
-                    }
-                }
+                val navIdent = fetchNavIdent(firstValidToken.get(), tokenFetchStats)
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
-                    val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().substring(4)}" // Remove "/api" from start of url
-                    val headers: Headers =
-                        request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
-                            listOf(
-                                HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
-                                HEADER_X_ACTING_NAV_IDENT to navIdent,
-                                HEADER_X_CORRELATION_ID to xCorrelationId
-                            )
+                    val forwardRequest = createForwardRequest(request, navIdent, tokenFetchStats)
 
-                    val forwardRequest = Request(request.method, dstUrl).headers(headers).body(request.body)
-
-                    if (devContext) File("/tmp/forwardmessage").writeText(forwardRequest.toMessage())
-
-                    lateinit var response: Response
-                    tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
-                        response =
-                            if (twincallsEnabled && forwardRequest.method == Method.GET) {
-                                twincallHandler.performTwinCall(forwardRequest)
-                            } else client(forwardRequest)
-                    }
+                    val response = invokeRequest(forwardRequest, tokenFetchStats)
 
                     tokenFetchStats.logStats(response.status.code, forwardRequest.uri)
 
@@ -150,32 +122,60 @@ class Application(
                             "uri" to forwardRequest.uri.toString()
                         )
                     ) {
-                        log.info { "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}" }
+                        log.info {
+                            "Summary : status=${response.status.code}, call_ms=${tokenFetchStats.latestCallElapsedTime}, " +
+                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${tokenFetchStats.srcLabel}"
+                        }
                     }
-                    val finalResponse = response.removeHeader("Set-Cookie") // if (token.isBisysOBOToken()) response.removeHeader("Set-Cookie") else response
-                    if (devContext) File("/tmp/${tokenFetchStats.srcLabel.replace(":","-")}").writeText("${LocalDateTime.now()}\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${finalResponse.toMessage()}")
-                    return finalResponse
+
+                    // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
+                    //      creates noise in clients due to cookie source mismatch.
+                    return response.removeHeader("Set-Cookie")
                 }
             }
         }
     }
 
-    private fun fetchNavIdent(request: Request, token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
+    private fun fetchNavIdent(token: JwtToken, tokenFetchStats: TokenFetchStatistics): String =
         if (token.isNavOBOToken()) {
-            tokenFetchStats.registerSourceLabel(token.getAzpName(), "Ident from obo", "obo")
+            tokenFetchStats.srcLabel = token.getAzpName()
+            Metrics.callSource.labels("obo-${tokenFetchStats.srcLabel}").inc()
             token.getNAVIdent()
         } else if (token.isMachineToken()) {
-            val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
-            tokenFetchStats.registerSourceLabel(navConsumerId, "Ident as machine source", "m2m")
+            tokenFetchStats.srcLabel = token.getAzpName()
+            // tokenFetchStats.srcLabel = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
+            Metrics.callSource.labels("m2m-${tokenFetchStats.srcLabel}").inc()
             tokenFetchStats.machine = true
             token.getAzpName()
-        } else if (request.header(HEADER_NAV_IDENT) != null) {
-            val navConsumerId = request.header(HEADER_NAV_CONSUMER_ID) ?: "Unidentified"
-            val xProxyRef = request.header("X-Proxy-Ref") ?: ""
-            tokenFetchStats.registerSourceLabel("$navConsumerId.$xProxyRef", "Ident from header", "header")
-            request.header(HEADER_NAV_IDENT) ?: ""
         } else {
             log.warn { "Not able do deduce navIdent from request" }
             ""
         }
+
+    private fun createForwardRequest(request: Request, navIdent: String, tokenFetchStats: TokenFetchStatistics): Request {
+        // Refresh accessToken if needed
+        tokenFetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis { accessTokenHandler.accessToken }
+
+        // Drop first 4 chars = "/api" from url and replace with salesforce path
+        val dstUrl = "${accessTokenHandler.instanceUrl}/services/apexrest${request.uri.toString().drop(4)}"
+        val headers: Headers =
+            request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
+                listOf(
+                    HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
+                    HEADER_X_ACTING_NAV_IDENT to navIdent
+                )
+
+        return Request(request.method, dstUrl).headers(headers).body(request.body)
+    }
+
+    private fun invokeRequest(request: Request, tokenFetchStats: TokenFetchStatistics): Response {
+        lateinit var response: Response
+        tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
+            response =
+                if (twincallsEnabled && request.method == Method.GET) {
+                    twincallHandler.performTwinCall(request)
+                } else client(request)
+        }
+        return response
+    }
 }

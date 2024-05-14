@@ -17,7 +17,6 @@ import org.http4k.core.Response
 import org.http4k.core.body.toBody
 import org.json.JSONObject
 import java.time.Instant
-import kotlin.system.measureTimeMillis
 
 /**
  * A handler for azure on-behalf-of exchange flow.
@@ -64,7 +63,7 @@ object OboTokenExchangeHandler {
         val key = "$azp_name:$NAVident"
         OBOcache[key]?.let { cachedToken ->
             if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
-                tokenFetchStats.oboCached++
+                // tokenFetchStats.oboCached++
                 return cachedToken
             }
         }
@@ -84,12 +83,12 @@ object OboTokenExchangeHandler {
             )
 
         lateinit var res: Response
-        tokenFetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
-            res = client(req)
-        }
+        // tokenFetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
+        res = client(req)
+        // }
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
         OBOcache[key] = jwt
-        tokenFetchStats.oboFetches++
+        // tokenFetchStats.oboFetches++
         return jwt
     }
 }

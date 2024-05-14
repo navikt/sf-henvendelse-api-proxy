@@ -18,8 +18,6 @@ object Metrics {
         DefaultExports.initialize()
     }
 
-    val xcorHeaders: MutableSet<String> = mutableSetOf()
-
     private val log = KotlinLogging.logger { }
 
     val calls: Counter = registerLabelCounter("calls", "path", "status", "source")
@@ -29,9 +27,7 @@ object Metrics {
     val machineCalls: Counter = registerLabelCounter("calls_machine", "path")
 
     val elapsedTimeAccessTokenRequest: Gauge = registerGauge("elapsed_time_access_token_request")
-    val elapsedTimeOboExchangeRequest: Gauge = registerGauge("elapsed_time_obo_exchange_request")
     val elapsedTimeTokenValidation: Gauge = registerGauge("elapsed_time_token_validation")
-    val elapsedTimeOboHandling: Gauge = registerGauge("elapsed_time_obo_handling")
     val elapsedTimeCall: Gauge = registerGauge("elapsed_time_call")
     val elapsedTimeCallPerPath: Gauge = registerLabelGauge("elapsed_time_call_per_path", "path")
     val elapsedTimeTokenHandling: Gauge = registerGauge("elapsed_time_token_handling")
