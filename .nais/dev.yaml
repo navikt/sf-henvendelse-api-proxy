@@ -22,9 +22,9 @@ spec:
     path: /internal/metrics
   resources:
     limits:
-      memory: 1024Mi
+      memory: 1Gi
     requests:
-      cpu: 100m
+      cpu: 5m
       memory: 512Mi
   ingresses:
     - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
