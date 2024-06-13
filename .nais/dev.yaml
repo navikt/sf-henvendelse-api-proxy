@@ -70,6 +70,9 @@ spec:
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
+          cluster: dev-gcp
   envFrom:
     - secret: sf-henvendelse-api
   env:
