@@ -1,6 +1,5 @@
 package no.nav.sf.henvendelse.api.proxy.httpclient
 
-import org.apache.http.HttpHost
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClients
@@ -14,7 +13,7 @@ fun supportProxy(httpsProxy: String): HttpHandler {
         client = HttpClients.custom()
             .setDefaultRequestConfig(
                 RequestConfig.custom()
-                    .setProxy(HttpHost(proxyUri.host, proxyUri.port, proxyUri.scheme))
+                    // .setProxy(HttpHost(proxyUri.host, proxyUri.port, proxyUri.scheme))
                     .setConnectTimeout(20000) // High - but not the default limitless wait for connection (max time establishing)
                     .setSocketTimeout(20000) // (Max time between data packets)
                     .setConnectionRequestTimeout(20000) // (Max time to be served from connection pool)
