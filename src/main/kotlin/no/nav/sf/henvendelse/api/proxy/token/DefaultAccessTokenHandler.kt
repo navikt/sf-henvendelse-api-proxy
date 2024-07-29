@@ -50,7 +50,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     private val privateKeyAlias = env(secret_PRIVATE_KEY_ALIAS)
     private val privateKeyPassword = env(secret_PRIVATE_KEY_PASSWORD)
 
-    private val client: HttpHandler = supportProxy(env("HTTPS_PROXY"))
+    private val client: HttpHandler = supportProxy()
 
     private val gson = Gson()
 

@@ -5,10 +5,9 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClients
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
-import java.net.URI
 
-fun supportProxy(httpsProxy: String): HttpHandler {
-    val proxyUri = URI(httpsProxy)
+fun supportProxy(/**/): HttpHandler {
+    // val proxyUri = URI(httpsProxy)
     return ApacheClient(
         client = HttpClients.custom()
             .setDefaultRequestConfig(

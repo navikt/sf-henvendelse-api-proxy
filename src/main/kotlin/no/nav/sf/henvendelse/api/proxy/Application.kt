@@ -48,7 +48,7 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
-    private val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY)),
+    private val client: HttpHandler = supportProxy(),
     private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss",
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)

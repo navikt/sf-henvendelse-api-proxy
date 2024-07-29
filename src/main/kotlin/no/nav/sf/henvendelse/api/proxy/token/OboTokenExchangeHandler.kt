@@ -8,7 +8,6 @@ import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_SECRET
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT
-import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -37,7 +36,7 @@ object OboTokenExchangeHandler {
 
     private val log = KotlinLogging.logger { }
 
-    private val client: HttpHandler = supportProxy(env(env_HTTPS_PROXY))
+    private val client: HttpHandler = supportProxy()
 
     private val clientId: String = env(env_AZURE_APP_CLIENT_ID)
     private val clientSecret: String = env(env_AZURE_APP_CLIENT_SECRET)
