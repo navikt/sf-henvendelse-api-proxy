@@ -156,6 +156,17 @@ class Application(
     }
 
     private fun createForwardRequest(request: Request, navIdent: String, tokenFetchStats: Statistics): Request {
+        // Measure x-forwarded-host header to determine if requests are coming from ingress or service discovery
+        try {
+            if (request.header("x-forwarded-host") != null) {
+                Metrics.forwardedHost.labels(request.header("x-forwarded-host")).inc()
+            } else {
+                Metrics.forwardedHost.labels(request.header("service discovery")).inc()
+            }
+        } catch (e: Exception) {
+            log.error { "Failed metric measure forwarded-host" }
+        }
+
         // Measure a refresh of accessToken if needed
         tokenFetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis { accessTokenHandler.accessToken }
 

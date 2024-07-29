@@ -15,6 +15,7 @@ import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, private val client: HttpHandler, private val devContext: Boolean) {
@@ -38,8 +39,13 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
 
     fun performTestCalls() {
         try {
-            val dstUrl =
+            val dstUrlBase =
                 "${accessTokenHandler.instanceUrl}$APEX_REST_BASE_PATH/henvendelseinfo/henvendelseliste?aktorid=${if (devContext) "2755132512806" else "1000097498966"}"
+
+            // Randomize a dummy parameter to avoid second call responding quick due to cache in salesforce
+            val dstUrl = dstUrlBase + "&dummyparameter=${Random.nextInt(10000)}"
+            val dstUrl2 = dstUrlBase + "&dummyparameter=${Random.nextInt(10000)}"
+
             val headers: Headers =
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
@@ -47,12 +53,13 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
                     HEADER_X_CORRELATION_ID to "testcall"
                 )
             val request = Request(Method.GET, dstUrl).headers(headers)
+            val request2 = Request(Method.GET, dstUrl2).headers(headers)
             lateinit var response: Response
             val ref = measureTimeMillis {
                 response = client(request)
             }
             val twincall = measureTimeMillis {
-                response = performTwinCall(request)
+                response = performTwinCall(request2)
             }
             log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
             Metrics.summaryTestRef.observe(ref.toDouble())

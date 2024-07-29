@@ -20,6 +20,8 @@ object Metrics {
 
     private val log = KotlinLogging.logger { }
 
+    val forwardedHost: Counter = registerLabelCounter("forwarded_host", "host")
+
     val calls: Counter = registerLabelCounter("calls", "path", "status", "source")
     val successCalls: Counter = registerLabelCounter("calls_success", "path")
     val failedCalls: Counter = registerLabelCounter("calls_failed", "status")
