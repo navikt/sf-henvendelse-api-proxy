@@ -48,7 +48,7 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
   deploy-dev:
-    name: Deploy to NAIS dev fss
+    name: Deploy to NAIS dev gcp
     needs: build
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest

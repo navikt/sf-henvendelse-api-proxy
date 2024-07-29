@@ -27,7 +27,8 @@ spec:
       cpu: 5m
       memory: 512Mi
   ingresses:
-    - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
+    - "https://sf-henvendelse-api-proxy.intern.dev.nav.no"
+#    - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
     - "https://sf-henvendelse-api-proxy.dev-fss-pub.nais.io"
   azure:
     application:
