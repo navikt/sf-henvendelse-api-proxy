@@ -6,6 +6,7 @@ import no.nav.security.token.support.core.jwt.JwtToken
 const val CLAIM_NAV_IDENT = "NAVident"
 const val CLAIM_AZP_NAME = "azp_name"
 const val CLAIM_ROLES = "roles"
+const val CLAIM_ISS = "iss"
 
 private val log = KotlinLogging.logger { }
 
@@ -29,3 +30,5 @@ fun JwtToken.isNavOBOToken() = this.hasClaim(CLAIM_NAV_IDENT)
 fun JwtToken.getAzpName() = this.getClaim(CLAIM_AZP_NAME)
 
 fun JwtToken.getNAVIdent() = this.getClaim(CLAIM_NAV_IDENT)
+
+fun JwtToken.getIssuer() = this.getClaim(CLAIM_ISS)

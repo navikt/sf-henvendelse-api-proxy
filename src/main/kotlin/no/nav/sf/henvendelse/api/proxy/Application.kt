@@ -49,7 +49,7 @@ class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     private val client: HttpHandler = supportProxy(),
-    private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss",
+    private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {
@@ -108,6 +108,12 @@ class Application(
             } else {
                 val navIdent = fetchNavIdent(firstValidToken.get(), stats)
 
+                try {
+                    Metrics.issuer.labels(firstValidToken.get().issuer).inc()
+                } catch (e: java.lang.Exception) {
+                    log.error { "Failed to fetch issuer from token" }
+                }
+
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
@@ -161,7 +167,7 @@ class Application(
             if (request.header("x-forwarded-host") != null) {
                 Metrics.forwardedHost.labels(request.header("x-forwarded-host")).inc()
             } else {
-                Metrics.forwardedHost.labels(request.header("service discovery")).inc()
+                Metrics.forwardedHost.labels("service discovery").inc()
             }
         } catch (e: Exception) {
             log.error { "Failed metric measure forwarded-host" }

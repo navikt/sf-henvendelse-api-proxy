@@ -5,6 +5,7 @@ import no.nav.security.token.support.core.configuration.MultiIssuerConfiguration
 import no.nav.security.token.support.core.http.HttpRequest
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler
+import no.nav.sf.henvendelse.api.proxy.Metrics
 import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE
 import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_ALIAS
 import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_URL
@@ -42,6 +43,7 @@ class DefaultTokenValidator : TokenValidator {
         }
         if (!result.isPresent) {
             File("/tmp/novalidtoken").writeText(request.toMessage())
+            Metrics.noauth.inc()
         }
         return result
     }

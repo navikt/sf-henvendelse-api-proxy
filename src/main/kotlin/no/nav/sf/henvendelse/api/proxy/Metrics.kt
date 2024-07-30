@@ -21,6 +21,8 @@ object Metrics {
     private val log = KotlinLogging.logger { }
 
     val forwardedHost: Counter = registerLabelCounter("forwarded_host", "host")
+    val noauth: Counter = registerCounter("noauth_calls")
+    val issuer: Counter = registerLabelCounter("issuer", "iss")
 
     val calls: Counter = registerLabelCounter("calls", "path", "status", "source")
     val successCalls: Counter = registerLabelCounter("calls_success", "path")
