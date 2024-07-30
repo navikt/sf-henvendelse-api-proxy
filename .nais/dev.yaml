@@ -8,7 +8,7 @@ metadata:
 spec:
   image: '{{ image }}'
   port: 8080
-  # webproxy: true
+  webproxy: true
   replicas:
     min: 1
     max: 1
@@ -27,7 +27,7 @@ spec:
       cpu: 5m
       memory: 512Mi
   ingresses:
-    - "https://sf-henvendelse-api-proxy.intern.dev.nav.no"
+    - "https://sf-henvendelse-api-proxy.dev.intern.nav.no"
     - "https://sf-henvendelse-api-proxy.dev-fss-pub.nais.io"
   azure:
     application:
@@ -43,40 +43,30 @@ spec:
       rules:
         - application: itestapp
           namespace: teamcrm
-          cluster: dev-fss
         - application: itestapp
           namespace: teamcrm
           cluster: dev-gcp
         - application: gosys-q1
           namespace: isa
-          cluster: dev-fss
         - application: gosys-q2
           namespace: isa
-          cluster: dev-fss
         - application: modia-robot-api
           namespace: personoversikt
-          cluster: dev-fss
         - application: modiapersonoversikt-api-q1
           namespace: personoversikt
-          cluster: dev-fss
         - application: azure-token-generator
-          namespace: aura
           cluster: dev-gcp
+          namespace: aura
         - application: pensjon-pen-q0
           namespace: pensjon-q0
-          cluster: dev-fss
         - application: pensjon-pen-q1
           namespace: pensjon-q1
-          cluster: dev-fss
         - application: pensjon-pen-q2
           namespace: pensjon-q2
-          cluster: dev-fss
         - application: pensjon-pen-q5
           namespace: pensjon-q5
-          cluster: dev-fss
         - application: bisys
           namespace: bidrag
-          cluster: dev-fss
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external
