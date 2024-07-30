@@ -28,7 +28,7 @@ class DefaultTokenValidator : TokenValidator {
 
     private val multiIssuerConfiguration = MultiIssuerConfiguration(
         mapOf(
-            tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
+            // tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
             azureAlias to IssuerProperties(URL(azureUrl), azureAudience)
         )
     )
