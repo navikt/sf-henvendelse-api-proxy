@@ -90,10 +90,10 @@ class Application(
 
         withLoggingContext(
             mapOf(
-                HEADER_X_REQUEST_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
+                HEADER_X_REQUEST_ID to (request.header(HEADER_X_REQUEST_ID) ?: ""),
                 HEADER_NAV_CALL_ID to (request.header(HEADER_NAV_CALL_ID) ?: ""),
                 HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
-                HEADER_NAV_CONSUMER_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
+                HEADER_NAV_CONSUMER_ID to (request.header(HEADER_NAV_CONSUMER_ID) ?: ""),
                 "callIndex" to callIndex.toString()
             )
         ) {
