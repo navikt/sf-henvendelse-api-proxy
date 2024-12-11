@@ -100,10 +100,12 @@ class Application(
             log.info { "Incoming call ${request.uri}" }
             val firstValidToken = tokenValidator.firstValidToken(request, stats)
             if (!firstValidToken.isPresent) {
+                log.warn { "Proxy: Not authorized" }
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
             } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.get().isMachineToken()) {
                 // Request is authorized with a machine token instead of an obo token, we only allow access to
                 // kodeverk endpoints in that case:
+                log.warn { "Proxy: Machine token authorization not sufficient" }
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
                 val navIdent = fetchNavIdent(firstValidToken.get(), stats)
