@@ -3,7 +3,12 @@ package no.nav.sf.henvendelse.api.proxy.token
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.APEX_REST_BASE_PATH
 import no.nav.sf.henvendelse.api.proxy.Metrics
+import org.http4k.core.Request
+import org.http4k.core.Response
 import org.http4k.core.Uri
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * Statistics - Stores and handles data for logging and measurements, instantiated per request.
@@ -25,7 +30,7 @@ class Statistics {
     val pathsWithPathVars =
         listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
-    fun logAndUpdateMetrics(status: Int, uri: Uri) {
+    fun logAndUpdateMetrics(status: Int, uri: Uri, req: Request, res: Response) {
         try {
             log.info {
                 "Timings : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
@@ -58,8 +63,22 @@ class Statistics {
             }
             Metrics.calls.labels(statsPath, status.toString(), srcLabel).inc()
             if (machine) Metrics.machineCalls.labels(statsPath).inc()
+            if (status == 403) {
+                File("/tmp/" + createSafeFilename(statsPath, 403)).writeText(
+                    "$currentDateTime\n\nREQUEST:\n${req.toMessage()}\n\nRESPONSE:\n${res.toMessage()}"
+                )
+            }
         } catch (t: Throwable) {
             log.error { "Failed to update metrics:" + t.message }
         }
+    }
+
+    val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+
+    fun createSafeFilename(requestPath: String, statusCode: Int): String {
+        // Remove leading/trailing slashes and replace special characters with underscores
+        val sanitizedPath = requestPath.trim('/').replace(Regex("[^a-zA-Z0-9]"), "_")
+        // Combine sanitized path with status code
+        return "${sanitizedPath}_$statusCode"
     }
 }

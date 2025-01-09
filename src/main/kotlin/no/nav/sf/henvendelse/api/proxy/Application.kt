@@ -124,7 +124,7 @@ class Application(
 
                     val response = invokeRequest(forwardRequest, stats)
 
-                    stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri)
+                    stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
 
                     withLoggingContext(
                         mapOf(
