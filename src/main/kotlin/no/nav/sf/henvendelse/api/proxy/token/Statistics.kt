@@ -61,7 +61,10 @@ class Statistics {
             } else {
                 Metrics.failedCalls.labels(status.toString()).inc()
             }
-            Metrics.calls.labels(statsPath, status.toString(), srcLabel).inc()
+            val callTimeBucket = if (latestCallElapsedTime < 2000) { "less then 2000 ms" } else if (latestCallElapsedTime < 4000) {
+                "2000 to 4000 ms"
+            } else "4000 ms or worse"
+            Metrics.calls.labels(statsPath, status.toString(), srcLabel, callTimeBucket).inc()
             if (machine) Metrics.machineCalls.labels(statsPath).inc()
             if (status == 403) {
                 File("/tmp/" + createSafeFilename(statsPath, 403)).writeText(

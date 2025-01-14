@@ -24,7 +24,7 @@ object Metrics {
     val noauth: Counter = registerCounter("noauth_calls")
     val issuer: Counter = registerLabelCounter("issuer", "iss")
 
-    val calls: Counter = registerLabelCounter("calls", "path", "status", "source")
+    val calls: Counter = registerLabelCounter("calls", "path", "status", "source", "call_time")
     val successCalls: Counter = registerLabelCounter("calls_success", "path")
     val failedCalls: Counter = registerLabelCounter("calls_failed", "status")
     val callSource: Counter = registerLabelCounter("call_source", "key")
