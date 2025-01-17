@@ -129,7 +129,7 @@ class Application(
                     withLoggingContext(
                         mapOf(
                             "status" to response.status.code.toString(),
-                            "processing_time" to stats.latestCallElapsedTime.toString(),
+                            "event.duration" to stats.latestCallElapsedTime.toString(),
                             "src" to stats.srcLabel,
                             "uri" to forwardRequest.uri.toString()
                         )
