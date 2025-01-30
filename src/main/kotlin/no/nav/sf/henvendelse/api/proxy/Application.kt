@@ -1,5 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy
 
+import com.google.gson.JsonParser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -133,6 +134,28 @@ class Application(
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
+
+                    if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
+                        val aktorId = request.query("aktorid") ?: "null"
+                        Cache.doAsyncPut(aktorId, response.bodyString())
+                    }
+
+                    if ((
+                        request.uri.path.contains("behandling") ||
+                            request.uri.path.contains("/ny/samtalereferat") ||
+                            request.uri.path.contains("/ny/melding")
+                        ) &&
+                        response.status.code == 200
+                    ) {
+                        try {
+                            val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
+                            val aktorId = jsonObject.get("aktorId").asString
+                            File("/tmp/cacheLog").appendText("Parsed aktoerId $aktorId on call to ${request.uri.path}\n")
+                            Cache.doAsyncDelete(aktorId)
+                        } catch (e: Exception) {
+                            File("/failedRequestParsing").writeText(e.stackTraceToString())
+                        }
+                    }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
 
