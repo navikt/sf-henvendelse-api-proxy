@@ -76,6 +76,9 @@ spec:
         - application: modia-robot-api
           namespace: personoversikt
           cluster: dev-gcp
+    outbound:
+      external:
+        - host: "sf-henvendelse-db.intern.dev.nav.no"
   envFrom:
     - secret: sf-henvendelse-api
   env:

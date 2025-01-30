@@ -24,6 +24,9 @@ object Cache {
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId")
         val response = client(request)
         File("/tmp/cacheLog").appendText("Get AktoerId $aktorId - status ${response.status}, body ${response.bodyString()}\n")
+        if (response.status.code != 200) {
+            File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
+        }
     }
 
     fun put(aktorId: String, json: String) {
