@@ -4,6 +4,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.EntraTokenHandler
+import org.http4k.client.ApacheClient
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -13,6 +14,7 @@ import java.io.File
 object Cache {
     private val entraTokenHandler = EntraTokenHandler()
     private val client: HttpHandler = supportProxy()
+    private val clientNo: HttpHandler = ApacheClient()
 
     private val endpointSfHenvendelserDb = if (application.devContext) {
         "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
@@ -25,7 +27,7 @@ object Cache {
     fun get(aktorId: String) {
         val request =
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
-        val response = client(request)
+        val response = clientNo(request)
         File("/tmp/cacheLog").appendText("Get AktoerId $aktorId - status ${response.status}, body ${response.bodyString()}\n")
         if (response.status.code != 200) {
             File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
