@@ -62,11 +62,11 @@ class Application(
     fun start() {
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
         apiServer(8080).start()
-        try {
-            Cache.fetchEntraToken()
-        } catch (e: Exception) {
-            File("/tmp/EntraException").writeText(e.stackTraceToString())
-        }
+//        try {
+//            Cache.fetchEntraToken()
+//        } catch (e: Exception) {
+//            File("/tmp/EntraException").writeText(e.stackTraceToString())
+//        }
         refreshLoop() // Refresh access token and cache in advance outside of calls
     }
 
