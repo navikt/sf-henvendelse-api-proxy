@@ -40,6 +40,10 @@ spec:
       tenant: trygdeetaten.no
   accessPolicy:
     outbound:
+      rules:
+        - application: sf-henvendelse-db
+          namespace: teamnks
+          cluster: dev-gcp
       external:
         - host: sf-henvendelse-db.intern.dev.nav.no
     inbound:
