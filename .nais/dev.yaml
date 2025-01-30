@@ -39,6 +39,9 @@ spec:
           - NAVident
       tenant: trygdeetaten.no
   accessPolicy:
+    outbound:
+      external:
+        - host: sf-henvendelse-db.intern.dev.nav.no
     inbound:
       rules:
         - application: itestapp
@@ -76,9 +79,6 @@ spec:
         - application: modia-robot-api
           namespace: personoversikt
           cluster: dev-gcp
-    outbound:
-      external:
-        - host: "sf-henvendelse-db.intern.dev.nav.no"
   envFrom:
     - secret: sf-henvendelse-api
   env:
