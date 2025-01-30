@@ -49,7 +49,7 @@ class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     private val client: HttpHandler = supportProxy(),
-    private val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
+    val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {
@@ -62,6 +62,11 @@ class Application(
     fun start() {
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
         apiServer(8080).start()
+        try {
+            Cache.fetchEntraToken()
+        } catch (e: Exception) {
+            File("/tmp/EntraException").writeText(e.stackTraceToString())
+        }
         refreshLoop() // Refresh access token and cache in advance outside of calls
     }
 
@@ -121,6 +126,11 @@ class Application(
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
+
+                    if (request.uri.path.contains("henvendelseliste")) {
+                        val aktorId = request.query("aktorid") ?: "null"
+                        Cache.doAsyncGet(aktorId)
+                    }
 
                     val response = invokeRequest(forwardRequest, stats)
 
