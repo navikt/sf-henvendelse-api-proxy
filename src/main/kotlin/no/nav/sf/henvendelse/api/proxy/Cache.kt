@@ -2,6 +2,7 @@ package no.nav.sf.henvendelse.api.proxy
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.token.EntraTokenHandler
 import org.http4k.client.ApacheClient
 import org.http4k.core.Headers
@@ -9,8 +10,11 @@ import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 object Cache {
+    private val log = KotlinLogging.logger { }
     private val entraTokenHandler = EntraTokenHandler()
     // private val client: HttpHandler = supportProxy()
     private val clientNoProxy: HttpHandler = ApacheClient()
@@ -27,7 +31,7 @@ object Cache {
         val request =
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
         val response = clientNoProxy(request)
-        File("/tmp/cacheLog").appendText("Get AktoerId $aktorId - status ${response.status}, body ${response.bodyString()}\n")
+        appendCacheLog("Get AktoerId $aktorId - status ${response.status}, body ${response.bodyString()}")
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
@@ -37,34 +41,49 @@ object Cache {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
         val response = clientNoProxy(request)
-        File("/tmp/cacheLog").appendText("Put AktoerId $aktorId - status ${response.status}, request body $json\n")
+        appendCacheLog("Put AktoerId $aktorId - status ${response.status}, request body $json")
     }
 
     fun delete(aktorId: String) {
         val request =
             Request(Method.DELETE, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
         val response = clientNoProxy(request)
-        File("/tmp/cacheLog").appendText("Delete AktoerId $aktorId - status ${response.status}\n")
+        appendCacheLog("Delete AktorId $aktorId - status ${response.status}")
     }
 
     fun doAsyncGet(aktorId: String) {
-        File("/tmp/cacheLog").appendText("Will perform async cache get with aktoerId $aktorId\n")
+        log.info { "Will perform async cache get with aktorId $aktorId" }
+        appendCacheLog("Will perform async cache get with aktorId $aktorId")
         GlobalScope.launch {
             get(aktorId)
         }
     }
 
     fun doAsyncPut(aktorId: String, json: String) {
-        File("/tmp/cacheLog").appendText("Will perform async cache put with aktoerId $aktorId\n")
+        log.info { "Will perform async cache put with aktorId $aktorId" }
+        appendCacheLog("Will perform async cache put with aktorId $aktorId")
         GlobalScope.launch {
             put(aktorId, json)
         }
     }
 
     fun doAsyncDelete(aktorId: String) {
-        File("/tmp/cacheLog").appendText("Will perform async cache delete with aktoerId $aktorId\n")
+        log.info { "Will perform async cache delete with aktorId $aktorId" }
+        appendCacheLog("Will perform async cache delete with aktorId $aktorId")
         GlobalScope.launch {
             delete(aktorId)
+        }
+    }
+
+    private const val logLimit = 1000
+    private var logCounter = 0
+
+    private val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+
+    fun appendCacheLog(msg: String) {
+        logCounter++
+        if (logCounter <= logLimit) {
+            File("/tmp/cacheLog").appendText("$currentDateTime $msg\n")
         }
     }
 }

@@ -150,7 +150,7 @@ class Application(
                         try {
                             val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
                             val aktorId = jsonObject.get("aktorId").asString
-                            File("/tmp/cacheLog").appendText("Parsed aktoerId $aktorId on call to ${request.uri.path}\n")
+                            Cache.appendCacheLog("Parsed aktoerId $aktorId on call to ${request.uri.path}")
                             Cache.doAsyncDelete(aktorId)
                         } catch (e: Exception) {
                             File("/failedRequestParsing").writeText(e.stackTraceToString())
