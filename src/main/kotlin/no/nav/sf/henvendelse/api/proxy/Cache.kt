@@ -37,7 +37,7 @@ object Cache {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
         val response = clientNoProxy(request)
-        File("/tmp/cacheLog").appendText("Put AktoerId $aktorId - status ${response.status}, request body size ${json.length}\n")
+        File("/tmp/cacheLog").appendText("Put AktoerId $aktorId - status ${response.status}, request body $json\n")
     }
 
     fun delete(aktorId: String) {
@@ -48,21 +48,21 @@ object Cache {
     }
 
     fun doAsyncGet(aktorId: String) {
-        File("/tmp/cacheLog").appendText("Will perform cache get with aktoerId $aktorId\n")
+        File("/tmp/cacheLog").appendText("Will perform async cache get with aktoerId $aktorId\n")
         GlobalScope.launch {
             get(aktorId)
         }
     }
 
     fun doAsyncPut(aktorId: String, json: String) {
-        File("/tmp/cacheLog").appendText("Will perform cache put with aktoerId $aktorId\n")
+        File("/tmp/cacheLog").appendText("Will perform async cache put with aktoerId $aktorId\n")
         GlobalScope.launch {
             put(aktorId, json)
         }
     }
 
     fun doAsyncDelete(aktorId: String) {
-        File("/tmp/cacheLog").appendText("Will perform cache delete with aktoerId $aktorId\n")
+        File("/tmp/cacheLog").appendText("Will perform async cache delete with aktoerId $aktorId\n")
         GlobalScope.launch {
             delete(aktorId)
         }
