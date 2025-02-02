@@ -45,6 +45,8 @@ object Metrics {
 
     val cacheSize: Gauge = registerGauge("cache_size")
 
+    val henvendelselisteCache = registerLabelCounter("henvendelselistecache", "method", "status", "call_time")
+
     private val metricsAsText: String get() {
         val str = StringWriter()
         TextFormat.write004(str, CollectorRegistry.defaultRegistry.metricFamilySamples())

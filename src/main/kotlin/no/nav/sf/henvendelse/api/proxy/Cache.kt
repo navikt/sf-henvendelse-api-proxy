@@ -9,9 +9,11 @@ import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
+import org.http4k.core.Response
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.system.measureTimeMillis
 
 object Cache {
     private val log = KotlinLogging.logger { }
@@ -30,8 +32,13 @@ object Cache {
     fun get(aktorId: String) {
         val request =
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
-        val response = clientNoProxy(request)
-        appendCacheLog("Get AktoerId $aktorId - status ${response.status}, body ${response.bodyString()}")
+        val response: Response
+        val callTime = measureTimeMillis {
+            response = clientNoProxy(request)
+        }
+
+        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel())
+        appendCacheLog("Get AktorId $aktorId - status ${response.status}, body ${response.bodyString()}")
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
@@ -40,14 +47,22 @@ object Cache {
     fun put(aktorId: String, json: String) {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
-        val response = clientNoProxy(request)
-        appendCacheLog("Put AktoerId $aktorId - status ${response.status}, request body $json")
+        val response: Response
+        val callTime = measureTimeMillis {
+            response = clientNoProxy(request)
+        }
+        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel())
+        appendCacheLog("Put AktorId $aktorId - status ${response.status}, request body $json")
     }
 
     fun delete(aktorId: String) {
         val request =
             Request(Method.DELETE, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
-        val response = clientNoProxy(request)
+        val response: Response
+        val callTime = measureTimeMillis {
+            response = clientNoProxy(request)
+        }
+        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel())
         appendCacheLog("Delete AktorId $aktorId - status ${response.status}")
     }
 
@@ -85,5 +100,14 @@ object Cache {
         if (logCounter <= logLimit) {
             File("/tmp/cacheLog").appendText("$currentDateTime $msg\n")
         }
+    }
+
+    fun Long.toLabel(): String = when {
+        this < 100 -> "< 100"
+        this < 200 -> "< 200"
+        this < 300 -> "< 300"
+        this < 400 -> "< 400"
+        this < 500 -> "< 500"
+        else -> "500+"
     }
 }
