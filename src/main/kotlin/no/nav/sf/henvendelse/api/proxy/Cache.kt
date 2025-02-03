@@ -37,7 +37,7 @@ object Cache {
             response = clientNoProxy(request)
         }
 
-        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel())
+        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel()).inc()
         appendCacheLog("Get AktorId $aktorId - status ${response.status}, body ${response.bodyString()}")
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
@@ -51,7 +51,7 @@ object Cache {
         val callTime = measureTimeMillis {
             response = clientNoProxy(request)
         }
-        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel())
+        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel()).inc()
         appendCacheLog("Put AktorId $aktorId - status ${response.status}, request body $json")
     }
 
@@ -62,7 +62,7 @@ object Cache {
         val callTime = measureTimeMillis {
             response = clientNoProxy(request)
         }
-        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel())
+        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel()).inc()
         appendCacheLog("Delete AktorId $aktorId - status ${response.status}")
     }
 
