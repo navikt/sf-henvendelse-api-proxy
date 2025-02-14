@@ -5,6 +5,7 @@ import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
 import org.apache.http.HttpHost
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler
 import org.apache.http.impl.client.HttpClients
 import org.http4k.client.ApacheClient
 import org.http4k.core.HttpHandler
@@ -23,7 +24,7 @@ fun supportProxy(httpsProxy: String = env(env_HTTPS_PROXY)): HttpHandler {
                     .setRedirectsEnabled(false)
                     .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
                     .build()
-            ).setMaxConnPerRoute(40).setMaxConnTotal(40)
+            ).setRetryHandler(DefaultHttpRequestRetryHandler(0, false)).setMaxConnPerRoute(40).setMaxConnTotal(40)
             .build()
     )
 }
