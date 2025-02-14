@@ -65,7 +65,7 @@ spec:
     - secret: sf-henvendelse-api
   env:
     - name: TWINCALL # TWINCALL triggers two calls and returns the fastest response
-      value: 'ON'
+      value: 'OFF'
     - name: SF_TOKENHOST
       value: 'https://login.salesforce.com/services/oauth2/token'
     - name: AUDIENCE_TOKEN_SERVICE_URL
