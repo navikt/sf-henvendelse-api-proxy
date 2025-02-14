@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
+import no.nav.sf.henvendelse.api.proxy.Cache.currentDateTime
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
@@ -171,6 +172,10 @@ class Application(
                             "Summary : status=${response.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                         }
+                    }
+
+                    if (request.uri.path.contains("journal")) {
+                        File("/tmp/latestJournal").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
                     }
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and

@@ -93,7 +93,7 @@ object Cache {
     private const val logLimit = 100
     private var logCounter = 0
 
-    private val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+    val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
 
     fun appendCacheLog(msg: String) {
         logCounter++
