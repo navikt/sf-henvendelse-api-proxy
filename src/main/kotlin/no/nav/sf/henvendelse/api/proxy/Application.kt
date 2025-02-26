@@ -72,6 +72,7 @@ class Application(
         }
 
         try {
+            log.info { "Perform test call" }
             val request = testRequestDev()
             val response = client(request)
             File("/tmp/CallTestResult").writeText("$currentDateTime\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
