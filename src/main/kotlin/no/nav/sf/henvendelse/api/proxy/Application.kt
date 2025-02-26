@@ -9,6 +9,7 @@ import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Cache.currentDateTime
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.configuredClient
+import no.nav.sf.henvendelse.api.proxy.httpclient.testRequestDev
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
@@ -49,7 +50,7 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
-    private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
+    val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     private val client: HttpHandler = configuredClient(),
     val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
@@ -68,6 +69,14 @@ class Application(
             Cache.get("dummy")
         } catch (e: Exception) {
             File("/tmp/CacheTestException").writeText(e.stackTraceToString())
+        }
+
+        try {
+            val request = testRequestDev()
+            val response = client(request)
+            File("/tmp/CallTestResult").writeText("$currentDateTime\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+        } catch (e: Exception) {
+            File("/tmp/CallTestException").writeText(e.stackTraceToString())
         }
         refreshLoop() // Refresh access token and cache in advance outside of calls
     }
