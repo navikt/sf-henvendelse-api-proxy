@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.config_SF_TOKENHOST
 import no.nav.sf.henvendelse.api.proxy.env
-import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
+import no.nav.sf.henvendelse.api.proxy.httpclient.configuredClient
 import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_JKS_B64
 import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_PASSWORD
 import no.nav.sf.henvendelse.api.proxy.secret_PRIVATE_KEY_ALIAS
@@ -50,7 +50,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     private val privateKeyAlias = env(secret_PRIVATE_KEY_ALIAS)
     private val privateKeyPassword = env(secret_PRIVATE_KEY_PASSWORD)
 
-    private val client: HttpHandler = supportProxy()
+    private val client: HttpHandler = configuredClient()
 
     private val gson = Gson()
 

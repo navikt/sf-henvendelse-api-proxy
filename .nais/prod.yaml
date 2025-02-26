@@ -8,7 +8,6 @@ metadata:
 spec:
   image: '{{ image }}'
   port: 8080
-  webproxy: true
   replicas:
     min: 12
     max: 12
@@ -27,8 +26,7 @@ spec:
       cpu: 5m
       memory: 512Mi
   ingresses:
-    - "https://sf-henvendelse-api-proxy.intern.nav.no"
-    - "https://sf-henvendelse-api-proxy.prod-fss-pub.nais.io"
+    - "https://sf-henvendelse.intern.nav.no"
   azure:
     application:
       enabled: true
@@ -38,20 +36,29 @@ spec:
           - azp_name
           - NAVident
   accessPolicy:
+    outbound:
+      rules:
+        - application: sf-henvendelse-db
     inbound:
       rules:
         - application: itestapp
           namespace: teamcrm
+          cluster: prod-gcp
         - application: gosys
           namespace: isa
+          cluster: prod-fss
         - application: modia-robot-api
           namespace: personoversikt
+          cluster: prod-fss
         - application: modiapersonoversikt-api
           namespace: personoversikt
+          cluster: prod-fss
         - application: pensjon-pen
           namespace: pensjondeployer
+          cluster: prod-fss
         - application: bisys
           namespace: bidrag
+          cluster: prod-fss
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
