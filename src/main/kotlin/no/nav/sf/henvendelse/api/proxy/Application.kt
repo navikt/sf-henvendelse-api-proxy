@@ -141,14 +141,14 @@ class Application(
 
                     if (request.uri.path.contains("henvendelseliste")) {
                         val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncGet(aktorId)
+                        // Cache.doAsyncGet(aktorId)
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncPut(aktorId, response.bodyString())
+                        // Cache.doAsyncPut(aktorId, response.bodyString())
                     }
 
                     if ((
@@ -161,8 +161,8 @@ class Application(
                         try {
                             val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
                             val aktorId = jsonObject.get("aktorId").asString
-                            Cache.appendCacheLog("Parsed aktoerId $aktorId on call to ${request.uri.path}")
-                            Cache.doAsyncDelete(aktorId)
+                            // Cache.appendCacheLog("Parsed aktoerId $aktorId on call to ${request.uri.path}")
+                            // Cache.doAsyncDelete(aktorId)
                         } catch (e: Exception) {
                             File("/failedRequestParsing").writeText(e.stackTraceToString())
                         }
@@ -184,6 +184,9 @@ class Application(
                         }
                     }
 
+                    if (request.uri.path.contains("henvendelseliste")) {
+                        File("/tmp/latestHenvendelseliste").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+                    }
                     if (request.uri.path.contains("journal")) {
                         File("/tmp/latestJournal").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
                     }
