@@ -187,10 +187,10 @@ class Application(
                     }
 
                     if (request.uri.path.contains("henvendelseliste")) {
-                        File("/tmp/latestHenvendelseliste").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+                        File("/tmp/latestHenvendelseliste").writeText("$currentDateTime\nREQUEST original: ${request.toMessage()}\n\nREQUEST forward:\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
                     }
                     if (request.uri.path.contains("journal")) {
-                        File("/tmp/latestJournal").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+                        File("/tmp/latestJournal").writeText("$currentDateTime\nREQUEST original: ${request.toMessage()}\n\nREQUEST forward:\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
                     }
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
