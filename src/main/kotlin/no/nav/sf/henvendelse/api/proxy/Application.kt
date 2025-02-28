@@ -71,13 +71,15 @@ class Application(
             File("/tmp/CacheTestException").writeText(e.stackTraceToString())
         }
 
-        try {
-            log.info { "Perform test call" }
-            val request = testRequestDev()
-            val response = client(request)
-            File("/tmp/CallTestResult").writeText("$currentDateTime\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
-        } catch (e: Exception) {
-            File("/tmp/CallTestException").writeText(e.stackTraceToString())
+        if (env(config_DEPLOY_CLUSTER) == "dev-gcp") {
+            try {
+                log.info { "Perform test call" }
+                val request = testRequestDev()
+                val response = client(request)
+                File("/tmp/CallTestResult").writeText("$currentDateTime\nREQUEST\n${request.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+            } catch (e: Exception) {
+                File("/tmp/CallTestException").writeText(e.stackTraceToString())
+            }
         }
         refreshLoop() // Refresh access token and cache in advance outside of calls
     }
