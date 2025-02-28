@@ -38,6 +38,9 @@ spec:
           - azp_name
           - NAVident
   accessPolicy:
+    outbound:
+      external:
+        - host: sf-henvendelse-db.intern.nav.no
     inbound:
       rules:
         - application: itestapp
