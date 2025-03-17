@@ -29,7 +29,7 @@ object Cache {
 
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
 
-    fun get(aktorId: String) {
+    fun get(aktorId: String, endpointLabel: String) {
         val request =
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
         val response: Response
@@ -37,56 +37,56 @@ object Cache {
             response = clientNoProxy(request)
         }
 
-        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel()).inc()
-        appendCacheLog("Get AktorId $aktorId - status ${response.status}, body ${response.bodyString()}")
+        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Get AktorId $aktorId $endpointLabel - status ${response.status}, body ${response.bodyString()}")
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
     }
 
-    fun put(aktorId: String, json: String) {
+    fun put(aktorId: String, json: String, endpointLabel: String) {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
         val response: Response
         val callTime = measureTimeMillis {
             response = clientNoProxy(request)
         }
-        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel()).inc()
-        appendCacheLog("Put AktorId $aktorId - status ${response.status}, request body $json")
+        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Put AktorId $aktorId $endpointLabel - status ${response.status}, request body $json")
     }
 
-    fun delete(aktorId: String) {
+    fun delete(aktorId: String, endpointLabel: String) {
         val request =
             Request(Method.DELETE, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
         val response: Response
         val callTime = measureTimeMillis {
             response = clientNoProxy(request)
         }
-        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel()).inc()
-        appendCacheLog("Delete AktorId $aktorId - status ${response.status}")
+        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Delete AktorId $aktorId $endpointLabel - status ${response.status}")
     }
 
-    fun doAsyncGet(aktorId: String) {
+    fun doAsyncGet(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async cache get with aktorId $aktorId" }
         appendCacheLog("Will perform async cache get with aktorId $aktorId")
         GlobalScope.launch {
-            get(aktorId)
+            get(aktorId, endpointLabel)
         }
     }
 
-    fun doAsyncPut(aktorId: String, json: String) {
+    fun doAsyncPut(aktorId: String, json: String, endpointLabel: String) {
         log.info { "Will perform async cache put with aktorId $aktorId" }
         appendCacheLog("Will perform async cache put with aktorId $aktorId")
         GlobalScope.launch {
-            put(aktorId, json)
+            put(aktorId, json, endpointLabel)
         }
     }
 
-    fun doAsyncDelete(aktorId: String) {
+    fun doAsyncDelete(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async cache delete with aktorId $aktorId" }
         appendCacheLog("Will perform async cache delete with aktorId $aktorId")
         GlobalScope.launch {
-            delete(aktorId)
+            delete(aktorId, endpointLabel)
         }
     }
 

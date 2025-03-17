@@ -65,7 +65,7 @@ class Application(
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
         apiServer(8080).start()
         try {
-            Cache.get("dummy")
+            Cache.get("dummy", "dummy")
         } catch (e: Exception) {
             File("/tmp/CacheTestException").writeText(e.stackTraceToString())
         }
@@ -131,30 +131,43 @@ class Application(
 
                     if (request.uri.path.contains("henvendelseliste")) {
                         val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncGet(aktorId)
+                        Cache.doAsyncGet(aktorId, "henvendelseliste")
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncPut(aktorId, response.bodyString())
+                        Cache.doAsyncPut(aktorId, response.bodyString(), "henvendelseliste")
                     }
 
-                    if ((
-                        request.uri.path.contains("behandling") ||
-                            request.uri.path.contains("/ny/samtalereferat") ||
-                            request.uri.path.contains("/ny/melding")
-                        ) &&
-                        response.status.code == 200
-                    ) {
-                        try {
-                            val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
-                            val aktorId = jsonObject.get("aktorId").asString
-                            Cache.appendCacheLog("Parsed aktoerId $aktorId on call to ${request.uri.path}")
-                            Cache.doAsyncDelete(aktorId)
-                        } catch (e: Exception) {
-                            File("/failedRequestParsing").writeText(e.stackTraceToString())
+                    if (response.status.successful) {
+                        val pathLabel = listOf(
+                            "/behandling" to "behandling",
+                            "/ny/samtalereferat" to "samtalereferat",
+                            "/ny/melding" to "melding"
+                        ).firstOrNull { request.uri.path.contains(it.first) }?.second.orEmpty()
+
+                        if (pathLabel.isNotEmpty()) {
+                            // Parse aktorId from request:
+                            try {
+                                val jsonObject = JsonParser.parseString(request.bodyString()).asJsonObject
+                                val aktorId = jsonObject.get("aktorId").asString
+                                Cache.appendCacheLog("Parsed aktorId $aktorId on call to ${request.uri.path}")
+                                Cache.doAsyncDelete(aktorId, pathLabel)
+                            } catch (e: Exception) {
+                                File("/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
+                            }
+                        } else if (request.uri.path.contains("journal")) {
+                            // Parse aktorId from response:
+                            try {
+                                val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
+                                val aktorId = jsonObject.get("aktorId").asString
+                                Cache.appendCacheLog("Parsed aktorId $aktorId on response from ${request.uri.path}")
+                                Cache.doAsyncDelete(aktorId, "journal")
+                            } catch (e: Exception) {
+                                File("/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
+                            }
                         }
                     }
 
