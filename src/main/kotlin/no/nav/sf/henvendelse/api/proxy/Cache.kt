@@ -38,9 +38,9 @@ object Cache {
         }
 
         Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Get AktorId $aktorId $endpointLabel - status ${response.status}, body ${response.bodyString()}")
+        appendCacheLog("Get AktorId $aktorId $endpointLabel - status ${response.status}, body size ${response.body.length}")
         if (response.status.code != 200 && response.status.code != 204) {
-            File("/tmp/failedCacheGet").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
+            File("/tmp/failedCacheGet-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
     }
 
@@ -52,7 +52,10 @@ object Cache {
             response = clientNoProxy(request)
         }
         Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Put AktorId $aktorId $endpointLabel - status ${response.status}, request body $json")
+        appendCacheLog("Put AktorId $aktorId $endpointLabel - status ${response.status}, request body size ${json.length}")
+        if (response.status.code != 200) {
+            File("/tmp/failedCachePut-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
+        }
     }
 
     fun delete(aktorId: String, endpointLabel: String) {
