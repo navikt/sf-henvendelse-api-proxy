@@ -38,8 +38,7 @@ spec:
   accessPolicy:
     outbound:
       rules:
-        rules:
-        - application: sf-henvendelse-db
+        - application: sf-henvendelse-db # TODO Use service discovery in gcp
       external:
         - host: sf-henvendelse-db.intern.nav.no
     inbound:

@@ -3,7 +3,6 @@ package no.nav.sf.henvendelse.api.proxy.token
 import mu.KotlinLogging
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Metrics
-import no.nav.sf.henvendelse.api.proxy.application
 import no.nav.sf.henvendelse.api.proxy.config_SALESFORCE_AZURE_ALIAS
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
@@ -11,6 +10,7 @@ import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_SECRET
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT
 import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
+import no.nav.sf.henvendelse.api.proxy.isGcp
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -38,7 +38,7 @@ object OboTokenExchangeHandler {
 
     private val log = KotlinLogging.logger { }
 
-    private val client: HttpHandler = if (application.gcpContext) noProxy() else supportProxy()
+    private val client: HttpHandler = if (isGcp) noProxy() else supportProxy()
 
     private val clientId: String = env(env_AZURE_APP_CLIENT_ID)
     private val clientSecret: String = env(env_AZURE_APP_CLIENT_SECRET)

@@ -48,12 +48,14 @@ const val HEADER_X_ACTING_NAV_IDENT = "X-ACTING-NAV-IDENT"
 const val API_BASE_PATH = "/api"
 const val APEX_REST_BASE_PATH = "/services/apexrest"
 
+val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
+val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
+
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
-    val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
-    val gcpContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp",
-    private val client: HttpHandler = if (gcpContext) noProxy() else supportProxy(),
+    private val devContext: Boolean = isDev,
+    private val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {

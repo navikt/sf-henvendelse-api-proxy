@@ -21,7 +21,7 @@ object Cache {
     // private val client: HttpHandler = supportProxy()
     private val clientNoProxy: HttpHandler = ApacheClient()
 
-    private val endpointSfHenvendelserDb = if (application.devContext) {
+    private val endpointSfHenvendelserDb = if (isDev) {
         "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
     } else {
         "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"

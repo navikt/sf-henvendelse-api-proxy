@@ -38,7 +38,6 @@ class ApplicationTest {
         tokenValidator = mockTokenValidator,
         accessTokenHandler = mockAccessTokenHandler,
         devContext = false,
-        gcpContext = false,
         client = mockClient,
         twincallsEnabled = false
     )
