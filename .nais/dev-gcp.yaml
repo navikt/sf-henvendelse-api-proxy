@@ -1,0 +1,108 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: sf-henvendelse-api-proxy
+  namespace: teamnks
+  labels:
+    team: teamnks
+spec:
+  image: '{{ image }}'
+  port: 8080
+  replicas:
+    min: 1
+    max: 1
+  liveness:
+    path: /internal/isAlive
+  readiness:
+    path: /internal/isReady
+  terminationGracePeriodSeconds: 60
+  prometheus:
+    enabled: true
+    path: /internal/metrics
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 5m
+      memory: 512Mi
+  ingresses:
+    - "https://sf-henvendelse.intern.dev.nav.no"
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      claims:
+        extra:
+          - azp_name
+          - NAVident
+      tenant: trygdeetaten.no
+  accessPolicy:
+    outbound:
+      rules:
+        - application: sf-henvendelse-db # TODO Use service discovery in gcp
+      external:
+        - host: sf-henvendelse-db.intern.dev.nav.no
+    inbound:
+      rules:
+        - application: itestapp
+          namespace: teamcrm
+          cluster: dev-fss
+        - application: itestapp
+          namespace: teamcrm
+          cluster: dev-gcp
+        - application: gosys-q1
+          namespace: isa
+          cluster: dev-fss
+        - application: gosys-q2
+          namespace: isa
+          cluster: dev-fss
+        - application: modia-robot-api
+          namespace: personoversikt
+          cluster: dev-fss
+        - application: modiapersonoversikt-api-q1
+          namespace: personoversikt
+          cluster: dev-fss
+        - application: azure-token-generator
+          cluster: dev-gcp
+          namespace: aura
+        - application: pensjon-pen-q0
+          namespace: pensjon-q0
+          cluster: dev-fss
+        - application: pensjon-pen-q1
+          namespace: pensjon-q1
+          cluster: dev-fss
+        - application: pensjon-pen-q2
+          namespace: pensjon-q2
+          cluster: dev-fss
+        - application: pensjon-pen-q5
+          namespace: pensjon-q5
+          cluster: dev-fss
+        - application: bisys
+          namespace: bidrag
+          cluster: dev-fss
+        - application: salesforce
+          namespace: teamcrm
+          cluster: dev-external
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
+          cluster: dev-gcp
+        - application: modia-robot-api
+          namespace: personoversikt
+          cluster: dev-gcp
+  envFrom:
+    - secret: sf-henvendelse-api
+  env:
+    - name: TWINCALL # TWINCALL ON triggers two calls and returns the fastest response
+      value: 'OFF'
+    - name: SF_TOKENHOST
+      value: 'https://test.salesforce.com/services/oauth2/token'
+    - name: AUDIENCE_TOKEN_SERVICE_URL
+      value: 'https://security-token-service.nais.preprod.local/rest/v1/sts/.well-known/openid-configuration'
+    - name: AUDIENCE_TOKEN_SERVICE_ALIAS
+      value: 'https://security-token-service.nais.preprod.local'
+    - name: AUDIENCE_TOKEN_SERVICE
+      value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
+    - name: SALESFORCE_AZURE_ALIAS
+      value: dev-external.teamcrm.salesforce
+    - name: DEPLOY_CLUSTER
+      value: '{{ DEPLOY_CLUSTER }}'

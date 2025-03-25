@@ -37,8 +37,9 @@ class ApplicationTest {
     private val application = Application(
         tokenValidator = mockTokenValidator,
         accessTokenHandler = mockAccessTokenHandler,
-        client = mockClient,
         devContext = false,
+        gcpContext = false,
+        client = mockClient,
         twincallsEnabled = false
     )
 

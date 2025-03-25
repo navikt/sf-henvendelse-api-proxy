@@ -47,7 +47,7 @@ jobs:
           team: teamnks
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
-  deploy-dev:
+  deploy-dev-fss:
     name: Deploy to NAIS dev fss
     needs: build
     if: github.ref == 'refs/heads/master'
@@ -60,9 +60,9 @@ jobs:
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-fss
-          RESOURCE: .nais/dev.yaml
+          RESOURCE: .nais/dev-fss.yaml
           VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-fss
-  deploy-prod:
+  deploy-prod-fss:
     name: Deploy to NAIS prod fss
     needs: build
     if: github.ref == 'refs/heads/master'
@@ -75,5 +75,5 @@ jobs:
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-fss
-          RESOURCE: .nais/prod.yaml
+          RESOURCE: .nais/prod-fss.yaml
           VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=prod-fss

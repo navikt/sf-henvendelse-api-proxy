@@ -28,3 +28,19 @@ fun supportProxy(httpsProxy: String = env(env_HTTPS_PROXY)): HttpHandler {
             .build()
     )
 }
+
+fun noProxy(): HttpHandler {
+    return ApacheClient(
+        client = HttpClients.custom()
+            .setDefaultRequestConfig(
+                RequestConfig.custom()
+                    .setConnectTimeout(20000) // High - but not the default limitless wait for connection (max time establishing)
+                    .setSocketTimeout(20000) // (Max time between data packets)
+                    .setConnectionRequestTimeout(20000) // (Max time to be served from connection pool)
+                    .setRedirectsEnabled(false)
+                    .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                    .build()
+            ).setRetryHandler(DefaultHttpRequestRetryHandler(0, false)).setMaxConnPerRoute(40).setMaxConnTotal(40)
+            .build()
+    )
+}

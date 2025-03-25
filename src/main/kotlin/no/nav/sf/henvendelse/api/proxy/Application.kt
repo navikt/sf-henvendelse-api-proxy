@@ -8,6 +8,7 @@ import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Cache.currentDateTime
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
+import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
@@ -50,8 +51,9 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
-    private val client: HttpHandler = supportProxy(),
     val devContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp",
+    val gcpContext: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp",
+    private val client: HttpHandler = if (gcpContext) noProxy() else supportProxy(),
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {

@@ -4,8 +4,10 @@ import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.sf.henvendelse.api.proxy.application
 import no.nav.sf.henvendelse.api.proxy.config_SF_TOKENHOST
 import no.nav.sf.henvendelse.api.proxy.env
+import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_JKS_B64
 import no.nav.sf.henvendelse.api.proxy.secret_KEYSTORE_PASSWORD
@@ -50,7 +52,7 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     private val privateKeyAlias = env(secret_PRIVATE_KEY_ALIAS)
     private val privateKeyPassword = env(secret_PRIVATE_KEY_PASSWORD)
 
-    private val client: HttpHandler = supportProxy()
+    private val client: HttpHandler = if (application.gcpContext) noProxy() else supportProxy()
 
     private val gson = Gson()
 

@@ -6,6 +6,7 @@ import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_SECRET
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT
+import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
@@ -20,7 +21,7 @@ class EntraTokenHandler {
     private var token: String = ""
     private var expireTime: LocalDateTime = LocalDateTime.MIN
 
-    private val client: HttpHandler = supportProxy()
+    private val client: HttpHandler = if (application.gcpContext) noProxy() else supportProxy()
 
     private fun fetchToken(): String {
         if (LocalDateTime.now().isAfter(expireTime)) {

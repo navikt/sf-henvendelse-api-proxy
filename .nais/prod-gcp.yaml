@@ -1,0 +1,90 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: sf-henvendelse-api-proxy
+  namespace: teamnks
+  labels:
+    team: teamnks
+spec:
+  image: '{{ image }}'
+  port: 8080
+  replicas:
+    min: 6
+    max: 6
+  liveness:
+    path: /internal/isAlive
+  readiness:
+    path: /internal/isReady
+  terminationGracePeriodSeconds: 60
+  prometheus:
+    enabled: true
+    path: /internal/metrics
+  resources:
+    limits:
+      memory: 4Gi
+    requests:
+      cpu: 5m
+      memory: 512Mi
+  ingresses:
+    - "https://sf-henvendelse.intern.nav.no"
+  azure:
+    application:
+      enabled: true
+      allowAllUsers: true
+      claims:
+        extra:
+          - azp_name
+          - NAVident
+  accessPolicy:
+    outbound:
+      rules:
+        rules:
+        - application: sf-henvendelse-db
+      external:
+        - host: sf-henvendelse-db.intern.nav.no
+    inbound:
+      rules:
+        - application: itestapp
+          namespace: teamcrm
+          cluster: prod-gcp
+        - application: gosys
+          namespace: isa
+          cluster: prod-fss
+        - application: modia-robot-api
+          namespace: personoversikt
+          cluster: prod-fss
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
+          cluster: prod-fss
+        - application: pensjon-pen
+          namespace: pensjondeployer
+          cluster: prod-fss
+        - application: bisys
+          namespace: bidrag
+          cluster: prod-fss
+        - application: salesforce
+          namespace: teamcrm
+          cluster: prod-external
+        - application: modiapersonoversikt-api
+          namespace: personoversikt
+          cluster: prod-gcp
+        - application: modia-robot-api
+          namespace: personoversikt
+          cluster: prod-gcp
+  envFrom:
+    - secret: sf-henvendelse-api
+  env:
+    - name: TWINCALL # TWINCALL triggers two calls and returns the fastest response
+      value: 'OFF'
+    - name: SF_TOKENHOST
+      value: 'https://login.salesforce.com/services/oauth2/token'
+    - name: AUDIENCE_TOKEN_SERVICE_URL
+      value: 'https://security-token-service.nais.adeo.no/rest/v1/sts/.well-known/openid-configuration'
+    - name: AUDIENCE_TOKEN_SERVICE_ALIAS
+      value: 'https://security-token-service.nais.adeo.no'
+    - name: AUDIENCE_TOKEN_SERVICE
+      value: 'srvhenvendelsedialog,srvmodiabrukerdialog,srvModiabrukerdialog'
+    - name: SALESFORCE_AZURE_ALIAS
+      value: prod-external.teamcrm.salesforce
+    - name: DEPLOY_CLUSTER
+      value: '{{ DEPLOY_CLUSTER }}'
