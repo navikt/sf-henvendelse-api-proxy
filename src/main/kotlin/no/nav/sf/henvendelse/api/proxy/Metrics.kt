@@ -47,6 +47,8 @@ object Metrics {
 
     val henvendelselisteCache = registerLabelCounter("henvendelselistecache", "method", "status", "call_time", "endpoint_label")
 
+    val postgresHenvendelselisteCache = registerLabelCounter("postgreshenvendelselistecache", "method", "status", "call_time", "endpoint_label")
+
     private val metricsAsText: String get() {
         val str = StringWriter()
         TextFormat.write004(str, CollectorRegistry.defaultRegistry.metricFamilySamples())
