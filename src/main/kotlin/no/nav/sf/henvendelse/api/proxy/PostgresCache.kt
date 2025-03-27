@@ -47,13 +47,29 @@ object PostgresCache {
     fun put(aktorId: String, json: String, endpointLabel: String) {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
-        val response: Response
+        lateinit var response: Response
+        var retryCount = 0
+        val maxRetries = 2
+
         val callTime = measureTimeMillis {
-            response = clientNoProxy(request)
+            while (retryCount <= maxRetries) {
+                response = clientNoProxy(request)
+
+                if (response.status.successful) {
+                    break
+                }
+
+                retryCount++
+            }
+            if (!response.status.successful) {
+                delete(aktorId, "$endpointLabel - failed POST")
+            }
         }
-        Metrics.postgresHenvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Put Postgres AktorId $aktorId $endpointLabel - status ${response.status}, request body size ${json.length}")
-        if (response.status.code != 200) {
+
+        val retryLbl = if (retryCount > 0) " - retry $retryCount" else ""
+        Metrics.postgresHenvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel + retryLbl).inc()
+        appendCacheLog("Put Postgres AktorId $aktorId $endpointLabel$retryLbl- status ${response.status}, request body size ${json.length}")
+        if (!response.status.successful) {
             File("/tmp/failedPostgresCachePut-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
     }
