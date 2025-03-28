@@ -22,9 +22,9 @@ object Cache {
     private val clientNoProxy: HttpHandler = ApacheClient()
 
     private val endpointSfHenvendelserDb = if (isDev) {
-        "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
+        "https://sf-henvendelse-db.intern.dev.nav.no/cache/postgreshenvendelseliste"
     } else {
-        "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
+        "https://sf-henvendelse-db.intern.nav.no/cache/postgreshenvendelseliste"
     }
 
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
@@ -37,24 +37,40 @@ object Cache {
             response = clientNoProxy(request)
         }
 
-        Metrics.henvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Get AktorId $aktorId $endpointLabel - status ${response.status}, body size ${response.body.length}")
+        Metrics.postgresHenvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Postgres Get AktorId $aktorId $endpointLabel - status ${response.status}, body size ${response.body.length}")
         if (response.status.code != 200 && response.status.code != 204) {
-            File("/tmp/failedCacheGet-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
+            File("/tmp/failedPostgresCacheGet-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
     }
 
     fun put(aktorId: String, json: String, endpointLabel: String) {
         val request =
             Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
-        val response: Response
+        lateinit var response: Response
+        var retryCount = 0
+        val maxRetries = 2
+
         val callTime = measureTimeMillis {
-            response = clientNoProxy(request)
+            while (retryCount <= maxRetries) {
+                response = clientNoProxy(request)
+
+                if (response.status.successful) {
+                    break
+                }
+
+                retryCount++
+            }
+            if (!response.status.successful) {
+                delete(aktorId, "$endpointLabel - failed POST")
+            }
         }
-        Metrics.henvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Put AktorId $aktorId $endpointLabel - status ${response.status}, request body size ${json.length}")
-        if (response.status.code != 200) {
-            File("/tmp/failedCachePut-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
+
+        val retryLbl = if (retryCount > 0) " - retry $retryCount" else ""
+        Metrics.postgresHenvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel + retryLbl).inc()
+        appendCacheLog("Put Postgres AktorId $aktorId $endpointLabel$retryLbl- status ${response.status}, request body size ${json.length}")
+        if (!response.status.successful) {
+            File("/tmp/failedPostgresCachePut-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
     }
 
@@ -65,29 +81,29 @@ object Cache {
         val callTime = measureTimeMillis {
             response = clientNoProxy(request)
         }
-        Metrics.henvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Delete AktorId $aktorId $endpointLabel - status ${response.status}")
+        Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Delete Postgres AktorId $aktorId $endpointLabel - status ${response.status}")
     }
 
     fun doAsyncGet(aktorId: String, endpointLabel: String) {
-        log.info { "Will perform async cache get with aktorId $aktorId" }
-        appendCacheLog("Will perform async cache get with aktorId $aktorId")
+        log.info { "Will perform async postgres cache get with aktorId $aktorId" }
+        appendCacheLog("Will perform postgres async cache get with aktorId $aktorId")
         GlobalScope.launch {
             get(aktorId, endpointLabel)
         }
     }
 
     fun doAsyncPut(aktorId: String, json: String, endpointLabel: String) {
-        log.info { "Will perform async cache put with aktorId $aktorId" }
-        appendCacheLog("Will perform async cache put with aktorId $aktorId")
+        log.info { "Will perform async postgres cache put with aktorId $aktorId" }
+        appendCacheLog("Will perform async postgres cache put with aktorId $aktorId")
         GlobalScope.launch {
             put(aktorId, json, endpointLabel)
         }
     }
 
     fun doAsyncDelete(aktorId: String, endpointLabel: String) {
-        log.info { "Will perform async cache delete with aktorId $aktorId" }
-        appendCacheLog("Will perform async cache delete with aktorId $aktorId")
+        log.info { "Will perform async cache postgres delete with aktorId $aktorId" }
+        appendCacheLog("Will perform async cache postgres delete with aktorId $aktorId")
         GlobalScope.launch {
             delete(aktorId, endpointLabel)
         }

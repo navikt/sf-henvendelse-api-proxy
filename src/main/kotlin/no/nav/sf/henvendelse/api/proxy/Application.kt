@@ -136,7 +136,6 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste")) {
                         val aktorId = request.query("aktorid") ?: "null"
                         Cache.doAsyncGet(aktorId, "henvendelseliste")
-                        PostgresCache.doAsyncGet(aktorId, "henvendelseliste")
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
@@ -144,7 +143,6 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         val aktorId = request.query("aktorid") ?: "null"
                         Cache.doAsyncPut(aktorId, response.bodyString(), "henvendelseliste")
-                        PostgresCache.doAsyncPut(aktorId, response.bodyString(), "henvendelseliste")
                     }
 
                     if (response.status.successful) {
@@ -161,7 +159,6 @@ class Application(
                                 val aktorId = jsonObject.get("aktorId").asString
                                 Cache.appendCacheLog("Parsed aktorId $aktorId on call to ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorId, pathLabel)
-                                PostgresCache.doAsyncDelete(aktorId, pathLabel)
                             } catch (e: Exception) {
                                 File("/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
@@ -172,7 +169,6 @@ class Application(
                                 val aktorId = jsonObject.get("aktorId").asString
                                 Cache.appendCacheLog("Parsed aktorId $aktorId on response from ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorId, "journal")
-                                PostgresCache.doAsyncDelete(aktorId, "journal")
                             } catch (e: Exception) {
                                 File("/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
