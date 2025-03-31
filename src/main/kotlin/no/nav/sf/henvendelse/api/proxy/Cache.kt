@@ -22,9 +22,9 @@ object Cache {
     private val clientNoProxy: HttpHandler = ApacheClient()
 
     private val endpointSfHenvendelserDb = if (isDev) {
-        "https://sf-henvendelse-db.intern.dev.nav.no/cache/postgreshenvendelseliste"
+        "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
     } else {
-        "https://sf-henvendelse-db.intern.nav.no/cache/postgreshenvendelseliste"
+        "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
     }
 
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
