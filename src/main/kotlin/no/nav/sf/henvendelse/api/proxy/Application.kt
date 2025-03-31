@@ -194,7 +194,7 @@ class Application(
                         }
                     }
 
-                    if (henvendelseCacheResponse != null) {
+                    if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code != 204) {
                         if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
                             Metrics.cacheControl.labels("success").inc()
                         } else {
