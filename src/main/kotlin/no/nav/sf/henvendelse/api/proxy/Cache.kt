@@ -29,7 +29,7 @@ object Cache {
 
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
 
-    fun get(aktorId: String, endpointLabel: String) {
+    fun get(aktorId: String, endpointLabel: String): Response {
         val request =
             Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
         val response: Response
@@ -42,6 +42,7 @@ object Cache {
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedPostgresCacheGet-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
+        return response
     }
 
     fun put(aktorId: String, json: String, endpointLabel: String) {

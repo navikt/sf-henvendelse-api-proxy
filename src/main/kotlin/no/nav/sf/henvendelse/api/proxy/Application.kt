@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Cache.currentDateTime
+import no.nav.sf.henvendelse.api.proxy.Cache.get
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
@@ -133,9 +134,11 @@ class Application(
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
 
+                    var henvendelseCacheResponse: Response? = null
                     if (request.uri.path.contains("henvendelseliste")) {
                         val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncGet(aktorId, "henvendelseliste")
+                        // Cache.doAsyncGet(aktorId, "henvendelseliste")
+                        henvendelseCacheResponse = get(aktorId, "henvendelseliste")
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
@@ -191,8 +194,13 @@ class Application(
                         }
                     }
 
-                    if (request.uri.path.contains("journal")) {
-                        File("/tmp/latestJournal").writeText("$currentDateTime\nREQUEST body length: ${forwardRequest.body.length}\n${forwardRequest.toMessage()}\n\nRESPONSE\n${response.toMessage()}")
+                    if (henvendelseCacheResponse != null) {
+                        if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
+                            Metrics.cacheControl.labels("success").inc()
+                        } else {
+                            File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
+                            Metrics.cacheControl.labels("fail").inc()
+                        }
                     }
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
