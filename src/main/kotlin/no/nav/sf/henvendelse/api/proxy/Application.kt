@@ -6,7 +6,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
-import no.nav.sf.henvendelse.api.proxy.Cache.currentDateTime
 import no.nav.sf.henvendelse.api.proxy.Cache.get
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
@@ -194,14 +193,16 @@ class Application(
                         }
                     }
 
-                    if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code != 204) {
+                    if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
                             Metrics.cacheControl.labels("success").inc()
                         } else {
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
 
-                            File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}\n\nMISMATCH:\n")
+                            // File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}\n\nMISMATCH:\n")
+
+                            File("/tmp/latestCacheMismatch").writeText("")
 
                             for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
                                 if (pair.first != pair.second) {
