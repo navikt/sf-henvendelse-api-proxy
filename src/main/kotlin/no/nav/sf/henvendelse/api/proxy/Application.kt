@@ -198,7 +198,20 @@ class Application(
                         if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
                             Metrics.cacheControl.labels("success").inc()
                         } else {
-                            File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
+                            val cacheLines = henvendelseCacheResponse.bodyString().lines()
+                            val responseLines = response.bodyString().lines()
+
+                            File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}\n\nMISMATCH:\n")
+
+                            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
+                                if (pair.first != pair.second) {
+                                    File("/tmp/latestCacheMismatch").appendText(
+                                        "Mismatch at line $i:\n" +
+                                            "CACHE: ${pair.first}\n" +
+                                            "SF: ${pair.second}\n\n"
+                                    )
+                                }
+                            }
                             Metrics.cacheControl.labels("fail").inc()
                         }
                     }
