@@ -162,7 +162,7 @@ class Application(
                                 Cache.appendCacheLog("Parsed aktorId $aktorId on call to ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorId, pathLabel)
                             } catch (e: Exception) {
-                                File("/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
+                                File("/tmp/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
                         } else if (request.uri.path.contains("journal")) {
                             // Parse aktorId from response:
@@ -172,8 +172,11 @@ class Application(
                                 Cache.appendCacheLog("Parsed aktorId $aktorId on response from ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorId, "journal")
                             } catch (e: Exception) {
-                                File("/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
+                                File("/tmp/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
+                        } else if (request.uri.path.contains("meldingskjede")) {
+                            File("/tmp/latestLukkRequest").writeText(request.toMessage())
+                            File("/tmp/latestLukkResponse").writeText(response.toMessage())
                         }
                     }
 
