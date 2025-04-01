@@ -195,7 +195,7 @@ class Application(
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
-                            Metrics.cacheControl.labels("success").inc()
+                            Metrics.cacheControl.labels("success", "").inc()
                         } else {
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
@@ -207,8 +207,18 @@ class Application(
 
                             File("/tmp/latestCacheMismatchMismatches").writeText("")
 
+                            var avsluttetDatoCount = 0
+                            var sistEndretAvCount = 0
+
+                            var journalpostIdCount = 0
+                            var journalfortDatoCount = 0
+
                             for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
                                 if (pair.first != pair.second) {
+                                    if (pair.first.contains("avsluttetDato")) avsluttetDatoCount++
+                                    if (pair.first.contains("sistEndretAv")) sistEndretAvCount++
+                                    if (pair.first.contains("journalpostId")) journalpostIdCount++
+                                    if (pair.first.contains("journalfortDato")) journalfortDatoCount++
                                     File("/tmp/latestCacheMismatchMismatches").appendText(
                                         "Mismatch at line $i:\n" +
                                             "CACHE: ${pair.first}\n" +
@@ -216,7 +226,15 @@ class Application(
                                     )
                                 }
                             }
-                            Metrics.cacheControl.labels("fail").inc()
+                            val type = if (avsluttetDatoCount == 1 && sistEndretAvCount == 1) {
+                                "Avsluttet"
+                            } else if (journalpostIdCount == 1 && journalfortDatoCount == 1) {
+                                "journalpostId"
+                            } else {
+                                "Undefined"
+                            }
+                            Metrics.cacheControl.labels("fail", type).inc()
+                            File("/tmp/latestCacheMismatchMarker-$type").writeText(type)
                         }
                     }
 

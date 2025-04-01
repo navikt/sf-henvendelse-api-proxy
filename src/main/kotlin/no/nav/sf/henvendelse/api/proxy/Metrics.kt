@@ -49,7 +49,7 @@ object Metrics {
 
     val postgresHenvendelselisteCache = registerLabelCounter("postgreshenvendelselistecache", "method", "status", "call_time", "endpoint_label")
 
-    val cacheControl = registerLabelCounter("cache_control", "result")
+    val cacheControl = registerLabelCounter("cache_control", "result", "type")
 
     private val metricsAsText: String get() {
         val str = StringWriter()
