@@ -202,11 +202,14 @@ class Application(
 
                             // File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}\n\nMISMATCH:\n")
 
-                            File("/tmp/latestCacheMismatch").writeText("")
+                            File("/tmp/latestCacheMismatchResponseCache").writeText(henvendelseCacheResponse.toMessage())
+                            File("/tmp/latestCacheMismatchResponseSF").writeText(response.toMessage())
+
+                            File("/tmp/latestCacheMismatchMismatches").writeText("")
 
                             for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
                                 if (pair.first != pair.second) {
-                                    File("/tmp/latestCacheMismatch").appendText(
+                                    File("/tmp/latestCacheMismatchMismatches").appendText(
                                         "Mismatch at line $i:\n" +
                                             "CACHE: ${pair.first}\n" +
                                             "SF: ${pair.second}\n\n"
