@@ -174,10 +174,10 @@ class Application(
                             } catch (e: Exception) {
                                 File("/tmp/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
-                        } else if (request.uri.path.contains("meldingskjede")) {
+                        } /*else if (request.uri.path.contains("meldingskjede")) {
                             File("/tmp/latestLukkRequest").writeText(request.toMessage())
                             File("/tmp/latestLukkResponse").writeText(response.toMessage())
-                        }
+                        }*/
                     }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
@@ -203,13 +203,6 @@ class Application(
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
 
-                            // File("/tmp/latestCacheMismatch").writeText("$currentDateTime\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}\n\nMISMATCH:\n")
-
-                            File("/tmp/latestCacheMismatchResponseCache").writeText(henvendelseCacheResponse.toMessage())
-                            File("/tmp/latestCacheMismatchResponseSF").writeText(response.toMessage())
-
-                            File("/tmp/latestCacheMismatchMismatches").writeText("")
-
                             var avsluttetDatoCount = 0
                             var sistEndretAvCount = 0
 
@@ -222,11 +215,6 @@ class Application(
                                     if (pair.first.contains("sistEndretAv")) sistEndretAvCount++
                                     if (pair.first.contains("journalpostId")) journalpostIdCount++
                                     if (pair.first.contains("journalfortDato")) journalfortDatoCount++
-                                    File("/tmp/latestCacheMismatchMismatches").appendText(
-                                        "Mismatch at line $i:\n" +
-                                            "CACHE: ${pair.first}\n" +
-                                            "SF: ${pair.second}\n\n"
-                                    )
                                 }
                             }
                             val type = if (avsluttetDatoCount == 1 && sistEndretAvCount == 1) {
@@ -237,7 +225,18 @@ class Application(
                                 "Undefined"
                             }
                             Metrics.cacheControl.labels("fail", type).inc()
-                            File("/tmp/latestCacheMismatchMarker-$type").writeText(type)
+                            File("/tmp/latestCacheMismatchResponseCache-$type").writeText(henvendelseCacheResponse.toMessage())
+                            File("/tmp/latestCacheMismatchResponseSF-$type").writeText(response.toMessage())
+                            File("/tmp/latestCacheMismatchMismatches-$type").writeText("")
+                            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
+                                if (pair.first != pair.second) {
+                                    File("/tmp/latestCacheMismatchMismatches-$type").appendText(
+                                        "Mismatch at line $i:\n" +
+                                            "CACHE: ${pair.first}\n" +
+                                            "SF: ${pair.second}\n\n"
+                                    )
+                                }
+                            }
                         }
                     }
 
