@@ -27,6 +27,12 @@ object Cache {
         "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
     }
 
+    private val endpointLookupDelete = if (isDev) {
+        "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelselistebykjedeid"
+    } else {
+        "https://sf-henvendelse-db.intern.nav.no/cache/henvendelselistebykjedeid"
+    }
+
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
 
     fun get(aktorId: String, endpointLabel: String): Response {
@@ -86,6 +92,17 @@ object Cache {
         appendCacheLog("Delete Postgres AktorId $aktorId $endpointLabel - status ${response.status}")
     }
 
+    fun deleteByKjedeId(kjedeId: String, endpointLabel: String) {
+        val request =
+            Request(Method.DELETE, "$endpointLookupDelete?kjedeId=$kjedeId").headers(authHeaders)
+        val response: Response
+        val callTime = measureTimeMillis {
+            response = clientNoProxy(request)
+        }
+        Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name + " via kjedeId", response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
+        appendCacheLog("Delete Postgres KjedeId $kjedeId $endpointLabel - status ${response.status}")
+    }
+
     fun doAsyncGet(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async postgres cache get with aktorId $aktorId" }
         appendCacheLog("Will perform postgres async cache get with aktorId $aktorId")
@@ -107,6 +124,14 @@ object Cache {
         appendCacheLog("Will perform async cache postgres delete with aktorId $aktorId")
         GlobalScope.launch {
             delete(aktorId, endpointLabel)
+        }
+    }
+
+    fun doAsyncDeleteByKjedeId(kjedeId: String, endpointLabel: String) {
+        log.info { "Will perform async cache postgres delete with kjedeId $kjedeId" }
+        appendCacheLog("Will perform async cache postgres delete with kjedeId $kjedeId")
+        GlobalScope.launch {
+            deleteByKjedeId(kjedeId, endpointLabel)
         }
     }
 

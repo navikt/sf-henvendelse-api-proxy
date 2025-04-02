@@ -174,10 +174,14 @@ class Application(
                             } catch (e: Exception) {
                                 File("/tmp/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
-                        } /*else if (request.uri.path.contains("meldingskjede")) {
-                            File("/tmp/latestLukkRequest").writeText(request.toMessage())
-                            File("/tmp/latestLukkResponse").writeText(response.toMessage())
-                        }*/
+                        } else if (request.uri.path.contains("meldingskjede")) {
+                            try {
+                                val kjedeId = request.query("kjedeId")!!
+                                Cache.doAsyncDeleteByKjedeId(kjedeId, "lukk")
+                            } catch (e: Exception) {
+                                File("/tmp/failedLukkParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
+                            }
+                        }
                     }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
