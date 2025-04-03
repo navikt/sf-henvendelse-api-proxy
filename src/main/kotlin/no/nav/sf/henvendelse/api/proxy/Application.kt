@@ -209,7 +209,12 @@ class Application(
                             Metrics.cacheControl.labels("success", "comp").inc()
                         } else if (JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)) {
                             Metrics.cacheControl.labels("fail", "unset journalpostId").inc()
+                        } else if (JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 2)) {
+                            Metrics.cacheControl.labels("fail", "unset 2 journalpostId").inc()
+                        } else if (JsonComparator.numberOfEmptyMeldinger(sf) == (JsonComparator.numberOfEmptyMeldinger(cache) + 1)) {
+                            Metrics.cacheControl.labels("fail", "empty meldinger").inc()
                         } else {
+                            Metrics.cacheControl.labels("fail", "unset journalpostId").inc()
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
 

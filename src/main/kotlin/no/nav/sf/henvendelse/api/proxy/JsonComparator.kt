@@ -49,4 +49,26 @@ object JsonComparator {
         val regex = "\"journalpostId\"\\s*:\\s*null,"
         return regex.toRegex().findAll(json).count()
     }
+
+    fun numberOfEmptyMeldinger(json: String): Int {
+        val regex = "\"meldinger\"\\s*:\\s*\\[\\s*\\]".toRegex()
+        return regex.findAll(json).count()
+    }
+
+    fun findMissingElements(json1: String, json2: String): List<JsonElement> {
+        return try {
+            val list1 = JsonParser.parseString(json1).asJsonArray
+            val list2 = JsonParser.parseString(json2).asJsonArray
+
+            val set1 = list1.map { it.toString() }.toSet()
+            val set2 = list2.map { it.toString() }.toSet()
+
+            // Elements in json1 but missing in json2
+            val missing = set1 - set2
+            missing.map { JsonParser.parseString(it) }
+        } catch (e: Exception) {
+            File("/tmp/jsonSyntaxError").writeText(e.stackTraceToString())
+            emptyList()
+        }
+    }
 }

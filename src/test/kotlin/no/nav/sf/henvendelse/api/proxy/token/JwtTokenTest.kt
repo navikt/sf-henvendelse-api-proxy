@@ -13,17 +13,24 @@ class JwtTokenTest {
         Assertions.assertTrue(simulatedMachineToken.isMachineToken())
     }
 
-    /*
+/*
     @Test
     fun `Make compare`() {
-        val cache = readResourceFile("/Scratch_1_Cache")
-        val sf = readResourceFile("/Scratch_1_SF")
+        val cache = readResourceFile("/Scratch_2_Cache")
+        val sf = readResourceFile("/Scratch_2_SF")
+        //println(JsonComparator.jsonEquals(cache, sf))
+        val result = JsonComparator.findMissingElements(sf, cache)
+        println(result)
+
+        println(JsonComparator.numberOfEmptyMeldinger(cache))
+        println(JsonComparator.numberOfEmptyMeldinger(sf))
         //val cacheEl = JsonParser.parseString(cache)
         //val cacheSf = JsonParser.parseString(sf)
         //println(JsonComparator.jsonEquals(cacheEl, cacheSf))
-        println(JsonComparator.numberOfJournalPostIdNull(cache))
-        println(JsonComparator.numberOfJournalPostIdNull(sf))
-        println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
+        //println(JsonComparator.numberOfJournalPostIdNull(cache))
+        //println(JsonComparator.numberOfJournalPostIdNull(sf))
+        //println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
     }
-     */
+
+ */
 }
