@@ -16,12 +16,14 @@ class JwtTokenTest {
     /*
     @Test
     fun `Make compare`() {
-        val cache = readResourceFile("/Scratch_0_CACHE")
-        val sf = readResourceFile("/Scratch_0_SF")
-        val cacheEl = JsonParser.parseString(cache)
-        val cacheSf = JsonParser.parseString(sf)
-        println(JsonComparator.jsonEquals(cacheEl, cacheSf))
-
+        val cache = readResourceFile("/Scratch_1_Cache")
+        val sf = readResourceFile("/Scratch_1_SF")
+        //val cacheEl = JsonParser.parseString(cache)
+        //val cacheSf = JsonParser.parseString(sf)
+        //println(JsonComparator.jsonEquals(cacheEl, cacheSf))
+        println(JsonComparator.numberOfJournalPostIdNull(cache))
+        println(JsonComparator.numberOfJournalPostIdNull(sf))
+        println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
     }
      */
 }

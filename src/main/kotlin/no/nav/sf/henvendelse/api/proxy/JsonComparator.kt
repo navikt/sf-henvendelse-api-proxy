@@ -44,4 +44,9 @@ object JsonComparator {
 
         return false // Mismatched types
     }
+
+    fun numberOfJournalPostIdNull(json: String): Int {
+        val regex = "\"journalpostId\"\\s*:\\s*null,"
+        return regex.toRegex().findAll(json).count()
+    }
 }

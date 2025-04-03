@@ -201,10 +201,14 @@ class Application(
                     }
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
+                        val cache = henvendelseCacheResponse.bodyString()
+                        val sf = response.bodyString()
+                        if (sf == cache) {
                             Metrics.cacheControl.labels("success", "").inc()
-                        } else if (JsonComparator.jsonEquals(response.bodyString(), henvendelseCacheResponse.bodyString())) {
+                        } else if (JsonComparator.jsonEquals(sf, cache)) {
                             Metrics.cacheControl.labels("success", "comp").inc()
+                        } else if (JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)) {
+                            Metrics.cacheControl.labels("fail", "unset journalpostId").inc()
                         } else {
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
