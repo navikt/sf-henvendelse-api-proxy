@@ -12,4 +12,16 @@ class JwtTokenTest {
         val simulatedMachineToken = JwtToken(readResourceFile("/simulatedmachinetoken"))
         Assertions.assertTrue(simulatedMachineToken.isMachineToken())
     }
+
+    /*
+    @Test
+    fun `Make compare`() {
+        val cache = readResourceFile("/Scratch_0_CACHE")
+        val sf = readResourceFile("/Scratch_0_SF")
+        val cacheEl = JsonParser.parseString(cache)
+        val cacheSf = JsonParser.parseString(sf)
+        println(JsonComparator.jsonEquals(cacheEl, cacheSf))
+
+    }
+     */
 }

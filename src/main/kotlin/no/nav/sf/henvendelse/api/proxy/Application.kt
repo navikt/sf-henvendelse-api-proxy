@@ -203,6 +203,8 @@ class Application(
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (response.bodyString() == henvendelseCacheResponse.bodyString()) {
                             Metrics.cacheControl.labels("success", "").inc()
+                        } else if (JsonComparator.jsonEquals(response.bodyString(), henvendelseCacheResponse.bodyString())) {
+                            Metrics.cacheControl.labels("success", "comp").inc()
                         } else {
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
