@@ -203,18 +203,21 @@ class Application(
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         val cache = henvendelseCacheResponse.bodyString()
                         val sf = response.bodyString()
+                        val journalPostIdNullsSF = JsonComparator.numberOfJournalPostIdNull(sf)
+                        val journalPostIdNullsCache = JsonComparator.numberOfJournalPostIdNull(cache)
+                        val emptyMeldingeSF = JsonComparator.numberOfEmptyMeldinger(sf)
+                        val emptyMeldingeCache = JsonComparator.numberOfEmptyMeldinger(cache)
                         if (sf == cache) {
-                            Metrics.cacheControl.labels("success", "").inc()
+                            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                         } else if (JsonComparator.jsonEquals(sf, cache)) {
-                            Metrics.cacheControl.labels("success", "comp").inc()
-                        } else if (JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)) {
-                            Metrics.cacheControl.labels("fail", "unset journalpostId").inc()
-                        } else if (JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 2)) {
-                            Metrics.cacheControl.labels("fail", "unset 2 journalpostId").inc()
-                        } else if (JsonComparator.numberOfEmptyMeldinger(sf) == (JsonComparator.numberOfEmptyMeldinger(cache) + 1)) {
-                            Metrics.cacheControl.labels("fail", "empty meldinger").inc()
+                            Metrics.cacheControl.labels("success", "comp", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
+                        } else if (journalPostIdNullsCache == (journalPostIdNullsSF + 1)) {
+                            Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
+                        } else if (journalPostIdNullsCache == (journalPostIdNullsSF + 2)) {
+                            Metrics.cacheControl.labels("fail", "unset 2 journalpostId", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
+                        } else if (emptyMeldingeSF == (emptyMeldingeCache + 1)) {
+                            Metrics.cacheControl.labels("fail", "empty meldinger", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                         } else {
-                            Metrics.cacheControl.labels("fail", "unset journalpostId").inc()
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
                             val responseLines = response.bodyString().lines()
 
@@ -239,7 +242,7 @@ class Application(
                             } else {
                                 "Undefined"
                             }
-                            Metrics.cacheControl.labels("fail", type).inc()
+                            Metrics.cacheControl.labels("fail", type, journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                             File("/tmp/latestCacheMismatchResponseCache-$type").writeText(henvendelseCacheResponse.toMessage())
                             File("/tmp/latestCacheMismatchResponseSF-$type").writeText(response.toMessage())
                             File("/tmp/latestCacheMismatchMismatches-$type").writeText("")
