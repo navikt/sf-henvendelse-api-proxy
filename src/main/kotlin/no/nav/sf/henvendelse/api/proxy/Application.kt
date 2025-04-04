@@ -210,7 +210,7 @@ class Application(
                         if (sf == cache) {
                             Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                         } else if (JsonComparator.jsonEquals(sf, cache)) {
-                            Metrics.cacheControl.labels("success", "comp", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
+                            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                         } else if (journalPostIdNullsCache == (journalPostIdNullsSF + 1)) {
                             Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), emptyMeldingeSF.toString()).inc()
                         } else if (journalPostIdNullsCache == (journalPostIdNullsSF + 2)) {
