@@ -213,8 +213,12 @@ class Application(
                         } else if (JsonComparator.jsonEquals(sf, cache)) {
                             Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
                         } else if (moreFnrsInSF != 0) {
+                            File("/tmp/latestCacheMismatchResponseCache-henvendelser-diff").writeText(henvendelseCacheResponse.toMessage())
+                            File("/tmp/latestCacheMismatchResponseSF-henvendelser-diff").writeText(response.toMessage())
                             Metrics.cacheControl.labels("fail", "henvendelser diff (fnr)", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
                         } else if (journalPostIdNullsCache > journalPostIdNullsSF) {
+                            File("/tmp/latestCacheMismatchResponseCache-journalidnull").writeText(henvendelseCacheResponse.toMessage())
+                            File("/tmp/latestCacheMismatchResponseSF-journalidnull").writeText(response.toMessage())
                             Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
                         } else {
                             val cacheLines = henvendelseCacheResponse.bodyString().lines()
