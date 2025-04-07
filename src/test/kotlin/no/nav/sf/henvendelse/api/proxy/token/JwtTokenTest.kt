@@ -1,6 +1,7 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import no.nav.security.token.support.core.jwt.JwtToken
+import no.nav.sf.henvendelse.api.proxy.JsonComparator
 import no.nav.sf.henvendelse.api.proxy.readResourceFile
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -13,24 +14,22 @@ class JwtTokenTest {
         Assertions.assertTrue(simulatedMachineToken.isMachineToken())
     }
 
-/*
     @Test
     fun `Make compare`() {
-        val cache = readResourceFile("/Scratch_2_Cache")
-        val sf = readResourceFile("/Scratch_2_SF")
-        //println(JsonComparator.jsonEquals(cache, sf))
+        val cache = readResourceFile("/Scratch_3_Cache")
+        val sf = readResourceFile("/Scratch_3_SF")
+        println(JsonComparator.jsonEquals(cache, sf))
         val result = JsonComparator.findMissingElements(sf, cache)
         println(result)
-
-        println(JsonComparator.numberOfEmptyMeldinger(cache))
-        println(JsonComparator.numberOfEmptyMeldinger(sf))
-        //val cacheEl = JsonParser.parseString(cache)
-        //val cacheSf = JsonParser.parseString(sf)
-        //println(JsonComparator.jsonEquals(cacheEl, cacheSf))
-        //println(JsonComparator.numberOfJournalPostIdNull(cache))
-        //println(JsonComparator.numberOfJournalPostIdNull(sf))
-        //println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
+        println(JsonComparator.numberOfFnrFields(sf))
+        println(JsonComparator.numberOfFnrFields(cache))
+        // println(JsonComparator.numberOfEmptyMeldinger(cache))
+        // println(JsonComparator.numberOfEmptyMeldinger(sf))
+        // val cacheEl = JsonParser.parseString(cache)
+        // val cacheSf = JsonParser.parseString(sf)
+        // println(JsonComparator.jsonEquals(cacheEl, cacheSf))
+        // println(JsonComparator.numberOfJournalPostIdNull(cache))
+        // println(JsonComparator.numberOfJournalPostIdNull(sf))
+        // println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
     }
-
- */
 }

@@ -55,6 +55,11 @@ object JsonComparator {
         return regex.findAll(json).count()
     }
 
+    fun numberOfFnrFields(json: String): Int {
+        val regex = "\"fnr\"".toRegex()
+        return regex.findAll(json).count()
+    }
+
     fun findMissingElements(json1: String, json2: String): List<JsonElement> {
         return try {
             val list1 = JsonParser.parseString(json1).asJsonArray
