@@ -1,7 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.token
 
 import no.nav.security.token.support.core.jwt.JwtToken
-import no.nav.sf.henvendelse.api.proxy.JsonComparator
 import no.nav.sf.henvendelse.api.proxy.readResourceFile
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -14,6 +13,7 @@ class JwtTokenTest {
         Assertions.assertTrue(simulatedMachineToken.isMachineToken())
     }
 
+    /*
     @Test
     fun `Make compare`() {
         val cache = readResourceFile("/Scratch_3_Cache")
@@ -32,4 +32,5 @@ class JwtTokenTest {
         // println(JsonComparator.numberOfJournalPostIdNull(sf))
         // println((JsonComparator.numberOfJournalPostIdNull(cache) == (JsonComparator.numberOfJournalPostIdNull(sf) + 1)))
     }
+     */
 }
