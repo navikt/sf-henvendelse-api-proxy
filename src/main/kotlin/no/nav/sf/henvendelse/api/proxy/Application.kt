@@ -1,7 +1,9 @@
 package no.nav.sf.henvendelse.api.proxy
 
 import com.google.gson.JsonParser
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
@@ -55,7 +57,7 @@ class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     private val devContext: Boolean = isDev,
-    private val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
+    val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
 ) {
@@ -203,7 +205,11 @@ class Application(
                     }
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        Cache.analyseMismatch(response, henvendelseCacheResponse, aktorIdInFocus)
+                        if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {
+                            GlobalScope.launch {
+                                Cache.retryCallVsCache(request, aktorIdInFocus)
+                            }
+                        }
                     }
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and

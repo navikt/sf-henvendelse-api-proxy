@@ -159,7 +159,20 @@ object Cache {
 
     val scheduler = Executors.newSingleThreadScheduledExecutor()
 
-    fun analyseMismatch(sfResponse: Response, cacheResponse: Response, aktorIdInFocus: String) {
+    val secondsToRetry = 10
+
+    fun retryCallVsCache(request: Request, aktorIdInFocus: String) {
+        Thread.sleep(secondsToRetry * 1000L)
+        val cacheResponse = get(aktorIdInFocus, "henvendelseliste-retry")
+        val sfResponse = application.client(request)
+        if (cacheResponse.status.code == 200) {
+            compareRealToCache(sfResponse, cacheResponse, aktorIdInFocus, true)
+        } else {
+            File("/tmp/redemption-cache-cleared-${cacheResponse.status.code}-success-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+        }
+    }
+
+    fun compareRealToCache(sfResponse: Response, cacheResponse: Response, aktorIdInFocus: String, rechecking: Boolean = false): Boolean {
         val cache = cacheResponse.bodyString()
         val sf = sfResponse.bodyString()
         val journalPostIdNullsSF = JsonComparator.numberOfJournalPostIdNull(sf)
@@ -167,18 +180,23 @@ object Cache {
         val fnrFieldsSF = JsonComparator.numberOfFnrFields(sf)
         val fnrFieldsCache = JsonComparator.numberOfFnrFields(cache)
         val moreFnrsInSF = fnrFieldsSF - fnrFieldsCache
+        val prefix = if (rechecking) "redemption-" else ""
         if (sf == cache) {
-            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            Metrics.cacheControl.labels("${prefix}success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            if (rechecking) { File("/tmp/${prefix}success-$aktorIdInFocus").writeText(cacheResponse.toMessage()) }
+            return false
         } else if (JsonComparator.jsonEquals(sf, cache)) {
-            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            Metrics.cacheControl.labels("${prefix}success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            if (rechecking) { File("/tmp/${prefix}success-$aktorIdInFocus").writeText(cacheResponse.toMessage()) }
+            return false
         } else if (moreFnrsInSF != 0) {
-            File("/tmp/latestCacheMismatchResponseCache-henvendelser-diff-$aktorIdInFocus").writeText(cacheResponse.toMessage())
-            File("/tmp/latestCacheMismatchResponseSF-henvendelser-diff-$aktorIdInFocus").writeText(sfResponse.toMessage())
-            Metrics.cacheControl.labels("fail", "henvendelser diff (fnr)", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            File("/tmp/${prefix}latestCacheMismatchResponseCache-henvendelser-diff-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/${prefix}latestCacheMismatchResponseSF-henvendelser-diff-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            Metrics.cacheControl.labels("${prefix}fail", "henvendelser diff (fnr)", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
         } else if (journalPostIdNullsCache > journalPostIdNullsSF) {
-            File("/tmp/latestCacheMismatchResponseCache-journalidnull-$aktorIdInFocus").writeText(cacheResponse.toMessage())
-            File("/tmp/latestCacheMismatchResponseSF-journalidnull-$aktorIdInFocus").writeText(sfResponse.toMessage())
-            Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            File("/tmp/${prefix}latestCacheMismatchResponseCache-journalidnull-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/${prefix}latestCacheMismatchResponseSF-journalidnull-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            Metrics.cacheControl.labels("${prefix}fail", "unset journalpostId", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
         } else {
             val cacheLines = cacheResponse.bodyString().lines()
             val responseLines = sfResponse.bodyString().lines()
@@ -204,13 +222,13 @@ object Cache {
             } else {
                 "Undefined"
             }
-            Metrics.cacheControl.labels("fail", type, journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-            File("/tmp/latestCacheMismatchResponseCache-$type-$aktorIdInFocus").writeText(cacheResponse.toMessage())
-            File("/tmp/latestCacheMismatchResponseSF-$type-$aktorIdInFocus").writeText(sfResponse.toMessage())
-            File("/tmp/latestCacheMismatchMismatches-$type-$aktorIdInFocus").writeText("")
+            Metrics.cacheControl.labels("${prefix}fail", type, journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            File("/tmp/${prefix}latestCacheMismatchResponseCache-$type-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/${prefix}latestCacheMismatchResponseSF-$type-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            File("/tmp/${prefix}latestCacheMismatchMismatches-$type-$aktorIdInFocus").writeText("")
             for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
                 if (pair.first != pair.second) {
-                    File("/tmp/latestCacheMismatchMismatches-$type-$aktorIdInFocus").appendText(
+                    File("/tmp/${prefix}latestCacheMismatchMismatches-$type-$aktorIdInFocus").appendText(
                         "Mismatch at line $i:\n" +
                             "CACHE: ${pair.first}\n" +
                             "SF: ${pair.second}\n\n"
@@ -218,5 +236,6 @@ object Cache {
                 }
             }
         }
+        return true
     }
 }
