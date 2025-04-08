@@ -133,18 +133,19 @@ class Application(
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
 
+                    var aktorIdInFocus = ""
+
                     var henvendelseCacheResponse: Response? = null
                     if (request.uri.path.contains("henvendelseliste")) {
-                        val aktorId = request.query("aktorid") ?: "null"
+                        aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
-                        henvendelseCacheResponse = get(aktorId, "henvendelseliste")
+                        henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
-                        val aktorId = request.query("aktorid") ?: "null"
-                        Cache.doAsyncPut(aktorId, response.bodyString(), "henvendelseliste")
+                        Cache.doAsyncPut(aktorIdInFocus, response.bodyString(), "henvendelseliste")
                     }
 
                     if (response.status.successful) {
@@ -158,9 +159,9 @@ class Application(
                             // Parse aktorId from request:
                             try {
                                 val jsonObject = JsonParser.parseString(request.bodyString()).asJsonObject
-                                val aktorId = jsonObject.get("aktorId").asString
-                                Cache.appendCacheLog("Parsed aktorId $aktorId on call to ${request.uri.path}")
-                                Cache.doAsyncDelete(aktorId, pathLabel)
+                                aktorIdInFocus = jsonObject.get("aktorId").asString
+                                Cache.appendCacheLog("Parsed aktorId $aktorIdInFocus on call to ${request.uri.path}")
+                                Cache.doAsyncDelete(aktorIdInFocus, pathLabel)
                             } catch (e: Exception) {
                                 File("/tmp/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
@@ -168,9 +169,9 @@ class Application(
                             // Parse aktorId from response:
                             try {
                                 val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
-                                val aktorId = jsonObject.get("aktorId").asString
-                                Cache.appendCacheLog("Parsed aktorId $aktorId on response from ${request.uri.path}")
-                                Cache.doAsyncDelete(aktorId, "journal")
+                                aktorIdInFocus = jsonObject.get("aktorId").asString
+                                Cache.appendCacheLog("Parsed aktorId $aktorIdInFocus on response from ${request.uri.path}")
+                                Cache.doAsyncDelete(aktorIdInFocus, "journal")
                             } catch (e: Exception) {
                                 File("/tmp/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
@@ -191,7 +192,8 @@ class Application(
                             "status" to response.status.code.toString(),
                             "event.duration" to stats.latestCallElapsedTime.toString(),
                             "src" to stats.srcLabel,
-                            "uri" to forwardRequest.uri.toString()
+                            "uri" to forwardRequest.uri.toString(),
+                            "aktorId" to aktorIdInFocus
                         )
                     ) {
                         log.info {
@@ -201,64 +203,7 @@ class Application(
                     }
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        val cache = henvendelseCacheResponse.bodyString()
-                        val sf = response.bodyString()
-                        val journalPostIdNullsSF = JsonComparator.numberOfJournalPostIdNull(sf)
-                        val journalPostIdNullsCache = JsonComparator.numberOfJournalPostIdNull(cache)
-                        val fnrFieldsSF = JsonComparator.numberOfFnrFields(sf)
-                        val fnrFieldsCache = JsonComparator.numberOfFnrFields(cache)
-                        val moreFnrsInSF = fnrFieldsSF - fnrFieldsCache
-                        if (sf == cache) {
-                            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-                        } else if (JsonComparator.jsonEquals(sf, cache)) {
-                            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-                        } else if (moreFnrsInSF != 0) {
-                            File("/tmp/latestCacheMismatchResponseCache-henvendelser-diff").writeText(henvendelseCacheResponse.toMessage())
-                            File("/tmp/latestCacheMismatchResponseSF-henvendelser-diff").writeText(response.toMessage())
-                            Metrics.cacheControl.labels("fail", "henvendelser diff (fnr)", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-                        } else if (journalPostIdNullsCache > journalPostIdNullsSF) {
-                            File("/tmp/latestCacheMismatchResponseCache-journalidnull").writeText(henvendelseCacheResponse.toMessage())
-                            File("/tmp/latestCacheMismatchResponseSF-journalidnull").writeText(response.toMessage())
-                            Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-                        } else {
-                            val cacheLines = henvendelseCacheResponse.bodyString().lines()
-                            val responseLines = response.bodyString().lines()
-
-                            var avsluttetDatoCount = 0
-                            var sistEndretAvCount = 0
-
-                            var journalpostIdCount = 0
-                            var journalfortDatoCount = 0
-
-                            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
-                                if (pair.first != pair.second) {
-                                    if (pair.first.contains("avsluttetDato")) avsluttetDatoCount++
-                                    if (pair.first.contains("sistEndretAv")) sistEndretAvCount++
-                                    if (pair.first.contains("journalpostId")) journalpostIdCount++
-                                    if (pair.first.contains("journalfortDato")) journalfortDatoCount++
-                                }
-                            }
-                            val type = if (avsluttetDatoCount == 1 && sistEndretAvCount == 1) {
-                                "Avsluttet"
-                            } else if (journalpostIdCount == 1 && journalfortDatoCount == 1) {
-                                "journalpostId"
-                            } else {
-                                "Undefined"
-                            }
-                            Metrics.cacheControl.labels("fail", type, journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
-                            File("/tmp/latestCacheMismatchResponseCache-$type").writeText(henvendelseCacheResponse.toMessage())
-                            File("/tmp/latestCacheMismatchResponseSF-$type").writeText(response.toMessage())
-                            File("/tmp/latestCacheMismatchMismatches-$type").writeText("")
-                            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
-                                if (pair.first != pair.second) {
-                                    File("/tmp/latestCacheMismatchMismatches-$type").appendText(
-                                        "Mismatch at line $i:\n" +
-                                            "CACHE: ${pair.first}\n" +
-                                            "SF: ${pair.second}\n\n"
-                                    )
-                                }
-                            }
-                        }
+                        Cache.analyseMismatch(response, henvendelseCacheResponse, aktorIdInFocus)
                     }
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and

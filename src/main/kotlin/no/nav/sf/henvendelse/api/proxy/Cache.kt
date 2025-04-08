@@ -13,6 +13,7 @@ import org.http4k.core.Response
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.Executors
 import kotlin.system.measureTimeMillis
 
 object Cache {
@@ -154,5 +155,68 @@ object Cache {
         this < 400 -> "< 400"
         this < 500 -> "< 500"
         else -> "500+"
+    }
+
+    val scheduler = Executors.newSingleThreadScheduledExecutor()
+
+    fun analyseMismatch(sfResponse: Response, cacheResponse: Response, aktorIdInFocus: String) {
+        val cache = cacheResponse.bodyString()
+        val sf = sfResponse.bodyString()
+        val journalPostIdNullsSF = JsonComparator.numberOfJournalPostIdNull(sf)
+        val journalPostIdNullsCache = JsonComparator.numberOfJournalPostIdNull(cache)
+        val fnrFieldsSF = JsonComparator.numberOfFnrFields(sf)
+        val fnrFieldsCache = JsonComparator.numberOfFnrFields(cache)
+        val moreFnrsInSF = fnrFieldsSF - fnrFieldsCache
+        if (sf == cache) {
+            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+        } else if (JsonComparator.jsonEquals(sf, cache)) {
+            Metrics.cacheControl.labels("success", "", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+        } else if (moreFnrsInSF != 0) {
+            File("/tmp/latestCacheMismatchResponseCache-henvendelser-diff-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/latestCacheMismatchResponseSF-henvendelser-diff-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            Metrics.cacheControl.labels("fail", "henvendelser diff (fnr)", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+        } else if (journalPostIdNullsCache > journalPostIdNullsSF) {
+            File("/tmp/latestCacheMismatchResponseCache-journalidnull-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/latestCacheMismatchResponseSF-journalidnull-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            Metrics.cacheControl.labels("fail", "unset journalpostId", journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+        } else {
+            val cacheLines = cacheResponse.bodyString().lines()
+            val responseLines = sfResponse.bodyString().lines()
+
+            var avsluttetDatoCount = 0
+            var sistEndretAvCount = 0
+
+            var journalpostIdCount = 0
+            var journalfortDatoCount = 0
+
+            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
+                if (pair.first != pair.second) {
+                    if (pair.first.contains("avsluttetDato")) avsluttetDatoCount++
+                    if (pair.first.contains("sistEndretAv")) sistEndretAvCount++
+                    if (pair.first.contains("journalpostId")) journalpostIdCount++
+                    if (pair.first.contains("journalfortDato")) journalfortDatoCount++
+                }
+            }
+            val type = if (avsluttetDatoCount == 1 && sistEndretAvCount == 1) {
+                "Avsluttet"
+            } else if (journalpostIdCount == 1 && journalfortDatoCount == 1) {
+                "journalpostId"
+            } else {
+                "Undefined"
+            }
+            Metrics.cacheControl.labels("fail", type, journalPostIdNullsSF.toString(), moreFnrsInSF.toString()).inc()
+            File("/tmp/latestCacheMismatchResponseCache-$type-$aktorIdInFocus").writeText(cacheResponse.toMessage())
+            File("/tmp/latestCacheMismatchResponseSF-$type-$aktorIdInFocus").writeText(sfResponse.toMessage())
+            File("/tmp/latestCacheMismatchMismatches-$type-$aktorIdInFocus").writeText("")
+            for ((i, pair) in cacheLines.zip(responseLines).withIndex()) {
+                if (pair.first != pair.second) {
+                    File("/tmp/latestCacheMismatchMismatches-$type-$aktorIdInFocus").appendText(
+                        "Mismatch at line $i:\n" +
+                            "CACHE: ${pair.first}\n" +
+                            "SF: ${pair.second}\n\n"
+                    )
+                }
+            }
+        }
     }
 }
