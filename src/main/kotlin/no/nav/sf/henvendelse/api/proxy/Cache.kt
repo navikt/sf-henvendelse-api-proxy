@@ -45,7 +45,6 @@ object Cache {
         }
 
         Metrics.postgresHenvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Postgres Get AktorId $aktorId $endpointLabel - status ${response.status}, body size ${response.body.length}")
         if (response.status.code != 200 && response.status.code != 204) {
             File("/tmp/failedPostgresCacheGet-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
@@ -76,7 +75,6 @@ object Cache {
 
         val retryLbl = if (retryCount > 0) " - retry $retryCount" else ""
         Metrics.postgresHenvendelselisteCache.labels(Method.POST.name, response.status.code.toString(), callTime.toLabel(), endpointLabel + retryLbl).inc()
-        appendCacheLog("Put Postgres AktorId $aktorId $endpointLabel$retryLbl- status ${response.status}, request body size ${json.length}")
         if (!response.status.successful) {
             File("/tmp/failedPostgresCachePut-${response.status.code}").writeText("REQUEST\n" + request.toMessage() + "\n\nRESPONSE\n" + response.toMessage())
         }
@@ -90,7 +88,6 @@ object Cache {
             response = clientNoProxy(request)
         }
         Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Delete Postgres AktorId $aktorId $endpointLabel - status ${response.status}")
     }
 
     fun deleteByKjedeId(kjedeId: String, endpointLabel: String) {
@@ -101,12 +98,10 @@ object Cache {
             response = clientNoProxy(request)
         }
         Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name + " via kjedeId", response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-        appendCacheLog("Delete Postgres KjedeId $kjedeId $endpointLabel - status ${response.status}")
     }
 
     fun doAsyncGet(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async postgres cache get with aktorId $aktorId" }
-        appendCacheLog("Will perform postgres async cache get with aktorId $aktorId")
         GlobalScope.launch {
             get(aktorId, endpointLabel)
         }
@@ -114,7 +109,6 @@ object Cache {
 
     fun doAsyncPut(aktorId: String, json: String, endpointLabel: String) {
         log.info { "Will perform async postgres cache put with aktorId $aktorId" }
-        appendCacheLog("Will perform async postgres cache put with aktorId $aktorId")
         GlobalScope.launch {
             put(aktorId, json, endpointLabel)
         }
@@ -122,7 +116,6 @@ object Cache {
 
     fun doAsyncDelete(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async cache postgres delete with aktorId $aktorId" }
-        appendCacheLog("Will perform async cache postgres delete with aktorId $aktorId")
         GlobalScope.launch {
             delete(aktorId, endpointLabel)
         }
@@ -130,7 +123,6 @@ object Cache {
 
     fun doAsyncDeleteByKjedeId(kjedeId: String, endpointLabel: String) {
         log.info { "Will perform async cache postgres delete with kjedeId $kjedeId" }
-        appendCacheLog("Will perform async cache postgres delete with kjedeId $kjedeId")
         GlobalScope.launch {
             deleteByKjedeId(kjedeId, endpointLabel)
         }
@@ -140,13 +132,6 @@ object Cache {
     private var logCounter = 0
 
     val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
-
-    fun appendCacheLog(msg: String) {
-        logCounter++
-        if (logCounter <= logLimit) {
-            File("/tmp/cacheLog").appendText("$currentDateTime $msg\n")
-        }
-    }
 
     fun Long.toLabel(): String = when {
         this < 100 -> "< 100"
@@ -163,11 +148,21 @@ object Cache {
 
     fun retryCallVsCache(request: Request, aktorIdInFocus: String) {
         Thread.sleep(secondsToRetry * 1000L)
+        File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Trigger cache get\n")
         val cacheResponse = get(aktorIdInFocus, "henvendelseliste-retry")
+        File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Trigger sf call\n")
         val sfResponse = application.client(request)
+        File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Cache status ${cacheResponse.status.code}, SF status ${sfResponse.status.code}\n")
         if (cacheResponse.status.code == 200) {
-            compareRealToCache(sfResponse, cacheResponse, aktorIdInFocus, true)
+            val stillFail = compareRealToCache(sfResponse, cacheResponse, aktorIdInFocus, true)
+            if (stillFail) {
+                File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Still fail\n")
+            } else {
+                File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Redemption - match\n")
+            }
         } else {
+            Metrics.cacheControl.labels("redemption-success", "", "0", "0").inc()
+            File("/tmp/investigate-redemption-$aktorIdInFocus").appendText("Redemption - cache cleared\n")
             File("/tmp/redemption-cache-cleared-${cacheResponse.status.code}-success-$aktorIdInFocus").writeText(cacheResponse.toMessage())
         }
     }

@@ -162,7 +162,6 @@ class Application(
                             try {
                                 val jsonObject = JsonParser.parseString(request.bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
-                                Cache.appendCacheLog("Parsed aktorId $aktorIdInFocus on call to ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorIdInFocus, pathLabel)
                             } catch (e: Exception) {
                                 File("/tmp/failedRequestParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
@@ -172,7 +171,6 @@ class Application(
                             try {
                                 val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
-                                Cache.appendCacheLog("Parsed aktorId $aktorIdInFocus on response from ${request.uri.path}")
                                 Cache.doAsyncDelete(aktorIdInFocus, "journal")
                             } catch (e: Exception) {
                                 File("/tmp/failedResponseParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
