@@ -205,7 +205,7 @@ class Application(
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {
                             GlobalScope.launch {
-                                Cache.retryCallVsCache(request, aktorIdInFocus)
+                                Cache.retryCallVsCache(forwardRequest, aktorIdInFocus)
                             }
                         }
                     }
