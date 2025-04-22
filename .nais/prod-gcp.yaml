@@ -9,8 +9,8 @@ spec:
   image: '{{ image }}'
   port: 8080
   replicas:
-    min: 6
-    max: 6
+    min: 10
+    max: 10
   liveness:
     path: /internal/isAlive
   readiness:
@@ -41,6 +41,8 @@ spec:
         - application: sf-henvendelse-db # TODO Use service discovery in gcp
       external:
         - host: sf-henvendelse-db.intern.nav.no
+        - host: navdialog.my.salesforce.com
+
     inbound:
       rules:
         - application: itestapp

@@ -183,6 +183,8 @@ class Application(
                                 File("/tmp/failedLukkParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
                         }
+                    } else {
+                        File("/tmp/failResponse-${response.status.code}").writeText(response.toMessage())
                     }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
