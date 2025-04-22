@@ -41,6 +41,8 @@ spec:
     outbound:
       external:
         - host: sf-henvendelse-db.intern.nav.no
+        - host: login.salesforce.com
+        - host: navdialog.my.salesforce.com
     inbound:
       rules:
         - application: itestapp

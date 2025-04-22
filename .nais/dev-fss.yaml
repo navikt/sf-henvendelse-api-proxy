@@ -41,6 +41,10 @@ spec:
   accessPolicy:
     outbound:
       external:
+        - host: test.salesforce.com
+        - host: navdialog--preprod.my.salesforce.com
+        - host: navdialog--uat.my.salesforce.com
+        - host: navdialog--sit2.my.salesforce.com
         - host: sf-henvendelse-db.intern.dev.nav.no
     inbound:
       rules:
