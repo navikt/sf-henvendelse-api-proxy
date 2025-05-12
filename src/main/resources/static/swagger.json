@@ -5,10 +5,18 @@
         "version": "1.0"
     },
     "servers": [
-        { "url": "https://sf-henvendelse-api-proxy.dev.intern.nav.no/api" },
-        { "url": "https://sf-henvendelse-api-proxy.intern.nav.no/api" },
-        { "url": "https://navdialog--uat.my.salesforce.com/services/apexrest" },
-        { "url": "http://sf-henvendelse-api-proxy.teamnks.svc.nais.local/api" }
+        {
+            "url": "https://sf-henvendelse-api-proxy.dev.intern.nav.no/api"
+        },
+        {
+            "url": "https://sf-henvendelse-api-proxy.intern.nav.no/api"
+        },
+        {
+            "url": "https://navdialog--uat.my.salesforce.com/services/apexrest"
+        },
+        {
+            "url": "http://sf-henvendelse-api-proxy.teamnks.svc.nais.local/api"
+        }
     ],
     "paths": {
         "/henvendelse/kodeverk/temagrupper": {
@@ -54,7 +62,10 @@
                                     "items": {
                                         "type": "string"
                                     },
-                                    "example": ["Ikke statlig dialog", "Sikkerhetshendelse"]
+                                    "example": [
+                                        "Ikke statlig dialog",
+                                        "Sikkerhetshendelse"
+                                    ]
                                 }
                             }
                         }
@@ -134,7 +145,13 @@
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "$ref": "#/components/schemas/Henvendelse"
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Henvendelse"
+                                }
+                            }
+                        }
                     },
                     "400": {
                         "$ref": "#/components/responses/BadRequest"
@@ -179,7 +196,13 @@
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "$ref": "#/components/schemas/Henvendelse"
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Henvendelse"
+                                }
+                            }
+                        }
                     },
                     "400": {
                         "$ref": "#/components/responses/BadRequest"
@@ -209,9 +232,6 @@
                             "type": "string"
                         },
                         "description": "Unik kjedeId til meldingstråden som skal lukkes"
-                    },
-                    {
-                        "$ref": "#/components/parameters/X-Correlation-ID"
                     },
                     {
                         "name": "aktorid",
@@ -273,7 +293,6 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
                                     "$ref": "#/components/schemas/Henvendelse"
                                 }
                             }
@@ -435,7 +454,11 @@
             }
         }
     },
-    "security": [{ "Salesforce_auth": [] }],
+    "security": [
+        {
+            "Salesforce_auth": []
+        }
+    ],
     "components": {
         "schemas": {
             "Markering": {
@@ -532,7 +555,13 @@
                         "example": "TELEFON"
                     }
                 },
-                "required": ["aktorId", "temagruppe", "enhet", "fritekst", "kanal"]
+                "required": [
+                    "aktorId",
+                    "temagruppe",
+                    "enhet",
+                    "fritekst",
+                    "kanal"
+                ]
             },
             "JournalRequest": {
                 "type": "object",
@@ -562,12 +591,15 @@
                             "BISYS",
                             "BA",
                             "EF",
+                            "EY",
                             "KONT",
                             "SUPSTONAD",
                             "OMSORGSPENGER",
                             "HJELPEMIDLER",
-                             "NEESSI",
-                            "TILLEGGSSTONADER"
+                            "TILLEGGSSTONADER",
+                            "NEESSI",
+                            "KOMPYS",
+                            "ARBEIDSOPPFOLGING"
                         ],
                         "description": "Fagsystemet som saken behandles i, required hvis saksId er definert",
                         "example": "AO01"
@@ -629,12 +661,15 @@
                             "BISYS",
                             "BA",
                             "EF",
+                            "EY",
                             "KONT",
                             "SUPSTONAD",
                             "OMSORGSPENGER",
                             "HJELPEMIDLER",
-                             "NEESSI",
-                            "TILLEGGSSTONADER"
+                            "TILLEGGSSTONADER",
+                            "NEESSI",
+                            "KOMPYS",
+                            "ARBEIDSOPPFOLGING"
                         ],
                         "description": "Fagsystemet som saken behandles i.",
                         "example": "AO01"
@@ -645,7 +680,11 @@
                         "example": "509934220"
                     }
                 },
-                "required": ["journalforerNavIdent", "journalfortDato", "journalfortTema"]
+                "required": [
+                    "journalforerNavIdent",
+                    "journalfortDato",
+                    "journalfortTema"
+                ]
             },
             "MeldingFra": {
                 "type": "object",
@@ -752,6 +791,11 @@
                         "description": "Definerer om henvendelsen er markert som kontorsperret. Markeringsinformasjon finnes i listen av markeringer",
                         "example": false
                     },
+                    "sistEndretAv": {
+                        "type": "string",
+                        "description": "Identen til den siste som gjorde endring på tråden.",
+                        "example": "Z994035"
+                    },
                     "sladding": {
                         "type": "boolean",
                         "description": "Definerer om henvendelsen skal vurderes for sladding. Dette sender henvendelsen til en sladdekø",
@@ -791,6 +835,9 @@
                         "items": {
                             "$ref": "#/components/schemas/Markering"
                         }
+                    },
+                    "lukketAv": {
+                        "$ref": "#/components/schemas/MeldingFra"
                     }
                 },
                 "required": [
@@ -800,8 +847,7 @@
                     "opprettetDato",
                     "kontorsperre",
                     "feilsendt",
-                    "kjedeId",
-                    "gjeldendeTemagruppe"
+                    "kjedeId"
                 ]
             },
             "Temagruppe": {
