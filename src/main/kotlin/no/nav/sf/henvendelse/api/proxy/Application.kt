@@ -135,6 +135,8 @@ class Application(
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
 
+                    File("/tmp/latestForwardRequest").writeText(forwardRequest.toMessage())
+
                     var aktorIdInFocus = ""
 
                     var henvendelseCacheResponse: Response? = null
