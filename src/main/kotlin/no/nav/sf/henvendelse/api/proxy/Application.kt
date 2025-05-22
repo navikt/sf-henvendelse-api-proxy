@@ -177,11 +177,9 @@ class Application(
                             }
                         } else if (request.uri.path.contains("meldingskjede")) {
                             try {
-                                val kjedeId = request.query("kjedeId")!!
-                                Cache.doAsyncDeleteByKjedeId(kjedeId, "lukk")
                                 val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
-                                log.info { "Lukk could trigger DELETE on cache on aktorId $aktorIdInFocus" }
+                                Cache.doAsyncDelete(aktorIdInFocus, "lukk")
                             } catch (e: Exception) {
                                 File("/tmp/failedLukkParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
