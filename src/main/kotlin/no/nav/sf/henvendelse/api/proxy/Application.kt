@@ -53,7 +53,7 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
 val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
 
-const val useHenvendelseListeCache = false
+const val useHenvendelseListeCache = true
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
@@ -173,7 +173,7 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         Cache.doAsyncPut(aktorIdInFocus, response.bodyString(), "henvendelseliste")
                         if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                            File("/tmp/latestCompare").writeText("CACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
+                            File("/tmp/latestCompare").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
                         }
                     }
 
