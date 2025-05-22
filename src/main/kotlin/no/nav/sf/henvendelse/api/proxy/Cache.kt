@@ -3,8 +3,8 @@ package no.nav.sf.henvendelse.api.proxy
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.token.EntraTokenHandler
-import org.http4k.client.ApacheClient
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -20,7 +20,7 @@ object Cache {
     private val log = KotlinLogging.logger { }
     private val entraTokenHandler = EntraTokenHandler()
     // private val client: HttpHandler = supportProxy()
-    private val clientNoProxy: HttpHandler = ApacheClient()
+    private val clientNoProxy: HttpHandler = noProxy()
 
     private val endpointSfHenvendelserDb = if (isDev) {
         "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
