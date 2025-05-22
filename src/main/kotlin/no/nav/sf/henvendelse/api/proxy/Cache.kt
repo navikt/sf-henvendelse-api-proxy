@@ -90,16 +90,6 @@ object Cache {
         Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
     }
 
-    fun deleteByKjedeId(kjedeId: String, endpointLabel: String) {
-        val request =
-            Request(Method.DELETE, "$endpointLookupDelete?kjedeId=$kjedeId").headers(authHeaders)
-        val response: Response
-        val callTime = measureTimeMillis {
-            response = clientNoProxy(request)
-        }
-        Metrics.postgresHenvendelselisteCache.labels(Method.DELETE.name + " via kjedeId", response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
-    }
-
     fun doAsyncGet(aktorId: String, endpointLabel: String) {
         log.info { "Will perform async postgres cache get with aktorId $aktorId" }
         GlobalScope.launch {
@@ -118,13 +108,6 @@ object Cache {
         log.info { "Will perform async cache postgres delete with aktorId $aktorId" }
         GlobalScope.launch {
             delete(aktorId, endpointLabel)
-        }
-    }
-
-    fun doAsyncDeleteByKjedeId(kjedeId: String, endpointLabel: String) {
-        log.info { "Will perform async cache postgres delete with kjedeId $kjedeId" }
-        GlobalScope.launch {
-            deleteByKjedeId(kjedeId, endpointLabel)
         }
     }
 
