@@ -147,6 +147,8 @@ class Application(
 
                         if (useHenvendelseListeCache && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
 
+                            File("/tmp/latestRequestCacheResponse").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}")
+
                             stats.logAndUpdateMetrics(henvendelseCacheResponse.status.code, forwardRequest.uri, forwardRequest, henvendelseCacheResponse)
 
                             withLoggingContext(
