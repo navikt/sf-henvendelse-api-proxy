@@ -135,8 +135,6 @@ class Application(
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
 
-                    File("/tmp/latestForwardRequest").writeText(forwardRequest.toMessage())
-
                     var aktorIdInFocus = ""
 
                     var henvendelseCacheResponse: Response? = null
@@ -181,6 +179,9 @@ class Application(
                             try {
                                 val kjedeId = request.query("kjedeId")!!
                                 Cache.doAsyncDeleteByKjedeId(kjedeId, "lukk")
+                                val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
+                                aktorIdInFocus = jsonObject.get("aktorId").asString
+                                log.info { "Lukk could trigger DELETE on cache on aktorId $aktorIdInFocus" }
                             } catch (e: Exception) {
                                 File("/tmp/failedLukkParsing").writeText("On ${request.uri.path}\n" + e.stackTraceToString())
                             }
