@@ -53,6 +53,8 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
 val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
 
+const val useHenvendelseListeCache = true
+
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
@@ -142,6 +144,27 @@ class Application(
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
                         henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
+                        if (useHenvendelseListeCache && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
+
+                            stats.logAndUpdateMetrics(henvendelseCacheResponse.status.code, forwardRequest.uri, forwardRequest, henvendelseCacheResponse)
+
+                            withLoggingContext(
+                                mapOf(
+                                    "status" to henvendelseCacheResponse.status.code.toString(),
+                                    "event.duration" to stats.latestCallElapsedTime.toString(),
+                                    "src" to stats.srcLabel,
+                                    "uri" to forwardRequest.uri.toString(),
+                                    "aktorId" to aktorIdInFocus
+                                )
+                            ) {
+                                log.info {
+                                    "Summary : Cached Response, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
+                                }
+                            }
+
+                            return henvendelseCacheResponse
+                        }
                     }
 
                     val response = invokeRequest(forwardRequest, stats)
