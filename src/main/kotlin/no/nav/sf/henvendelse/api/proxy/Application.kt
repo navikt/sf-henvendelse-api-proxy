@@ -144,6 +144,7 @@ class Application(
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
                         henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
+
                         if (useHenvendelseListeCache && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
 
                             stats.logAndUpdateMetrics(henvendelseCacheResponse.status.code, forwardRequest.uri, forwardRequest, henvendelseCacheResponse)
@@ -171,6 +172,9 @@ class Application(
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         Cache.doAsyncPut(aktorIdInFocus, response.bodyString(), "henvendelseliste")
+                        if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
+                            File("/tmp/latestCompare").writeText("CACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
+                        }
                     }
 
                     if (response.status.successful) {
