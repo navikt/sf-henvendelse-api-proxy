@@ -48,9 +48,9 @@ spec:
         - host: sf-henvendelse-db.intern.dev.nav.no
     inbound:
       rules:
-        - application: itestapp
+        - application: simtest
           namespace: teamcrm
-          cluster: dev-fss
+          cluster: dev-gcp
         - application: itestapp
           namespace: teamcrm
           cluster: dev-gcp
