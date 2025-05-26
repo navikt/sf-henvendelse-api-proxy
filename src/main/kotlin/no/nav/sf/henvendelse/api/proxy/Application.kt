@@ -103,6 +103,11 @@ class Application(
         val callIndex = lifeTimeCallIndex++
         val stats = Statistics()
 
+        val cache = request.query("cache")
+        val forceCache = if (cache != null && cache == "true") {
+            log.info { "Force cache true" }
+            true
+        } else { false }
         withLoggingContext(
             mapOf(
                 HEADER_X_REQUEST_ID to (request.header(HEADER_X_REQUEST_ID) ?: ""),
@@ -145,9 +150,8 @@ class Application(
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
                         henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
 
-                        if (useHenvendelseListeCache && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
+                        if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
 
-                            /*
                             File("/tmp/latestRequestCacheResponse").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}")
 
                             stats.logAndUpdateMetrics(henvendelseCacheResponse.status.code, forwardRequest.uri, forwardRequest, henvendelseCacheResponse)
@@ -166,8 +170,6 @@ class Application(
                                         "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
-
-                             */
 
                             return henvendelseCacheResponse
                         }
