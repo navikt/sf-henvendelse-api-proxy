@@ -151,10 +151,12 @@ class Application(
                         henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
 
                         if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
-
-                            File("/tmp/latestRequestCacheResponse").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}")
-
-                            stats.logAndUpdateMetrics(henvendelseCacheResponse.status.code, forwardRequest.uri, forwardRequest, henvendelseCacheResponse)
+                            stats.logAndUpdateMetrics(
+                                henvendelseCacheResponse.status.code,
+                                forwardRequest.uri,
+                                forwardRequest,
+                                henvendelseCacheResponse
+                            )
 
                             withLoggingContext(
                                 mapOf(
@@ -167,13 +169,11 @@ class Application(
                             ) {
                                 log.info {
                                     "Summary : Cached Response, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
-                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
+                                            "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
 
-                            val renewedResponse = Response(Status.OK).body(henvendelseCacheResponse.body)
-
-                            return renewedResponse
+                            return Response(Status.OK).body(henvendelseCacheResponse.body)
                         }
                     }
 
