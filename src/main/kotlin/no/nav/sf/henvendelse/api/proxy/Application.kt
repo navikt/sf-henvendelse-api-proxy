@@ -241,7 +241,7 @@ class Application(
                         }
                     }
 
-                    File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${response.toMessage()}")
+                    // File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${response.toMessage()}")
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {
