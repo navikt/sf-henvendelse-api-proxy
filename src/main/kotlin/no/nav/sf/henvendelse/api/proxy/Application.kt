@@ -171,7 +171,9 @@ class Application(
                                 }
                             }
 
-                            return henvendelseCacheResponse
+                            val renewedResponse = Response(Status.OK).body(henvendelseCacheResponse.body)
+
+                            return renewedResponse
                         }
                     }
 
