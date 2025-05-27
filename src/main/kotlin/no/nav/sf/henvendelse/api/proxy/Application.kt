@@ -293,7 +293,7 @@ class Application(
             request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
-                    HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""), //Make sure expected case on header
+                    HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""), // Make sure expected case on header
                     HEADER_X_ACTING_NAV_IDENT to navIdent
                 )
 
