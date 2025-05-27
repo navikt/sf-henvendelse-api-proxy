@@ -55,7 +55,7 @@ object OboTokenExchangeHandler {
             if (!stillEligable) droppedCacheElements++
             stillEligable
         }.toMutableMap()
-        log.info { "Dropped cache elements during lifetime $droppedCacheElements " }
+        log.info { "Dropped cache elements during lifetime $droppedCacheElements" }
     }
 
     fun exchange(jwtIn: JwtToken, tokenFetchStats: Statistics): JwtToken {
