@@ -150,7 +150,7 @@ class Application(
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
                         henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
 
-                        if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
+                        if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
 
                             File("/tmp/latestRequestCacheResponse").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}")
 
