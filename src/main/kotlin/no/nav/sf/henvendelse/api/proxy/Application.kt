@@ -169,7 +169,7 @@ class Application(
                             ) {
                                 log.info {
                                     "Summary : Cached Response, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
-                                            "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
+                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
 
