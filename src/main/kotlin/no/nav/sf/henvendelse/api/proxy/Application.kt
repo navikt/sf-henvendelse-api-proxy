@@ -67,7 +67,7 @@ class Application(
     private var lifeTimeCallIndex = 0L
 
     // List of headers that will not be forwarded
-    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization")
+    private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     fun start() {
         log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
