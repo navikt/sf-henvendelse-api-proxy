@@ -132,8 +132,10 @@ class Application(
                 }
 
                 val chosenTestUser = try {
-                    if (firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString() == "Z990454") {
-                        File("/tmp/testBrukerWasHere").writeText("true")
+                    val chosenTestUsers = listOf("Z990454", "Z993068")
+                    val navIdent = firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString()
+                    if (chosenTestUsers.contains(navIdent)) {
+                        File("/tmp/testBrukerWasHere-$navIdent").writeText("true")
                         true
                     } else {
                         false
