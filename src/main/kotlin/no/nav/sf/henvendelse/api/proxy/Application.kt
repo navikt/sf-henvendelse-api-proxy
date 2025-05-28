@@ -103,11 +103,6 @@ class Application(
         val callIndex = lifeTimeCallIndex++
         val stats = Statistics()
 
-        val cache = request.query("cache")
-        val forceCache = if (cache != null && cache == "true") {
-            log.info { "Force cache true" }
-            true
-        } else { false }
         withLoggingContext(
             mapOf(
                 HEADER_X_REQUEST_ID to (request.header(HEADER_X_REQUEST_ID) ?: ""),
@@ -136,13 +131,23 @@ class Application(
                     log.error { "Failed to fetch issuer from token" }
                 }
 
-                try {
+                val chosenTestUser = try {
                     if (firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString() == "Z990454") {
                         File("/tmp/testBrukerWasHere").writeText("true")
+                        true
+                    } else {
+                        false
                     }
                 } catch (e: java.lang.Exception) {
                     log.error { "Failed to check navident on token" }
+                    false
                 }
+
+                val cache = request.query("cache")
+                val forceCache = if (chosenTestUser || (cache != null && cache == "true")) {
+                    log.info { "Force cache true - due to chosen test user? $chosenTestUser" }
+                    true
+                } else { false }
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
