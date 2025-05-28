@@ -136,6 +136,14 @@ class Application(
                     log.error { "Failed to fetch issuer from token" }
                 }
 
+                try {
+                    if (firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString() == "Z990454") {
+                        File("/tmp/testBrukerWasHere").writeText("true")
+                    }
+                } catch (e: java.lang.Exception) {
+                    log.error { "Failed to check navident on token" }
+                }
+
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
