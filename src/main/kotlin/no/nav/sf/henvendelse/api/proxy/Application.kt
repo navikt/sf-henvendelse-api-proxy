@@ -133,9 +133,9 @@ class Application(
 
                 val chosenTestUser = try {
                     val chosenTestUsers = listOf("Z990454", "Z993068")
-                    val navIdent = firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString()
-                    if (chosenTestUsers.contains(navIdent)) {
-                        File("/tmp/testBrukerWasHere-$navIdent").writeText("true")
+                    val navIdentOnToken = firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString()
+                    if (chosenTestUsers.contains(navIdentOnToken)) {
+                        File("/tmp/testBrukerWasHere-$navIdentOnToken").writeText("true")
                         true
                     } else {
                         false
@@ -189,7 +189,7 @@ class Application(
                             }
                             val response = Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
 
-                            File("/tmp/responseFromCache").writeText(response.toMessage())
+                            // File("/tmp/responseFromCache").writeText(response.toMessage())
                             return response
                         }
                     }
