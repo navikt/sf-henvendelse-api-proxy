@@ -172,8 +172,10 @@ class Application(
                                         "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
+                            val response = Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
 
-                            return Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
+                            File("/tmp/responseFromCache").writeText(response.toMessage())
+                            return response
                         }
                     }
 
