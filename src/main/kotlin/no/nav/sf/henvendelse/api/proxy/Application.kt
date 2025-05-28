@@ -173,7 +173,7 @@ class Application(
                                 }
                             }
 
-                            return Response(Status.OK).body(henvendelseCacheResponse.body)
+                            return Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
                         }
                     }
 
