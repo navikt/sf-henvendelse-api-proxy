@@ -53,7 +53,7 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
 val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
 
-const val useHenvendelseListeCache = false
+val useHenvendelseListeCache = env(secret_USE_CACHE) == "true"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
@@ -70,7 +70,7 @@ class Application(
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     fun start() {
-        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled" }
+        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache" }
         apiServer(8080).start()
         try {
             Cache.get("dummy", "dummy")
@@ -132,7 +132,7 @@ class Application(
                 }
 
                 val chosenTestUser = try {
-                    val chosenTestUsers = listOf("Z990454", "Z993068")
+                    val chosenTestUsers = listOf("Z990454", "Z993068", "N175808")
                     val navIdentOnToken = firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString()
                     if (chosenTestUsers.contains(navIdentOnToken)) {
                         File("/tmp/testBrukerWasHere-$navIdentOnToken").writeText("true")
@@ -183,7 +183,7 @@ class Application(
                                 )
                             ) {
                                 log.info {
-                                    "Summary : Cached Response, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                                    "Summary : Cached Response, test user $chosenTestUser, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
                                         "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
@@ -253,7 +253,7 @@ class Application(
                         )
                     ) {
                         log.info {
-                            "Summary : status=${response.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                            "Summary : test user $chosenTestUser, status=${response.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                         }
                     }

@@ -34,6 +34,7 @@ const val secret_PRIVATE_KEY_ALIAS = "PRIVATE_KEY_ALIAS"
 const val secret_PRIVATE_KEY_PASSWORD = "PRIVATE_KEY_PASSWORD"
 const val secret_SF_CLIENT_ID = "SF_CLIENT_ID"
 const val secret_SF_USERNAME = "SF_USERNAME"
+const val secret_USE_CACHE = "USE_CACHE"
 
 /**
  * Shortcut for fetching environment variables
