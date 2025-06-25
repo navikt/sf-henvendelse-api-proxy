@@ -42,9 +42,7 @@ object Cache {
         val response: Response
 
         val callTime = measureTimeMillis {
-            File("/tmp/aboutToCacheGet").writeText(request.toMessage())
             response = clientNoProxy(request)
-            File("/tmp/cacheGetResponse").writeText(response.toMessage())
         }
 
         Metrics.postgresHenvendelselisteCache.labels(Method.GET.name, response.status.code.toString(), callTime.toLabel(), endpointLabel).inc()
