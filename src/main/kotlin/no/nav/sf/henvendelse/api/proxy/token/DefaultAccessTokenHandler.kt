@@ -131,10 +131,14 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     // private fun String.decodeB64(): ByteArray = Base64.getUrlDecoder().decode(this)
     // private fun String.encodeB64UrlSafe(): String = this.toByteArray().encodeB64UrlSafe()
 
-    private fun ByteArray.encodeB64UrlSafe(): String = String(java.util.Base64.getUrlEncoder().withoutPadding().encode(this))
-    private fun String.decodeB64(): ByteArray = java.util.Base64.getDecoder().decode(this)
-    private fun String.encodeB64UrlSafe(): String =
-        java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(this.toByteArray(Charsets.UTF_8))
+    private fun ByteArray.encodeB64UrlSafe(): String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this)
+    private fun String.decodeB64(): ByteArray = org.apache.commons.codec.binary.Base64.decodeBase64(this)
+    private fun String.encodeB64UrlSafe(): String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this.toByteArray())
+
+//    private fun ByteArray.encodeB64UrlSafe(): String = String(java.util.Base64.getUrlEncoder().withoutPadding().encode(this))
+//    private fun String.decodeB64(): ByteArray = java.util.Base64.getDecoder().decode(this)
+//    private fun String.encodeB64UrlSafe(): String =
+//        java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(this.toByteArray(Charsets.UTF_8))
 
     private data class JWTClaim(
         val iss: String,
