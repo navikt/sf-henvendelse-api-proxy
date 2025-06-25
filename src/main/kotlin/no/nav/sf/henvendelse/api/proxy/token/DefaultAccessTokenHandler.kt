@@ -15,8 +15,6 @@ import no.nav.sf.henvendelse.api.proxy.secret_PRIVATE_KEY_ALIAS
 import no.nav.sf.henvendelse.api.proxy.secret_PRIVATE_KEY_PASSWORD
 import no.nav.sf.henvendelse.api.proxy.secret_SF_CLIENT_ID
 import no.nav.sf.henvendelse.api.proxy.secret_SF_USERNAME
-import org.apache.commons.codec.binary.Base64.decodeBase64
-import org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
@@ -24,6 +22,7 @@ import org.http4k.core.Response
 import org.http4k.core.body.toBody
 import java.security.KeyStore
 import java.security.PrivateKey
+import java.util.Base64
 
 /**
  * A handler for oauth2 access flow to salesforce.
@@ -124,14 +123,18 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
                 initSign(it)
                 update(data)
             }.run {
-                sign().encodeB64()
+                sign().encodeB64UrlSafe()
             }
         }
     }
+    // private fun ByteArray.encodeB64UrlSafe(): String = String(Base64.getUrlEncoder().encode(this))
+    // private fun String.decodeB64(): ByteArray = Base64.getUrlDecoder().decode(this)
+    // private fun String.encodeB64UrlSafe(): String = this.toByteArray().encodeB64UrlSafe()
 
-    private fun ByteArray.encodeB64(): String = encodeBase64URLSafeString(this)
-    private fun String.decodeB64(): ByteArray = decodeBase64(this)
-    private fun String.encodeB64UrlSafe(): String = encodeBase64URLSafeString(this.toByteArray())
+    private fun ByteArray.encodeB64UrlSafe(): String = String(java.util.Base64.getUrlEncoder().withoutPadding().encode(this))
+    private fun String.decodeB64(): ByteArray = java.util.Base64.getDecoder().decode(this)
+    private fun String.encodeB64UrlSafe(): String =
+        java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(this.toByteArray(Charsets.UTF_8))
 
     private data class JWTClaim(
         val iss: String,
