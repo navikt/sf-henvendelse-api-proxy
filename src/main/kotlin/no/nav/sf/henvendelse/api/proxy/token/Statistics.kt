@@ -20,6 +20,7 @@ class Statistics {
     var elapsedTimeAccessTokenRequest = 0L // Time spent on fetching access token to Salesforce
     var latestCallElapsedTime = 0L // Time spent performing the call to Salesforce
 
+
     var srcLabel = ""
     var machine = false
 
