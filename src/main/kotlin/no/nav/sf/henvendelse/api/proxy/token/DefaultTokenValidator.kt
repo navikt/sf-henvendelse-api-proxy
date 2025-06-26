@@ -15,7 +15,6 @@ import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_WELL_KNOWN_URL
 import org.http4k.core.Request
 import java.io.File
 import java.net.URL
-import java.util.Optional
 import kotlin.system.measureTimeMillis
 
 class DefaultTokenValidator : TokenValidator {
@@ -36,12 +35,12 @@ class DefaultTokenValidator : TokenValidator {
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
 
-    override fun firstValidToken(request: Request, tokenFetchStats: Statistics): Optional<JwtToken> {
-        lateinit var result: Optional<JwtToken>
+    override fun firstValidToken(request: Request, tokenFetchStats: Statistics): JwtToken? {
+        var result: JwtToken?
         tokenFetchStats.elapsedTimeTokenValidation = measureTimeMillis {
             result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
         }
-        if (!result.isPresent) {
+        if (result == null) {
             File("/tmp/novalidtoken").writeText(request.toMessage())
             Metrics.noauth.inc()
         }
@@ -53,9 +52,6 @@ class DefaultTokenValidator : TokenValidator {
         return object : HttpRequest {
             override fun getHeader(headerName: String): String {
                 return req.header(headerName) ?: ""
-            }
-            override fun getCookies(): Array<HttpRequest.NameValue> {
-                return arrayOf()
             }
         }
     }
