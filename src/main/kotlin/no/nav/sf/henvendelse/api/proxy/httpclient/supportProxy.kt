@@ -5,6 +5,7 @@ import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
 import okhttp3.OkHttpClient
 import org.http4k.client.OkHttp
 import org.http4k.core.HttpHandler
+import java.io.File
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.time.Duration
@@ -27,6 +28,7 @@ fun supportProxy(httpsProxy: String = env(env_HTTPS_PROXY)): HttpHandler {
         Proxy.Type.HTTP,
         InetSocketAddress(proxyUri.host, proxyUri.port)
     )
+    File("/tmp/proxysettings").writeText(proxyUri.host + " " + proxyUri.port)
     return OkHttp(client = createOkHttpClient(proxy))
 }
 
