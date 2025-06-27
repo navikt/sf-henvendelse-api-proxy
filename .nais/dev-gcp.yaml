@@ -1,7 +1,7 @@
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
-  name: sf-henvendelse-api-proxy2
+  name: sf-henvendelse-api-proxy
   namespace: teamnks
   labels:
     team: teamnks
@@ -26,7 +26,7 @@ spec:
       cpu: 5m
       memory: 512Mi
   ingresses:
-    - "https://sf-henvendelse2.intern.dev.nav.no"
+    - "https://sf-henvendelse.intern.dev.nav.no"
   azure:
     application:
       enabled: true
@@ -109,4 +109,5 @@ spec:
     - name: SALESFORCE_AZURE_ALIAS
       value: dev-external.teamcrm.salesforce
     - name: DEPLOY_CLUSTER
-      value: '{{ DEPLOY_CLUSTER }}'
+      value: '{{ DEPLOY_CLUSTER }}'f
+
