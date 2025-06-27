@@ -1,7 +1,7 @@
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
-  name: sf-henvendelse-api-proxy
+  name: sf-henvendelse-api-proxy2
   namespace: teamnks
   labels:
     team: teamnks
@@ -26,7 +26,7 @@ spec:
       cpu: 5m
       memory: 512Mi
   ingresses:
-    - "https://sf-henvendelse.intern.dev.nav.no"
+    - "https://sf-henvendelse2.intern.dev.nav.no"
   azure:
     application:
       enabled: true
