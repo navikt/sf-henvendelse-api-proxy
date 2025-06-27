@@ -109,5 +109,5 @@ spec:
     - name: SALESFORCE_AZURE_ALIAS
       value: dev-external.teamcrm.salesforce
     - name: DEPLOY_CLUSTER
-      value: '{{ DEPLOY_CLUSTER }}'f
+      value: '{{ DEPLOY_CLUSTER }}'
 
