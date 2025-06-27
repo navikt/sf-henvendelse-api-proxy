@@ -72,7 +72,7 @@ object JsonComparator {
             val missing = set1 - set2
             missing.map { JsonParser.parseString(it) }
         } catch (e: Exception) {
-            File("/tmp/jsonSyntaxError").writeText(e.stackTraceToString())
+            File("/tmp/aJsonSyntaxError").writeText(e.stackTraceToString())
             emptyList()
         }
     }
