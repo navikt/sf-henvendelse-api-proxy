@@ -258,7 +258,11 @@ class Application(
                         }
                     }
 
-                    // File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${response.toMessage()}")
+                    try {
+                        File("/tmp/latest-${stats.srcLabel.replace(':','-')}-${stats.statsPath(forwardRequest.uri).replace('/','_')}-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${response.toMessage()}")
+                    } catch (e: Exception) {
+                        File("/tmp/filename-issue").writeText(forwardRequest.toMessage())
+                    }
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {

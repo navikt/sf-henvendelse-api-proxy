@@ -30,6 +30,13 @@ class Statistics {
     val pathsWithPathVars =
         listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
+    /**
+     * statsPath is a version of request path that is shortened and with known path variables removed
+     * to use as a clean metric
+     */
+    fun statsPath(uri: Uri): String = (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
+        .replace(APEX_REST_BASE_PATH, "")
+
     fun logAndUpdateMetrics(status: Int, uri: Uri, req: Request, res: Response) {
         try {
             log.info {
@@ -38,12 +45,7 @@ class Statistics {
                     " Sum ${elapsedTimeTokenValidation + elapsedTimeAccessTokenRequest + latestCallElapsedTime}."
             }
 
-            /**
-             * statsPath is a version of request path that is shortened and with known path variables removed
-             * to use as a clean metric
-             */
-            val statsPath = (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
-                .replace(APEX_REST_BASE_PATH, "")
+            val statsPath = statsPath(uri)
 
             Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
             Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
