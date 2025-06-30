@@ -23,12 +23,10 @@ import org.http4k.core.Uri
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Optional
 
 class ApplicationTest {
 
     private val mockTokenValidator = mockk<TokenValidator>()
-    private val mockTokenOptional = mockk<Optional<JwtToken>>()
     private val mockToken = mockk<JwtToken>()
 
     private val mockAccessTokenHandler = mockk<AccessTokenHandler>()
@@ -50,10 +48,7 @@ class ApplicationTest {
 
     @BeforeEach
     fun setup() {
-        every { mockTokenValidator.firstValidToken(any(), any()) } returns mockTokenOptional
-
-        every { mockTokenOptional.isPresent } returns true
-        every { mockTokenOptional.get() } returns mockToken
+        every { mockTokenValidator.firstValidToken(any(), any()) } returns mockToken
 
         every { mockToken.tokenAsString } returns "mockToken"
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims

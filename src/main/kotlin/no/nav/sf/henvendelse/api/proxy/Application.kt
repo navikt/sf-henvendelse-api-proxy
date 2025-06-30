@@ -21,6 +21,7 @@ import no.nav.sf.henvendelse.api.proxy.token.getAzpName
 import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
 import no.nav.sf.henvendelse.api.proxy.token.isMachineToken
 import no.nav.sf.henvendelse.api.proxy.token.isNavOBOToken
+import org.http4k.core.Body
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -31,10 +32,11 @@ import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.routing.static
-import org.http4k.server.ApacheServer
 import org.http4k.server.Http4kServer
+import org.http4k.server.Netty
 import org.http4k.server.asServer
 import java.io.File
+import java.nio.ByteBuffer
 import kotlin.system.measureTimeMillis
 
 // Common headers from calling apps. Added to logging for traceability:
@@ -80,7 +82,7 @@ class Application(
         refreshLoop() // Refresh access token and cache in advance outside of calls
     }
 
-    fun apiServer(port: Int): Http4kServer = api().asServer(ApacheServer(port))
+    fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
     fun api(): HttpHandler = routes(
         "$API_BASE_PATH/{rest:.*}" bind ::handleApiRequest,
@@ -114,26 +116,26 @@ class Application(
         ) {
             log.info { "Incoming call ${request.uri}" }
             val firstValidToken = tokenValidator.firstValidToken(request, stats)
-            if (!firstValidToken.isPresent) {
+            if (firstValidToken == null) {
                 log.warn { "Proxy: Not authorized" }
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
-            } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.get().isMachineToken()) {
+            } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.isMachineToken()) {
                 // Request is authorized with a machine token instead of an obo token, we only allow access to
                 // kodeverk endpoints in that case:
                 log.warn { "Proxy: Machine token authorization not sufficient" }
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
-                val navIdent = fetchNavIdent(firstValidToken.get(), stats)
+                val navIdent = fetchNavIdent(firstValidToken, stats)
 
                 try {
-                    Metrics.issuer.labels(firstValidToken.get().issuer).inc()
+                    Metrics.issuer.labels(firstValidToken.issuer).inc()
                 } catch (e: java.lang.Exception) {
                     log.error { "Failed to fetch issuer from token" }
                 }
 
                 val chosenTestUser = try {
                     val chosenTestUsers = listOf("Z990454", "Z993068", "N175808")
-                    val navIdentOnToken = firstValidToken.get().jwtTokenClaims.get("NAVident")?.toString()
+                    val navIdentOnToken = firstValidToken.jwtTokenClaims.get("NAVident")?.toString()
                     if (chosenTestUsers.contains(navIdentOnToken)) {
                         File("/tmp/testBrukerWasHere-$navIdentOnToken").writeText("true")
                         true
@@ -189,7 +191,7 @@ class Application(
                             }
                             val response = Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
 
-                            File("/tmp/responseFromCache").writeText(response.toMessage())
+//                            File("/tmp/responseFromCache").writeText(response.toMessage())
                             return response
                         }
                     }
@@ -270,7 +272,7 @@ class Application(
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
                     //      creates noise in clients due to cookie source mismatch.
-                    return response.removeHeader("Set-Cookie")
+                    return response.removeHeader("Set-Cookie").withoutBlockedHeaders()
                 }
             }
         }
@@ -328,5 +330,28 @@ class Application(
                 } else client(request)
         }
         return response
+    }
+
+    // Hop-by-hop headers as defined by RFC 7230 section 6.1.
+    // These headers are specific to a single transport-level connection and should not be forwarded by proxies
+    private val blockFromResponse = listOf(
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailer",
+        "transfer-encoding",
+        "content-length",
+        "upgrade"
+    )
+
+    private fun Response.withoutBlockedHeaders(): Response {
+        val filteredHeaders = this.headers.filter { (key, _) -> key.lowercase() !in blockFromResponse }
+
+        val bodyBytes = this.body.stream.use { it.readBytes() }
+        return Response(this.status)
+            .headers(filteredHeaders)
+            .body(Body(ByteBuffer.wrap(bodyBytes)))
     }
 }
