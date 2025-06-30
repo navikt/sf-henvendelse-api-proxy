@@ -46,25 +46,25 @@ jobs:
         id: docker-push
         with:
           team: teamnks
-#  deploy-dev-fss:
-#    name: Deploy to NAIS dev fss
-#    needs: build
-##    if: github.ref == 'refs/heads/master'
-#    runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write
-#      contents: read
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: nais/deploy/actions/deploy@v2
-#        env:
-#          CLUSTER: dev-fss
-#          RESOURCE: .nais/dev-fss.yaml
-#          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-fss
+  deploy-dev-fss:
+    name: Deploy to NAIS dev fss
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-fss
+          RESOURCE: .nais/dev-fss.yaml
+          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-fss
   deploy-dev-gcp:
     name: Deploy to NAIS dev gcp
     needs: build
-#    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
