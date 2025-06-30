@@ -19,7 +19,7 @@ private fun createOkHttpClient(proxy: Proxy? = null): OkHttpClient {
         .apply {
             proxy?.let { this.proxy(it) }
         }
-        .protocols(listOf(Protocol.HTTP_1_1))
+        .protocols(listOf(Protocol.HTTP_2))
         .connectTimeout(Duration.ofSeconds(20))
         .readTimeout(Duration.ofSeconds(20))
         .writeTimeout(Duration.ofSeconds(20))
