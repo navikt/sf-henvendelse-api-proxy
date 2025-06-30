@@ -18,10 +18,6 @@ import java.net.URL
 import kotlin.system.measureTimeMillis
 
 class DefaultTokenValidator : TokenValidator {
-    private val tokenServiceAlias = env(config_AUDIENCE_TOKEN_SERVICE_ALIAS)
-    private val tokenServiceUrl = env(config_AUDIENCE_TOKEN_SERVICE_URL)
-    private val tokenServiceAudience = env(config_AUDIENCE_TOKEN_SERVICE).split(',')
-
     private val azureAlias = "azure"
     private val azureUrl = env(env_AZURE_APP_WELL_KNOWN_URL)
     private val azureAudience = env(env_AZURE_APP_CLIENT_ID).split(',')
