@@ -6,9 +6,6 @@ import no.nav.security.token.support.core.http.HttpRequest
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.security.token.support.core.validation.JwtTokenValidationHandler
 import no.nav.sf.henvendelse.api.proxy.Metrics
-import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE
-import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_ALIAS
-import no.nav.sf.henvendelse.api.proxy.config_AUDIENCE_TOKEN_SERVICE_URL
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_CLIENT_ID
 import no.nav.sf.henvendelse.api.proxy.env_AZURE_APP_WELL_KNOWN_URL

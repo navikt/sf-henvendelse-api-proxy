@@ -1,5 +1,6 @@
 package no.nav.sf.henvendelse.api.proxy.httpclient
 
+import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
 import okhttp3.OkHttpClient
@@ -10,6 +11,8 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.time.Duration
+
+private val log = KotlinLogging.logger { }
 
 private fun createOkHttpClient(proxy: Proxy? = null): OkHttpClient {
     return OkHttpClient.Builder()
@@ -26,6 +29,7 @@ private fun createOkHttpClient(proxy: Proxy? = null): OkHttpClient {
 
 fun supportProxy(httpsProxy: String = env(env_HTTPS_PROXY)): HttpHandler {
     val proxyUri = java.net.URI(httpsProxy)
+    log.info("Setting up proxy with: " + proxyUri.host + " " + proxyUri.port)
     val proxy = Proxy(
         Proxy.Type.HTTP,
         InetSocketAddress(proxyUri.host, proxyUri.port)
