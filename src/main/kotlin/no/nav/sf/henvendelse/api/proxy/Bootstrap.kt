@@ -3,7 +3,9 @@ package no.nav.sf.henvendelse.api.proxy
 lateinit var application: Application
 
 fun main() {
-    Thread.sleep(3000)
+    // Suspecting potential race condition for load of web proxy envs and instantiating of token validator.
+    // Therefor a small delay on boot
+    Thread.sleep(1000)
     application = Application()
     application.start()
 }
