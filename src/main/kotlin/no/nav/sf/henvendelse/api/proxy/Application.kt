@@ -264,7 +264,7 @@ class Application(
                     File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}")
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        if (Cache.compareRealToCache(decompressIfGzipped(response), henvendelseCacheResponse, aktorIdInFocus)) {
+                        if (Cache.compareRealToCache(decompressIfGzipped(response), decompressIfGzipped(henvendelseCacheResponse), aktorIdInFocus)) {
                             GlobalScope.launch {
                                 Cache.retryCallVsCache(forwardRequest, aktorIdInFocus)
                             }
