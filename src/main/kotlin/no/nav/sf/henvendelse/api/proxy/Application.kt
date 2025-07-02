@@ -200,7 +200,7 @@ class Application(
                     val response = invokeRequest(forwardRequest, stats)
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
-                        Cache.doAsyncPut(aktorIdInFocus, response.bodyString(), "henvendelseliste")
+                        Cache.doAsyncPut(aktorIdInFocus, decompressIfGzipped(response).bodyString(), "henvendelseliste")
                         if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                             File("/tmp/latestCompare").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
                         }
@@ -225,7 +225,7 @@ class Application(
                         } else if (request.uri.path.contains("journal")) {
                             // Parse aktorId from response:
                             try {
-                                val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
+                                val jsonObject = JsonParser.parseString(decompressIfGzipped(response).bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
                                 Cache.doAsyncDelete(aktorIdInFocus, "journal")
                             } catch (e: Exception) {
@@ -233,7 +233,7 @@ class Application(
                             }
                         } else if (request.uri.path.contains("meldingskjede")) {
                             try {
-                                val jsonObject = JsonParser.parseString(response.bodyString()).asJsonObject
+                                val jsonObject = JsonParser.parseString(decompressIfGzipped(response).bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
                                 Cache.doAsyncDelete(aktorIdInFocus, "lukk")
                             } catch (e: Exception) {
@@ -241,7 +241,7 @@ class Application(
                             }
                         }
                     } else {
-                        File("/tmp/failResponse-${response.status.code}").writeText(response.toMessage())
+                        File("/tmp/failResponse-${response.status.code}").writeText(decompressIfGzipped(response).toMessage())
                     }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
@@ -264,7 +264,7 @@ class Application(
                     File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}")
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {
+                        if (Cache.compareRealToCache(decompressIfGzipped(response), henvendelseCacheResponse, aktorIdInFocus)) {
                             GlobalScope.launch {
                                 Cache.retryCallVsCache(forwardRequest, aktorIdInFocus)
                             }
