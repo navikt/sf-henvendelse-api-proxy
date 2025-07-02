@@ -4,7 +4,6 @@ import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
 import okhttp3.OkHttpClient
-import okhttp3.Protocol
 import org.http4k.client.OkHttp
 import org.http4k.core.HttpHandler
 import java.io.File
@@ -19,7 +18,7 @@ private fun createOkHttpClient(proxy: Proxy? = null): OkHttpClient {
         .apply {
             proxy?.let { this.proxy(it) }
         }
-        .protocols(listOf(Protocol.HTTP_1_1))
+//        .protocols(listOf(Protocol.HTTP_1_1))
         .connectTimeout(Duration.ofSeconds(20))
         .readTimeout(Duration.ofSeconds(20))
         .writeTimeout(Duration.ofSeconds(20))
