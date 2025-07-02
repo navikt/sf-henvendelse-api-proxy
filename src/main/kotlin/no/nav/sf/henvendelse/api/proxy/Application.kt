@@ -37,6 +37,7 @@ import org.http4k.server.Netty
 import org.http4k.server.asServer
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.zip.GZIPInputStream
 import kotlin.system.measureTimeMillis
 
 // Common headers from calling apps. Added to logging for traceability:
@@ -260,7 +261,7 @@ class Application(
                         }
                     }
 
-                    File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${response.withoutBlockedHeaders().toMessage()}")
+                    File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}")
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (Cache.compareRealToCache(response, henvendelseCacheResponse, aktorIdInFocus)) {
@@ -353,5 +354,17 @@ class Application(
         return Response(this.status)
             .headers(filteredHeaders)
             .body(Body(ByteBuffer.wrap(bodyBytes)))
+    }
+
+    fun decompressIfGzipped(response: Response): Response {
+        return if (response.header("Content-Encoding") == "gzip") {
+            val decompressed = GZIPInputStream(response.body.stream).bufferedReader().use { it.readText() }
+            response
+                .removeHeader("Content-Encoding")
+                .body(decompressed)
+                .header("Content-Length", decompressed.length.toString())
+        } else {
+            response
+        }
     }
 }
