@@ -10,6 +10,7 @@ import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Cache.get
 import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
+import no.nav.sf.henvendelse.api.proxy.httpclient.enforceHttp1_1
 import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
@@ -73,7 +74,7 @@ class Application(
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     fun start() {
-        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache" }
+        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1" }
         apiServer(8080).start()
         try {
             Cache.get("dummy", "dummy")
@@ -166,7 +167,7 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste")) {
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
-                        henvendelseCacheResponse = get(aktorIdInFocus, "henvendelseliste")
+                        henvendelseCacheResponse = decompressIfGzipped(get(aktorIdInFocus, "henvendelseliste"))
 
                         if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
                             stats.logAndUpdateMetrics(
