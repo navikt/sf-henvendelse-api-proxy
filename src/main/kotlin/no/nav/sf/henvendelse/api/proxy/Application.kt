@@ -183,7 +183,8 @@ class Application(
                                     "event.duration" to stats.latestCallElapsedTime.toString(),
                                     "src" to stats.srcLabel,
                                     "uri" to forwardRequest.uri.toString(),
-                                    "aktorId" to aktorIdInFocus
+                                    "aktorId" to aktorIdInFocus,
+                                    "x-acting-nav-ident" to navIdent
                                 )
                             ) {
                                 log.info {
@@ -193,7 +194,7 @@ class Application(
                             }
                             val response = Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
 
-//                            File("/tmp/responseFromCache").writeText(response.toMessage())
+                            File("/tmp/responseFromCache").writeText(response.toMessage())
                             return response
                         }
                     }
@@ -201,9 +202,10 @@ class Application(
                     val response = invokeRequest(forwardRequest, stats)
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
-                        Cache.doAsyncPut(aktorIdInFocus, decompressIfGzipped(response).bodyString(), "henvendelseliste")
+                        val sfDecompressed = decompressIfGzipped(response)
+                        Cache.doAsyncPut(aktorIdInFocus, sfDecompressed.bodyString(), "henvendelseliste")
                         if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                            File("/tmp/latestCompare").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${response.toMessage()}")
+                            File("/tmp/latestCompare").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${sfDecompressed.toMessage()}")
                         }
                     }
 
@@ -253,7 +255,8 @@ class Application(
                             "event.duration" to stats.latestCallElapsedTime.toString(),
                             "src" to stats.srcLabel,
                             "uri" to forwardRequest.uri.toString(),
-                            "aktorId" to aktorIdInFocus
+                            "aktorId" to aktorIdInFocus,
+                            "x-acting-nav-ident" to navIdent
                         )
                     ) {
                         log.info {
