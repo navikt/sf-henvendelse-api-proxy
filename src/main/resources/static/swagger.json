@@ -467,7 +467,7 @@
                 "properties": {
                     "markeringstype": {
                         "type": "string",
-                        "enum": ["FEILSENDT"],
+                        "enum": ["FEILSENDT", "KONTORSPERRE"],
                         "example": "FEILSENDT"
                     },
                     "markertDato": {
