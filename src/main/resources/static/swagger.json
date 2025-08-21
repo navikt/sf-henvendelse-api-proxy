@@ -12,7 +12,7 @@
             "url": "https://sf-henvendelse-api-proxy.intern.nav.no/api"
         },
         {
-            "url": "https://navdialog--sit2.sandbox.my.salesforce.com/services/apexrest"
+            "url": "https://navdialog--uat.my.salesforce.com/services/apexrest"
         },
         {
             "url": "http://sf-henvendelse-api-proxy.teamnks.svc.nais.local/api"
@@ -43,7 +43,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ]
             }
@@ -73,7 +73,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     },
                     {
                         "name": "kjedeId",
@@ -114,7 +114,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ]
             }
@@ -136,7 +136,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ],
                 "responses": {
@@ -188,7 +188,7 @@
                         "description": "Unik id til samtalereferat eller tråd som man ønsker å behandle"
                     },
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ],
                 "responses": {
@@ -233,7 +233,7 @@
                         "description": "Unik kjedeId til meldingstråden som skal lukkes"
                     },
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ],
                 "responses": {
@@ -279,7 +279,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     },
                     {
                         "name": "kjedeId",
@@ -334,7 +334,7 @@
                 },
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     },
                     {
                         "name": "kjedeId",
@@ -388,7 +388,7 @@
                         "description": "Aktørid til person for uthentelse av henvendelseliste"
                     },
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ],
                 "responses": {
@@ -432,7 +432,7 @@
                         "description": "Unik ID til henvendelsen"
                     },
                     {
-                        "$ref": "#/components/parameters/x-correlation-id"
+                        "$ref": "#/components/parameters/X-Correlation-ID"
                     }
                 ],
                 "responses": {
@@ -1005,8 +1005,8 @@
             }
         },
         "parameters": {
-            "x-correlation-id": {
-                "name": "x-correlation-id",
+            "X-Correlation-ID": {
+                "name": "X-Correlation-ID",
                 "in": "header",
                 "required": true,
                 "description": "Unik UUID for inkommende request",
