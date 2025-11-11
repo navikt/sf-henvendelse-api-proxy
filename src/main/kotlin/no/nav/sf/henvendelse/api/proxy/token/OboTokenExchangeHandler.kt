@@ -45,50 +45,62 @@ object OboTokenExchangeHandler {
     private val azureTokenEndPoint: String = env(env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT)
     private val sfAlias: String = env(config_SALESFORCE_AZURE_ALIAS)
 
-    private var OBOcache: MutableMap<String, JwtToken> = mutableMapOf()
+    private var oBOcache: MutableMap<String, JwtToken> = mutableMapOf()
 
     private var droppedCacheElements = 0L
 
     fun refreshCache() {
-        OBOcache = OBOcache.filterValues {
-            val stillEligable = it.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()
-            if (!stillEligable) droppedCacheElements++
-            stillEligable
-        }.toMutableMap()
+        oBOcache =
+            oBOcache
+                .filterValues {
+                    val stillEligable =
+                        it.jwtTokenClaims.expirationTime
+                            .toInstant()
+                            .minusSeconds(10) > Instant.now()
+                    if (!stillEligable) droppedCacheElements++
+                    stillEligable
+                }.toMutableMap()
         log.info { "Dropped cache elements during lifetime $droppedCacheElements " }
     }
 
-    fun exchange(jwtIn: JwtToken, tokenFetchStats: Statistics): JwtToken {
-        val NAVident = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_NAV_IDENT)
-        val azp_name = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_AZP_NAME)
-        val key = "$azp_name:$NAVident"
-        OBOcache[key]?.let { cachedToken ->
-            if (cachedToken.jwtTokenClaims.expirationTime.toInstant().minusSeconds(10) > Instant.now()) {
+    fun exchange(
+        jwtIn: JwtToken,
+        tokenFetchStats: Statistics,
+    ): JwtToken {
+        val nAVIdent = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_NAV_IDENT)
+        val azpName = jwtIn.jwtTokenClaims.getStringClaim(CLAIM_AZP_NAME)
+        val key = "$azpName:$nAVIdent"
+        oBOcache[key]?.let { cachedToken ->
+            if (cachedToken.jwtTokenClaims.expirationTime
+                    .toInstant()
+                    .minusSeconds(10) > Instant.now()
+            ) {
                 // tokenFetchStats.oboCached++
                 return cachedToken
             }
         }
-        Metrics.cacheSize.set(OBOcache.size.toDouble())
+        Metrics.cacheSize.set(oBOcache.size.toDouble())
 
-        val req = Request(Method.POST, azureTokenEndPoint)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(
-                listOf(
-                    "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                    "assertion" to jwtIn.tokenAsString,
-                    "client_id" to clientId,
-                    "scope" to "api://$sfAlias/.default",
-                    "client_secret" to clientSecret,
-                    "requested_token_use" to "on_behalf_of"
-                ).toBody()
-            )
+        val req =
+            Request(Method.POST, azureTokenEndPoint)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(
+                    listOf(
+                        "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                        "assertion" to jwtIn.tokenAsString,
+                        "client_id" to clientId,
+                        "scope" to "api://$sfAlias/.default",
+                        "client_secret" to clientSecret,
+                        "requested_token_use" to "on_behalf_of",
+                    ).toBody(),
+                )
 
         lateinit var res: Response
         // tokenFetchStats.elapsedTimeOboExchangeRequest = measureTimeMillis {
         res = client(req)
         // }
         val jwt = JwtToken(JSONObject(res.bodyString()).get("access_token").toString())
-        OBOcache[key] = jwt
+        oBOcache[key] = jwt
         // tokenFetchStats.oboFetches++
         return jwt
     }

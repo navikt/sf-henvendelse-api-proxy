@@ -32,9 +32,10 @@ class EntraTokenHandler {
     }
 
     private fun fetchEntraToken() {
-        val requestBody = "client_id=" + env(env_AZURE_APP_CLIENT_ID) +
-            "&scope=" + "api://${if (isDev) "dev-gcp" else "prod-gcp"}.teamnks.sf-henvendelse-db/.default" +
-            "&client_secret=" + env(env_AZURE_APP_CLIENT_SECRET) + "&grant_type=" + "client_credentials"
+        val requestBody =
+            "client_id=" + env(env_AZURE_APP_CLIENT_ID) +
+                "&scope=" + "api://${if (isDev) "dev-gcp" else "prod-gcp"}.teamnks.sf-henvendelse-db/.default" +
+                "&client_secret=" + env(env_AZURE_APP_CLIENT_SECRET) + "&grant_type=" + "client_credentials"
         val headers: Headers = listOf(Pair("Content-Type", "application/x-www-form-urlencoded"))
         val request =
             Request(Method.POST, env(env_AZURE_OPENID_CONFIG_TOKEN_ENDPOINT)).body(requestBody).headers(headers)
@@ -48,8 +49,10 @@ class EntraTokenHandler {
             val expiresIn = jsonObject.get("expires_in").asLong
 
             // Calculate expiry time with a 60-second safety margin
-            expireTime = LocalDateTime.now()
-                .plusSeconds(expiresIn - 60)
+            expireTime =
+                LocalDateTime
+                    .now()
+                    .plusSeconds(expiresIn - 60)
         } else {
             File("/tmp/responseEntraFail").writeText(response.toMessage())
         }

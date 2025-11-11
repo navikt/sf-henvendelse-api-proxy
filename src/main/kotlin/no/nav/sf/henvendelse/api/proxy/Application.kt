@@ -65,7 +65,7 @@ class Application(
     private val devContext: Boolean = isDev,
     val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
     private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
-    private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext)
+    private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext),
 ) {
     private val log = KotlinLogging.logger { }
     private var lifeTimeCallIndex = 0L
@@ -74,7 +74,9 @@ class Application(
     private val restrictedHeaders = listOf("host", "content-length", "user-agent", "authorization", "x-correlation-id")
 
     fun start() {
-        log.info { "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1" }
+        log.info {
+            "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1"
+        }
         apiServer(8080).start()
         try {
             Cache.get("dummy", "dummy")
@@ -86,13 +88,14 @@ class Application(
 
     fun apiServer(port: Int): Http4kServer = api().asServer(Netty(port))
 
-    fun api(): HttpHandler = routes(
-        "$API_BASE_PATH/{rest:.*}" bind ::handleApiRequest,
-        "/static" bind static(Classpath("/static")),
-        "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
-        "/internal/isReady" bind Method.GET to { Response(Status.OK) },
-        "/internal/metrics" bind Method.GET to Metrics.metricsHandler
-    )
+    fun api(): HttpHandler =
+        routes(
+            "$API_BASE_PATH/{rest:.*}" bind ::handleApiRequest,
+            "/static" bind static(Classpath("/static")),
+            "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
+            "/internal/isReady" bind Method.GET to { Response(Status.OK) },
+            "/internal/metrics" bind Method.GET to Metrics.metricsHandler,
+        )
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
@@ -113,8 +116,8 @@ class Application(
                 HEADER_NAV_CALL_ID to (request.header(HEADER_NAV_CALL_ID) ?: ""),
                 HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
                 HEADER_NAV_CONSUMER_ID to (request.header(HEADER_NAV_CONSUMER_ID) ?: ""),
-                "callIndex" to callIndex.toString()
-            )
+                "callIndex" to callIndex.toString(),
+            ),
         ) {
             log.info { "Incoming call ${request.uri}" }
             val firstValidToken = tokenValidator.firstValidToken(request, stats)
@@ -135,25 +138,29 @@ class Application(
                     log.error { "Failed to fetch issuer from token" }
                 }
 
-                val chosenTestUser = try {
-                    val chosenTestUsers = listOf("Z990454", "Z993068", "N175808")
-                    val navIdentOnToken = firstValidToken.jwtTokenClaims.get("NAVident")?.toString()
-                    if (chosenTestUsers.contains(navIdentOnToken)) {
-                        File("/tmp/testBrukerWasHere-$navIdentOnToken").writeText("true")
+                val chosenTestUser =
+                    try {
+                        val chosenTestUsers = listOf("Z990454", "Z993068", "N175808")
+                        val navIdentOnToken = firstValidToken.jwtTokenClaims.get("NAVident")?.toString()
+                        if (chosenTestUsers.contains(navIdentOnToken)) {
+                            File("/tmp/testBrukerWasHere-$navIdentOnToken").writeText("true")
+                            true
+                        } else {
+                            false
+                        }
+                    } catch (e: java.lang.Exception) {
+                        log.error { "Failed to check navident on token" }
+                        false
+                    }
+
+                val cache = request.query("cache")
+                val forceCache =
+                    if (chosenTestUser || (cache != null && cache == "true")) {
+                        log.info { "Force cache true - due to chosen test user? $chosenTestUser" }
                         true
                     } else {
                         false
                     }
-                } catch (e: java.lang.Exception) {
-                    log.error { "Failed to check navident on token" }
-                    false
-                }
-
-                val cache = request.query("cache")
-                val forceCache = if (chosenTestUser || (cache != null && cache == "true")) {
-                    log.info { "Force cache true - due to chosen test user? $chosenTestUser" }
-                    true
-                } else { false }
 
                 if (navIdent.isEmpty()) {
                     File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
@@ -174,7 +181,7 @@ class Application(
                                 henvendelseCacheResponse.status.code,
                                 forwardRequest.uri,
                                 forwardRequest,
-                                henvendelseCacheResponse
+                                henvendelseCacheResponse,
                             )
 
                             withLoggingContext(
@@ -184,15 +191,19 @@ class Application(
                                     "src" to stats.srcLabel,
                                     "uri" to forwardRequest.uri.toString(),
                                     "aktorId" to aktorIdInFocus,
-                                    "x-acting-nav-ident" to navIdent
-                                )
+                                    "x-acting-nav-ident" to navIdent,
+                                ),
                             ) {
                                 log.info {
-                                    "Summary : Cached Response, test user $chosenTestUser, status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                                    "Summary : Cached Response, test user $chosenTestUser, " +
+                                        "status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
                                         "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
                             }
-                            val response = Response(Status.OK).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
+                            val response =
+                                Response(
+                                    Status.OK,
+                                ).header("Content-Type", "application/json").body(henvendelseCacheResponse.body)
 
                             File("/tmp/responseFromCache").writeText(response.toMessage())
                             return response
@@ -205,16 +216,21 @@ class Application(
                         val sfDecompressed = decompressIfGzipped(response)
                         Cache.doAsyncPut(aktorIdInFocus, sfDecompressed.bodyString(), "henvendelseliste")
                         if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                            File("/tmp/latestCompare").writeText("REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${sfDecompressed.toMessage()}")
+                            File(
+                                "/tmp/latestCompare",
+                            ).writeText(
+                                "REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${sfDecompressed.toMessage()}",
+                            )
                         }
                     }
 
                     if (response.status.successful) {
-                        val pathLabel = listOf(
-                            "/behandling" to "behandling",
-                            "/ny/samtalereferat" to "samtalereferat",
-                            "/ny/melding" to "melding"
-                        ).firstOrNull { request.uri.path.contains(it.first) }?.second.orEmpty()
+                        val pathLabel =
+                            listOf(
+                                "/behandling" to "behandling",
+                                "/ny/samtalereferat" to "samtalereferat",
+                                "/ny/melding" to "melding",
+                            ).firstOrNull { request.uri.path.contains(it.first) }?.second.orEmpty()
 
                         if (pathLabel.isNotEmpty()) {
                             // Parse aktorId from request:
@@ -256,19 +272,29 @@ class Application(
                             "src" to stats.srcLabel,
                             "uri" to forwardRequest.uri.toString(),
                             "aktorId" to aktorIdInFocus,
-                            "x-acting-nav-ident" to navIdent
-                        )
+                            "x-acting-nav-ident" to navIdent,
+                        ),
                     ) {
                         log.info {
-                            "Summary : test user $chosenTestUser, status=${response.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
+                            "Summary : test user $chosenTestUser, status=${response.status.code}, " +
+                                "call_ms=${stats.latestCallElapsedTime}, " +
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                         }
                     }
 
-                    File("/tmp/latestStatus-${response.status.code}").writeText("FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}")
+                    File(
+                        "/tmp/latestStatus-${response.status.code}",
+                    ).writeText(
+                        "FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}",
+                    )
 
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        if (Cache.compareRealToCache(decompressIfGzipped(response), decompressIfGzipped(henvendelseCacheResponse), aktorIdInFocus)) {
+                        if (Cache.compareRealToCache(
+                                decompressIfGzipped(response),
+                                decompressIfGzipped(henvendelseCacheResponse),
+                                aktorIdInFocus,
+                            )
+                        ) {
                             GlobalScope.launch {
                                 Cache.retryCallVsCache(forwardRequest, aktorIdInFocus)
                             }
@@ -283,7 +309,10 @@ class Application(
         }
     }
 
-    private fun fetchNavIdent(token: JwtToken, tokenFetchStats: Statistics): String {
+    private fun fetchNavIdent(
+        token: JwtToken,
+        tokenFetchStats: Statistics,
+    ): String {
         tokenFetchStats.srcLabel = token.getAzpName()
         return if (token.isNavOBOToken()) {
             Metrics.callSource.labels("obo-${tokenFetchStats.srcLabel}").inc()
@@ -298,7 +327,11 @@ class Application(
         }
     }
 
-    private fun createForwardRequest(request: Request, navIdent: String, tokenFetchStats: Statistics): Request {
+    private fun createForwardRequest(
+        request: Request,
+        navIdent: String,
+        tokenFetchStats: Statistics,
+    ): Request {
         // Measure x-forwarded-host header to determine if requests are coming from ingress or service discovery
         try {
             if (request.header("x-forwarded-host") != null) {
@@ -320,36 +353,43 @@ class Application(
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
                     HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""), // Make sure expected case on header
-                    HEADER_X_ACTING_NAV_IDENT to navIdent
+                    HEADER_X_ACTING_NAV_IDENT to navIdent,
                 )
 
         return Request(request.method, dstUrl).headers(headers).body(request.body)
     }
 
-    private fun invokeRequest(request: Request, tokenFetchStats: Statistics): Response {
+    private fun invokeRequest(
+        request: Request,
+        tokenFetchStats: Statistics,
+    ): Response {
         lateinit var response: Response
-        tokenFetchStats.latestCallElapsedTime = measureTimeMillis {
-            response =
-                if (twincallsEnabled && request.method == Method.GET) {
-                    twincallHandler.performTwinCall(request)
-                } else client(request)
-        }
+        tokenFetchStats.latestCallElapsedTime =
+            measureTimeMillis {
+                response =
+                    if (twincallsEnabled && request.method == Method.GET) {
+                        twincallHandler.performTwinCall(request)
+                    } else {
+                        client(request)
+                    }
+            }
         return response
     }
 
     // Hop-by-hop headers as defined by RFC 7230 section 6.1.
     // These headers are specific to a single transport-level connection and should not be forwarded by proxies
-    private val blockFromResponse = listOf(
-        "connection",
-        "keep-alive",
-        "proxy-authenticate",
-        "proxy-authorization",
-        "te",
-        "trailer",
-        "transfer-encoding",
-        "content-length",
-        "upgrade"
-    )
+    private val blockFromResponse =
+        listOf(
+            "connection",
+            "keep-alive",
+            "proxy-authenticate",
+            "proxy-authorization",
+            "te",
+            "trailer",
+            "transfer-encoding",
+            "content-length",
+            "upgrade",
+        )
 
     private fun Response.withoutBlockedHeaders(): Response {
         val filteredHeaders = this.headers.filter { (key, _) -> key.lowercase() !in blockFromResponse }
@@ -360,8 +400,8 @@ class Application(
             .body(Body(ByteBuffer.wrap(bodyBytes)))
     }
 
-    fun decompressIfGzipped(response: Response): Response {
-        return if (response.header("Content-Encoding") == "gzip") {
+    fun decompressIfGzipped(response: Response): Response =
+        if (response.header("Content-Encoding") == "gzip") {
             val decompressed = GZIPInputStream(response.body.stream).bufferedReader().use { it.readText() }
             response
                 .removeHeader("Content-Encoding")
@@ -370,5 +410,4 @@ class Application(
         } else {
             response
         }
-    }
 }

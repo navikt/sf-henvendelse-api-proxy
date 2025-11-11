@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:property-naming")
+
 package no.nav.sf.henvendelse.api.proxy
 
 /**

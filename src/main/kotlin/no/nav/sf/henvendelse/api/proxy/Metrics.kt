@@ -47,7 +47,8 @@ object Metrics {
 
     val henvendelselisteCache = registerLabelCounter("henvendelselistecache", "method", "status", "call_time", "endpoint_label")
 
-    val postgresHenvendelselisteCache = registerLabelCounter("postgreshenvendelselistecache", "method", "status", "call_time", "endpoint_label")
+    val postgresHenvendelselisteCache =
+        registerLabelCounter("postgreshenvendelselistecache", "method", "status", "call_time", "endpoint_label")
 
     val cacheControl = registerLabelCounter("cache_control", "result", "type", "j_nulls", "m_empty")
 
@@ -71,27 +72,54 @@ object Metrics {
         }
     }
 
-    fun registerCounter(name: String): Counter {
-        return Counter.build().name(name).help(name).register()
-    }
+    fun registerCounter(name: String): Counter =
+        Counter
+            .build()
+            .name(name)
+            .help(name)
+            .register()
 
-    fun registerLabelCounter(name: String, vararg labels: String): Counter {
-        return Counter.build().name(name).help(name).labelNames(*labels).register()
-    }
+    fun registerLabelCounter(
+        name: String,
+        vararg labels: String,
+    ): Counter =
+        Counter
+            .build()
+            .name(name)
+            .help(name)
+            .labelNames(*labels)
+            .register()
 
-    fun registerGauge(name: String): Gauge {
-        return Gauge.build().name(name).help(name).register()
-    }
+    fun registerGauge(name: String): Gauge =
+        Gauge
+            .build()
+            .name(name)
+            .help(name)
+            .register()
 
-    fun registerLabelGauge(name: String, vararg labels: String): Gauge {
-        return Gauge.build().name(name).help(name).labelNames(*labels).register()
-    }
+    fun registerLabelGauge(
+        name: String,
+        vararg labels: String,
+    ): Gauge =
+        Gauge
+            .build()
+            .name(name)
+            .help(name)
+            .labelNames(*labels)
+            .register()
 
-    fun registerHistogram(name: String): Histogram {
-        return Histogram.build().name(name).help(name).buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0).register()
-    }
+    fun registerHistogram(name: String): Histogram =
+        Histogram
+            .build()
+            .name(name)
+            .help(name)
+            .buckets(300.0, 500.0, 750.0, 1000.0, 2000.0, 4000.0, 8000.0)
+            .register()
 
-    fun registerSummary(name: String): Summary {
-        return Summary.build().name(name).help(name).register()
-    }
+    fun registerSummary(name: String): Summary =
+        Summary
+            .build()
+            .name(name)
+            .help(name)
+            .register()
 }

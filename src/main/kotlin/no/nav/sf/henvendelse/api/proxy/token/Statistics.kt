@@ -30,7 +30,12 @@ class Statistics {
     val pathsWithPathVars =
         listOf("/henvendelse/sladding/aarsaker/", "/henvendelse/behandling/", "/henvendelseinfo/henvendelse/")
 
-    fun logAndUpdateMetrics(status: Int, uri: Uri, req: Request, res: Response) {
+    fun logAndUpdateMetrics(
+        status: Int,
+        uri: Uri,
+        req: Request,
+        res: Response,
+    ) {
         try {
             log.info {
                 "Timings : Validation $elapsedTimeTokenValidation, Accesstoken: $elapsedTimeAccessTokenRequest," +
@@ -42,8 +47,9 @@ class Statistics {
              * statsPath is a version of request path that is shortened and with known path variables removed
              * to use as a clean metric
              */
-            val statsPath = (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
-                .replace(APEX_REST_BASE_PATH, "")
+            val statsPath =
+                (pathsWithPathVars.firstOrNull { uri.path.contains(it) } ?: uri.path)
+                    .replace(APEX_REST_BASE_PATH, "")
 
             Metrics.elapsedTimeAccessTokenRequest.set(elapsedTimeAccessTokenRequest.toDouble())
             Metrics.elapsedTimeTokenValidation.set(elapsedTimeTokenValidation.toDouble())
@@ -61,14 +67,19 @@ class Statistics {
             } else {
                 Metrics.failedCalls.labels(status.toString()).inc()
             }
-            val callTimeBucket = if (latestCallElapsedTime < 2000) { "less then 2000 ms" } else if (latestCallElapsedTime < 4000) {
-                "2000 to 4000 ms"
-            } else "4000 ms or worse"
+            val callTimeBucket =
+                if (latestCallElapsedTime < 2000) {
+                    "less then 2000 ms"
+                } else if (latestCallElapsedTime < 4000) {
+                    "2000 to 4000 ms"
+                } else {
+                    "4000 ms or worse"
+                }
             Metrics.calls.labels(statsPath, status.toString(), srcLabel, callTimeBucket).inc()
             if (machine) Metrics.machineCalls.labels(statsPath).inc()
             if (status == 403) {
                 File("/tmp/" + createSafeFilename(statsPath, 403)).writeText(
-                    "$currentDateTime\n\nREQUEST:\n${req.toMessage()}\n\nRESPONSE:\n${res.toMessage()}"
+                    "$currentDateTime\n\nREQUEST:\n${req.toMessage()}\n\nRESPONSE:\n${res.toMessage()}",
                 )
             }
         } catch (t: Throwable) {
@@ -78,7 +89,10 @@ class Statistics {
 
     val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
 
-    fun createSafeFilename(requestPath: String, statusCode: Int): String {
+    fun createSafeFilename(
+        requestPath: String,
+        statusCode: Int,
+    ): String {
         // Remove leading/trailing slashes and replace special characters with underscores
         val sanitizedPath = requestPath.trim('/').replace(Regex("[^a-zA-Z0-9]"), "_")
         // Combine sanitized path with status code

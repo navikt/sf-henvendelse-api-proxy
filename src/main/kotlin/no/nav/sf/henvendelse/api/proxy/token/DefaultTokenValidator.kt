@@ -19,20 +19,25 @@ class DefaultTokenValidator : TokenValidator {
     private val azureUrl = env(env_AZURE_APP_WELL_KNOWN_URL)
     private val azureAudience = env(env_AZURE_APP_CLIENT_ID).split(',')
 
-    private val multiIssuerConfiguration = MultiIssuerConfiguration(
-        mapOf(
-            // tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
-            azureAlias to IssuerProperties(URL(azureUrl), azureAudience)
+    private val multiIssuerConfiguration =
+        MultiIssuerConfiguration(
+            mapOf(
+                // tokenServiceAlias to IssuerProperties(URL(tokenServiceUrl), tokenServiceAudience),
+                azureAlias to IssuerProperties(URL(azureUrl), azureAudience),
+            ),
         )
-    )
 
     private val jwtTokenValidationHandler = JwtTokenValidationHandler(multiIssuerConfiguration)
 
-    override fun firstValidToken(request: Request, tokenFetchStats: Statistics): JwtToken? {
+    override fun firstValidToken(
+        request: Request,
+        tokenFetchStats: Statistics,
+    ): JwtToken? {
         var result: JwtToken?
-        tokenFetchStats.elapsedTimeTokenValidation = measureTimeMillis {
-            result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
-        }
+        tokenFetchStats.elapsedTimeTokenValidation =
+            measureTimeMillis {
+                result = jwtTokenValidationHandler.getValidatedTokens(request.toNavRequest()).firstValidToken
+            }
         if (result == null) {
             File("/tmp/novalidtoken").writeText(request.toMessage())
             Metrics.noauth.inc()
@@ -43,9 +48,7 @@ class DefaultTokenValidator : TokenValidator {
     private fun Request.toNavRequest(): HttpRequest {
         val req = this
         return object : HttpRequest {
-            override fun getHeader(headerName: String): String {
-                return req.header(headerName) ?: ""
-            }
+            override fun getHeader(headerName: String): String = req.header(headerName) ?: ""
         }
     }
 }

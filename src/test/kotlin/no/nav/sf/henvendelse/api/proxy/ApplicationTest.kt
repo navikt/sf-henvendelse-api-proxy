@@ -25,23 +25,23 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class ApplicationTest {
-
     private val mockTokenValidator = mockk<TokenValidator>()
     private val mockToken = mockk<JwtToken>()
 
     private val mockAccessTokenHandler = mockk<AccessTokenHandler>()
     private val mockClient = mockk<HttpHandler>()
 
-    private val application = Application(
-        tokenValidator = mockTokenValidator,
-        accessTokenHandler = mockAccessTokenHandler,
-        devContext = false,
-        client = mockClient,
-        twincallsEnabled = false
-    )
+    private val application =
+        Application(
+            tokenValidator = mockTokenValidator,
+            accessTokenHandler = mockAccessTokenHandler,
+            devContext = false,
+            client = mockClient,
+            twincallsEnabled = false,
+        )
 
-    private val INSTANCE_URL = "https://localhost:8080"
-    private val ACCESS_TOKEN = "accesstoken"
+    private val instanceUrl = "https://localhost:8080"
+    private val accessToken = "accesstoken"
 
     // Configure claim content of simulated accepted token for each test case:
     private var jwtTokenClaims: JwtTokenClaims = JwtTokenClaims(JWTClaimsSet.Builder().build())
@@ -53,17 +53,19 @@ class ApplicationTest {
         every { mockToken.tokenAsString } returns "mockToken"
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
-        every { mockAccessTokenHandler.instanceUrl } returns INSTANCE_URL
-        every { mockAccessTokenHandler.accessToken } returns ACCESS_TOKEN
+        every { mockAccessTokenHandler.instanceUrl } returns instanceUrl
+        every { mockAccessTokenHandler.accessToken } returns accessToken
     }
 
     @Test
     fun `If no nav identifier to be found anywhere, consider it a bad request`() {
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .claim(CLAIM_AZP_NAME, "azp-name")
-                .build()
-        )
+        jwtTokenClaims =
+            JwtTokenClaims(
+                JWTClaimsSet
+                    .Builder()
+                    .claim(CLAIM_AZP_NAME, "azp-name")
+                    .build(),
+            )
         val request = Request(Method.GET, "$API_BASE_PATH/some-endpoint")
 
         val response = application.handleApiRequest(request)
@@ -74,22 +76,25 @@ class ApplicationTest {
 
     @Test
     fun `A call with valid azure obo token containing NAVident claim should be successfully redirected`() {
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .claim(CLAIM_NAV_IDENT, "A123456")
-                .claim(CLAIM_AZP_NAME, "azp-name")
-                .build()
-        )
+        jwtTokenClaims =
+            JwtTokenClaims(
+                JWTClaimsSet
+                    .Builder()
+                    .claim(CLAIM_NAV_IDENT, "A123456")
+                    .claim(CLAIM_AZP_NAME, "azp-name")
+                    .build(),
+            )
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "$API_BASE_PATH/some-endpoint").headers(
-            listOf(
-                "X-Correlation-ID" to "X-Correlation-ID"
+        val request =
+            Request(Method.GET, "$API_BASE_PATH/some-endpoint").headers(
+                listOf(
+                    "X-Correlation-ID" to "X-Correlation-ID",
+                ),
             )
-        )
 
         application.handleApiRequest(request)
 
@@ -97,8 +102,8 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/some-endpoint"), capturedRequest.uri)
-        assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
+        assertEquals(Uri.of("$instanceUrl$APEX_REST_BASE_PATH/some-endpoint"), capturedRequest.uri)
+        assertEquals("Bearer $accessToken", capturedRequest.header("Authorization"))
         assertEquals("A123456", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
     }
@@ -107,23 +112,26 @@ class ApplicationTest {
     fun `A call with an approved machine token to kodeverk path should use azp_name claim as ident and be successfully redirected`() {
         val array = JSONArray()
         array.add("access_as_application")
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .claim(CLAIM_AZP_NAME, "azp-name")
-                .claim(CLAIM_ROLES, array)
-                .build()
-        )
+        jwtTokenClaims =
+            JwtTokenClaims(
+                JWTClaimsSet
+                    .Builder()
+                    .claim(CLAIM_AZP_NAME, "azp-name")
+                    .claim(CLAIM_ROLES, array)
+                    .build(),
+            )
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
-            .headers(
-                listOf(
-                    "X-Correlation-ID" to "X-Correlation-ID"
+        val request =
+            Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
+                .headers(
+                    listOf(
+                        "X-Correlation-ID" to "X-Correlation-ID",
+                    ),
                 )
-            )
 
         application.handleApiRequest(request)
 
@@ -131,8 +139,8 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
-        assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
+        assertEquals(Uri.of("$instanceUrl$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
+        assertEquals("Bearer $accessToken", capturedRequest.header("Authorization"))
         assertEquals("azp-name", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
     }
@@ -141,23 +149,26 @@ class ApplicationTest {
     fun `A call with an approved machine token to path kodeverk path should use azp_name claim as ident and be successfully redirected`() {
         val array = JSONArray()
         array.add("access_as_application")
-        jwtTokenClaims = JwtTokenClaims(
-            JWTClaimsSet.Builder()
-                .claim(CLAIM_AZP_NAME, "azp-name")
-                .claim(CLAIM_ROLES, array)
-                .build()
-        )
+        jwtTokenClaims =
+            JwtTokenClaims(
+                JWTClaimsSet
+                    .Builder()
+                    .claim(CLAIM_AZP_NAME, "azp-name")
+                    .claim(CLAIM_ROLES, array)
+                    .build(),
+            )
 
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
         every { mockClient.invoke(capture(slot())) } returns Response(Status.OK)
 
-        val request = Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
-            .headers(
-                listOf(
-                    "X-Correlation-ID" to "X-Correlation-ID"
+        val request =
+            Request(Method.GET, "$API_BASE_PATH/kodeverk/some-endpoint")
+                .headers(
+                    listOf(
+                        "X-Correlation-ID" to "X-Correlation-ID",
+                    ),
                 )
-            )
 
         application.handleApiRequest(request)
 
@@ -165,8 +176,8 @@ class ApplicationTest {
         verify { mockClient.invoke(capture(capturedRequestSlot)) }
         val capturedRequest = capturedRequestSlot.captured
 
-        assertEquals(Uri.of("$INSTANCE_URL$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
-        assertEquals("Bearer $ACCESS_TOKEN", capturedRequest.header("Authorization"))
+        assertEquals(Uri.of("$instanceUrl$APEX_REST_BASE_PATH/kodeverk/some-endpoint"), capturedRequest.uri)
+        assertEquals("Bearer $accessToken", capturedRequest.header("Authorization"))
         assertEquals("azp-name", capturedRequest.header("X-ACTING-NAV-IDENT"))
         assertEquals("X-Correlation-ID", capturedRequest.header("X-Correlation-ID"))
     }

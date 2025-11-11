@@ -18,8 +18,11 @@ import org.http4k.core.Response
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, private val client: HttpHandler, private val devContext: Boolean) {
-
+class TwincallHandler(
+    private val accessTokenHandler: AccessTokenHandler,
+    private val client: HttpHandler,
+    private val devContext: Boolean,
+) {
     private val log = KotlinLogging.logger { }
 
     private fun threadCall(request: Request): Deferred<Response> = GlobalScope.async { client(request) }
@@ -27,7 +30,9 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
     fun performTwinCall(request: Request): Response {
         val first = threadCall(request)
         val second = threadCall(request)
-        while (!first.isCompleted && !second.isCompleted) { Thread.sleep(25) }
+        while (!first.isCompleted && !second.isCompleted) {
+            Thread.sleep(25)
+        }
         return if (first.isCompleted) {
             second.cancel()
             first.getCompleted()
@@ -50,17 +55,19 @@ class TwincallHandler(private val accessTokenHandler: AccessTokenHandler, privat
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
                     HEADER_X_ACTING_NAV_IDENT to "H159337",
-                    HEADER_X_CORRELATION_ID to "testcall"
+                    HEADER_X_CORRELATION_ID to "testcall",
                 )
             val request = Request(Method.GET, dstUrl).headers(headers)
             val request2 = Request(Method.GET, dstUrl2).headers(headers)
             lateinit var response: Response
-            val ref = measureTimeMillis {
-                response = client(request)
-            }
-            val twincall = measureTimeMillis {
-                response = performTwinCall(request2)
-            }
+            val ref =
+                measureTimeMillis {
+                    response = client(request)
+                }
+            val twincall =
+                measureTimeMillis {
+                    response = performTwinCall(request2)
+                }
             log.info { "Testcalls performed - ref $ref - twin $twincall. Diff ${twincall - ref}" }
             Metrics.summaryTestRef.observe(ref.toDouble())
             Metrics.summaryTestTwinCall.observe(twincall.toDouble())

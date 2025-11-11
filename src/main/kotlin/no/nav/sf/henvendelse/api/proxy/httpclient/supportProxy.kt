@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package no.nav.sf.henvendelse.api.proxy.httpclient
 
 import mu.KotlinLogging
@@ -17,30 +19,33 @@ private val log = KotlinLogging.logger { }
 
 val enforceHttp1_1 = env(secret_ENFORCE_HTTP_1_1) == "true"
 
-private fun createOkHttpClient(proxy: Proxy? = null, enforceProtocol1_1: Boolean = enforceHttp1_1): OkHttpClient {
-    return OkHttpClient.Builder().apply {
-        proxy?.let { this.proxy(it) }
-        if (enforceProtocol1_1) {
-            protocols(listOf(Protocol.HTTP_1_1))
-        }
-        connectTimeout(Duration.ofSeconds(20))
-        readTimeout(Duration.ofSeconds(20))
-        writeTimeout(Duration.ofSeconds(20))
-        retryOnConnectionFailure(false)
-    }.build()
-}
+private fun createOkHttpClient(
+    proxy: Proxy? = null,
+    enforceProtocol1_1: Boolean = enforceHttp1_1,
+): OkHttpClient =
+    OkHttpClient
+        .Builder()
+        .apply {
+            proxy?.let { this.proxy(it) }
+            if (enforceProtocol1_1) {
+                protocols(listOf(Protocol.HTTP_1_1))
+            }
+            connectTimeout(Duration.ofSeconds(20))
+            readTimeout(Duration.ofSeconds(20))
+            writeTimeout(Duration.ofSeconds(20))
+            retryOnConnectionFailure(false)
+        }.build()
 
 fun supportProxy(httpsProxy: String = env(env_HTTPS_PROXY)): HttpHandler {
     val proxyUri = java.net.URI(httpsProxy)
     log.info("Setting up proxy with: " + proxyUri.host + " " + proxyUri.port)
-    val proxy = Proxy(
-        Proxy.Type.HTTP,
-        InetSocketAddress(proxyUri.host, proxyUri.port)
-    )
+    val proxy =
+        Proxy(
+            Proxy.Type.HTTP,
+            InetSocketAddress(proxyUri.host, proxyUri.port),
+        )
     File("/tmp/proxysettings").writeText(proxyUri.host + " " + proxyUri.port)
     return OkHttp(client = createOkHttpClient(proxy))
 }
 
-fun noProxy(): HttpHandler {
-    return OkHttp(client = createOkHttpClient())
-}
+fun noProxy(): HttpHandler = OkHttp(client = createOkHttpClient())

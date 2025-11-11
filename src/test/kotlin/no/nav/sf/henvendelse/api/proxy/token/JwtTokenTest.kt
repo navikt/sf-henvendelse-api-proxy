@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class JwtTokenTest {
-
     @Test
     fun `Jwt token with role access_as_application should be considered a machine token`() {
         val simulatedMachineToken = JwtToken(readResourceFile("/simulatedmachinetoken"))

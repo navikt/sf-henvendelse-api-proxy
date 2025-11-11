@@ -5,16 +5,21 @@ import com.google.gson.JsonParser
 import java.io.File
 
 object JsonComparator {
-    fun jsonEquals(a: String, b: String): Boolean {
-        return try {
+    fun jsonEquals(
+        a: String,
+        b: String,
+    ): Boolean =
+        try {
             jsonEquals(JsonParser.parseString(a), JsonParser.parseString(b))
         } catch (e: Exception) {
             File("/tmp/jsonSyntaxError").writeText(e.stackTraceToString())
             false
         }
-    }
 
-    fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
+    fun jsonEquals(
+        a: JsonElement?,
+        b: JsonElement?,
+    ): Boolean {
         if (a == null || b == null) return a == b // Both null = true, one null = false
 
         if (a.isJsonPrimitive && b.isJsonPrimitive) {
@@ -60,8 +65,11 @@ object JsonComparator {
         return regex.findAll(json).count()
     }
 
-    fun findMissingElements(json1: String, json2: String): List<JsonElement> {
-        return try {
+    fun findMissingElements(
+        json1: String,
+        json2: String,
+    ): List<JsonElement> =
+        try {
             val list1 = JsonParser.parseString(json1).asJsonArray
             val list2 = JsonParser.parseString(json2).asJsonArray
 
@@ -75,5 +83,4 @@ object JsonComparator {
             File("/tmp/aJsonSyntaxError").writeText(e.stackTraceToString())
             emptyList()
         }
-    }
 }
