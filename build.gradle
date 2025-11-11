@@ -33,7 +33,7 @@ configurations {
 }
 
 dependencies {
-    implementation "no.nav.security:token-validation-core:4.1.5" //Major version 5 issue using webproxy
+    implementation "no.nav.security:token-validation-core:4.1.8" //Major version 5 issue using webproxy
     implementation "net.minidev:json-smart:2.5.2" //Transient dependency to token-validation
 
     implementation("org.json:json:20240303")
