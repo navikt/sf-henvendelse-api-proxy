@@ -46,21 +46,21 @@ jobs:
         id: docker-push
         with:
           team: teamnks
-  deploy-dev-fss:
-    name: Deploy to NAIS dev fss
-    needs: build
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-fss
-          RESOURCE: .nais/dev-fss.yaml
-          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-fss
+#  deploy-dev-fss:
+#    name: Deploy to NAIS dev fss
+#    needs: build
+#    if: github.ref == 'refs/heads/master'
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write
+#      contents: read
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: nais/deploy/actions/deploy@v2
+#        env:
+#          CLUSTER: dev-fss
+#          RESOURCE: .nais/dev-fss.yaml
+#          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-fss
   deploy-dev-gcp:
     name: Deploy to NAIS dev gcp
     needs: build
@@ -76,21 +76,21 @@ jobs:
           CLUSTER: dev-gcp
           RESOURCE: .nais/dev-gcp.yaml
           VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=dev-gcp
-  deploy-prod-fss:
-    name: Deploy to NAIS prod fss
-    needs: build
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: prod-fss
-          RESOURCE: .nais/prod-fss.yaml
-          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=prod-fss
+#  deploy-prod-fss:
+#    name: Deploy to NAIS prod fss
+#    needs: build
+#    if: github.ref == 'refs/heads/master'
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write
+#      contents: read
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: nais/deploy/actions/deploy@v2
+#        env:
+#          CLUSTER: prod-fss
+#          RESOURCE: .nais/prod-fss.yaml
+#          VAR: image=${{ needs.build.outputs.image }},DEPLOY_CLUSTER=prod-fss
   deploy-prod-gcp:
     name: Deploy to NAIS prod gcp
     needs: build

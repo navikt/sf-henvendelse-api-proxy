@@ -36,6 +36,7 @@ import org.http4k.routing.static
 import org.http4k.server.Http4kServer
 import org.http4k.server.Netty
 import org.http4k.server.asServer
+import org.slf4j.MarkerFactory
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.zip.GZIPInputStream
@@ -68,6 +69,7 @@ class Application(
     private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext),
 ) {
     private val log = KotlinLogging.logger { }
+    private val teamLogsMarker = MarkerFactory.getMarker("TEAM_LOGS")
     private var lifeTimeCallIndex = 0L
 
     // List of headers that will not be forwarded
@@ -195,7 +197,7 @@ class Application(
                                 ),
                             ) {
                                 log.info {
-                                    "Summary : Cached Response, test user $chosenTestUser, " +
+                                    "Summary : Cached Response, " +
                                         "status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
                                         "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
                                 }
@@ -275,11 +277,18 @@ class Application(
                             "x-acting-nav-ident" to navIdent,
                         ),
                     ) {
-                        log.info {
-                            "Summary : test user $chosenTestUser, status=${response.status.code}, " +
+                        log.info(
+                            "Summary : status=${response.status.code}, " +
                                 "call_ms=${stats.latestCallElapsedTime}, " +
-                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
-                        }
+                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
+                        )
+
+                        log.info(
+                            teamLogsMarker,
+                            "Summary (Teams): status=${response.status.code}, " +
+                                "call_ms=${stats.latestCallElapsedTime}, " +
+                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
+                        )
                     }
 
                     File(
