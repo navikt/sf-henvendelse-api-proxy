@@ -283,12 +283,20 @@ class Application(
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
                         )
 
-                        log.info(
-                            teamLogsMarker,
-                            "Summary (Teams): status=${response.status.code}, " +
-                                "call_ms=${stats.latestCallElapsedTime}, " +
-                                "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
-                        )
+                        withLoggingContext(
+                            mapOf(
+                                "responseBody" to response.bodyString(),
+                            ),
+                        ) {
+                            if (!response.status.successful) {
+                                log.info(
+                                    teamLogsMarker,
+                                    "Summary (Teams): status=${response.status.code}, " +
+                                        "call_ms=${stats.latestCallElapsedTime}, " +
+                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
+                                )
+                            }
+                        }
                     }
 
                     File(
