@@ -51,7 +51,7 @@ spec:
     inbound:
       rules:
         - application: simtest
-          namespace: teamcrm
+          namespace: platforce
           cluster: dev-gcp
         - application: itestapp
           namespace: teamcrm
