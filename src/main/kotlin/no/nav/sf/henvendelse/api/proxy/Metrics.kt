@@ -45,7 +45,7 @@ object Metrics {
 
     val cacheSize: Gauge = registerGauge("cache_size")
 
-    val henvendelselisteCache = registerLabelCounter("henvendelselistecache", "method", "status", "call_time", "endpoint_label")
+    // val henvendelselisteCache = registerLabelCounter("henvendelselistecache", "method", "status", "call_time", "endpoint_label")
 
     val postgresHenvendelselisteCache =
         registerLabelCounter("postgreshenvendelselistecache", "method", "status", "call_time", "endpoint_label")
