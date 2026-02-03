@@ -140,6 +140,7 @@ class Application(
                     log.error { "Failed to fetch issuer from token" }
                 }
 
+                /*
                 val chosenTestUser =
                     try {
                         val chosenTestUsers = listOf("Z990454", "Z993068", "N175808")
@@ -155,10 +156,12 @@ class Application(
                         false
                     }
 
+                 */
+
                 val cache = request.query("cache")
                 val forceCache =
-                    if (chosenTestUser || (cache != null && cache == "true")) {
-                        log.info { "Force cache true - due to chosen test user? $chosenTestUser" }
+                    if ((cache != null && cache == "true")) {
+                        log.info { "Force cache true" }
                         true
                     } else {
                         false
