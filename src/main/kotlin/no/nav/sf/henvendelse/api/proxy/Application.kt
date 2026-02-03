@@ -81,7 +81,7 @@ class Application(
         }
         apiServer(8080).start()
         try {
-            Cache.get("dummy", "dummy")
+            Cache.get("dummy", 1, 50, "dummy")
         } catch (e: Exception) {
             File("/tmp/CacheTestException").writeText(e.stackTraceToString())
         }
@@ -158,6 +158,9 @@ class Application(
 
                  */
 
+                val page = request.query("page")?.toInt() ?: 1
+                val pageSize = request.query("pageSize")?.toInt() ?: 50
+
                 val cache = request.query("cache")
                 val forceCache =
                     if ((cache != null && cache == "true")) {
@@ -179,7 +182,7 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste")) {
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
-                        henvendelseCacheResponse = decompressIfGzipped(get(aktorIdInFocus, "henvendelseliste"))
+                        henvendelseCacheResponse = decompressIfGzipped(get(aktorIdInFocus, page, pageSize, "henvendelseliste"))
 
                         if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
                             stats.logAndUpdateMetrics(
@@ -219,7 +222,7 @@ class Application(
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         val sfDecompressed = decompressIfGzipped(response)
-                        Cache.doAsyncPut(aktorIdInFocus, sfDecompressed.bodyString(), "henvendelseliste")
+                        Cache.doAsyncPut(aktorIdInFocus, page, pageSize, sfDecompressed.bodyString(), "henvendelseliste")
                         if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                             File(
                                 "/tmp/latestCompare",
@@ -308,6 +311,7 @@ class Application(
                         "FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}",
                     )
 
+                    /*
                     if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
                         if (Cache.compareRealToCache(
                                 decompressIfGzipped(response),
@@ -320,6 +324,8 @@ class Application(
                             }
                         }
                     }
+
+                     */
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
                     //      creates noise in clients due to cookie source mismatch.

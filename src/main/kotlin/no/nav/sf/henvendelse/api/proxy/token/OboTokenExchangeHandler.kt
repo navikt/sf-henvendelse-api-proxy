@@ -87,7 +87,7 @@ object OboTokenExchangeHandler {
                 .body(
                     listOf(
                         "grant_type" to "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                        "assertion" to jwtIn.tokenAsString,
+                        "assertion" to jwtIn.encodedToken,
                         "client_id" to clientId,
                         "scope" to "api://$sfAlias/.default",
                         "client_secret" to clientSecret,

@@ -30,21 +30,17 @@ object Cache {
             "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
         }
 
-    private val endpointLookupDelete =
-        if (isDev) {
-            "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelselistebykjedeid"
-        } else {
-            "https://sf-henvendelse-db.intern.nav.no/cache/henvendelselistebykjedeid"
-        }
-
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
 
+    // TODO Add the pageSize and page parmeteres to rest call + use service discovery - store the default values as config.
     fun get(
         aktorId: String,
+        page: Int,
+        pageSize: Int,
         endpointLabel: String,
     ): Response {
         val request =
-            Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders)
+            Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize").headers(authHeaders)
         val response: Response
 
         val callTime =
@@ -69,11 +65,13 @@ object Cache {
 
     fun put(
         aktorId: String,
+        page: Int,
+        pageSize: Int,
         json: String,
         endpointLabel: String,
     ) {
         val request =
-            Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId").headers(authHeaders).body(json)
+            Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize").headers(authHeaders).body(json)
         lateinit var response: Response
         var retryCount = 0
         val maxRetries = 2
@@ -131,22 +129,26 @@ object Cache {
 
     fun doAsyncGet(
         aktorId: String,
+        page: Int,
+        pageSize: Int,
         endpointLabel: String,
     ) {
         log.info { "Will perform async postgres cache get with aktorId $aktorId" }
         GlobalScope.launch {
-            get(aktorId, endpointLabel)
+            get(aktorId, page, pageSize, endpointLabel)
         }
     }
 
     fun doAsyncPut(
         aktorId: String,
+        page: Int,
+        pageSize: Int,
         json: String,
         endpointLabel: String,
     ) {
         log.info { "Will perform async postgres cache put with aktorId $aktorId" }
         GlobalScope.launch {
-            put(aktorId, json, endpointLabel)
+            put(aktorId, page, pageSize, json, endpointLabel)
         }
     }
 
@@ -159,9 +161,6 @@ object Cache {
             delete(aktorId, endpointLabel)
         }
     }
-
-    private const val LOG_LIMIT = 100
-    private var logCounter = 0
 
     val currentDateTime: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
 
@@ -179,6 +178,7 @@ object Cache {
 
     val secondsToRetry = 10
 
+    /*
     fun retryCallVsCache(
         request: Request,
         aktorIdInFocus: String,
@@ -293,4 +293,6 @@ object Cache {
         }
         return true
     }
+
+     */
 }

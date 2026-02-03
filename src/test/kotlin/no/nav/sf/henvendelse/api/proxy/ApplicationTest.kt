@@ -50,7 +50,7 @@ class ApplicationTest {
     fun setup() {
         every { mockTokenValidator.firstValidToken(any(), any()) } returns mockToken
 
-        every { mockToken.tokenAsString } returns "mockToken"
+        every { mockToken.encodedToken } returns "mockToken"
         every { mockToken.jwtTokenClaims } returns jwtTokenClaims
 
         every { mockAccessTokenHandler.instanceUrl } returns instanceUrl
