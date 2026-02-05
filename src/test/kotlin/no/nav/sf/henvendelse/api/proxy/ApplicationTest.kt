@@ -37,7 +37,6 @@ class ApplicationTest {
             accessTokenHandler = mockAccessTokenHandler,
             devContext = false,
             client = mockClient,
-            twincallsEnabled = false,
         )
 
     private val instanceUrl = "https://localhost:8080"

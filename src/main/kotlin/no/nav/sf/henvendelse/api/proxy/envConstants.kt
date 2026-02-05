@@ -18,7 +18,6 @@ package no.nav.sf.henvendelse.api.proxy
 
 const val config_SF_TOKENHOST = "SF_TOKENHOST"
 const val config_DEPLOY_CLUSTER = "DEPLOY_CLUSTER"
-const val config_TWINCALL = "TWINCALL"
 const val config_AUDIENCE_TOKEN_SERVICE_URL = "AUDIENCE_TOKEN_SERVICE_URL"
 const val config_AUDIENCE_TOKEN_SERVICE_ALIAS = "AUDIENCE_TOKEN_SERVICE_ALIAS"
 const val config_AUDIENCE_TOKEN_SERVICE = "AUDIENCE_TOKEN_SERVICE"

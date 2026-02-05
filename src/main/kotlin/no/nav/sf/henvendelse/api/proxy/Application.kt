@@ -9,7 +9,6 @@ import mu.KotlinLogging
 import mu.withLoggingContext
 import no.nav.security.token.support.core.jwt.JwtToken
 import no.nav.sf.henvendelse.api.proxy.Cache.get
-import no.nav.sf.henvendelse.api.proxy.handler.TwincallHandler
 import no.nav.sf.henvendelse.api.proxy.httpclient.enforceHttp1_1
 import no.nav.sf.henvendelse.api.proxy.httpclient.noProxy
 import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
@@ -65,8 +64,6 @@ class Application(
     private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
     private val devContext: Boolean = isDev,
     val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
-    private val twincallsEnabled: Boolean = env(config_TWINCALL) == "ON",
-    private val twincallHandler: TwincallHandler = TwincallHandler(accessTokenHandler, client, devContext),
 ) {
     private val log = KotlinLogging.logger { }
     private val teamLogsMarker = MarkerFactory.getMarker("TEAM_LOGS")
@@ -77,7 +74,7 @@ class Application(
 
     fun start() {
         log.info {
-            "Starting ${if (devContext) "DEV" else "PROD"} - twincalls enabled: $twincallsEnabled, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1"
+            "Starting ${if (devContext) "DEV" else "PROD"}, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1"
         }
         apiServer(8080).start()
         try {
@@ -101,7 +98,6 @@ class Application(
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        if (twincallsEnabled) twincallHandler.performTestCalls()
         accessTokenHandler.refreshToken()
         runBlocking { delay(900000) } // 15 min
 
@@ -392,12 +388,7 @@ class Application(
         lateinit var response: Response
         tokenFetchStats.latestCallElapsedTime =
             measureTimeMillis {
-                response =
-                    if (twincallsEnabled && request.method == Method.GET) {
-                        twincallHandler.performTwinCall(request)
-                    } else {
-                        client(request)
-                    }
+                response = client(request)
             }
         return response
     }
