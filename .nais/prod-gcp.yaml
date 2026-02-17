@@ -40,9 +40,8 @@ spec:
       rules:
         - application: logging
           namespace: nais-system
-        - application: sf-henvendelse-db # TODO Use service discovery in gcp
+        - application: sf-henvendelse-db
       external:
-        - host: sf-henvendelse-db.intern.nav.no
         - host: login.salesforce.com
         - host: navdialog.my.salesforce.com
     inbound:

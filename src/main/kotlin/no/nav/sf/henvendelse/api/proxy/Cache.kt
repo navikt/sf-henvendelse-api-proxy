@@ -23,12 +23,12 @@ object Cache {
     // private val client: HttpHandler = supportProxy()
     private val clientNoProxy: HttpHandler = noProxy()
 
-    private val endpointSfHenvendelserDb =
-        if (isDev) {
-            "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
-        } else {
-            "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
-        }
+    private val endpointSfHenvendelserDb = "http://sf-henvendelse-db/cache/henvendelseliste"
+//        if (isDev) {
+//            "https://sf-henvendelse-db.intern.dev.nav.no/cache/henvendelseliste"
+//        } else {
+//            "https://sf-henvendelse-db.intern.nav.no/cache/henvendelseliste"
+//        }
 
     private val authHeaders: Headers get() = listOf(HEADER_AUTHORIZATION to "Bearer ${entraTokenHandler.accessToken}")
 
