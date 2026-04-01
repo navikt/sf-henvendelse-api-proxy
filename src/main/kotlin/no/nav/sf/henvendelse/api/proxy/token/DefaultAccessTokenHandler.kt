@@ -33,6 +33,8 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     override val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     override val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
+    fun testAccess(): Boolean = fetchAccessTokenAndInstanceUrl(true).first != ""
+
 //    override fun refreshToken() {
 //        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
 //            log.info { "Refreshing access token" }
@@ -60,8 +62,8 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
 
     private var expireTime = System.currentTimeMillis()
 
-    private fun fetchAccessTokenAndInstanceUrl(): Pair<String, String> {
-        if (System.currentTimeMillis() < expireTime) {
+    private fun fetchAccessTokenAndInstanceUrl(ignoreCache: Boolean = false): Pair<String, String> {
+        if (!ignoreCache && System.currentTimeMillis() < expireTime) {
             log.debug { "Using cached access token (${(expireTime - System.currentTimeMillis()) / 60000} min left)" }
             return lastTokenPair
         }

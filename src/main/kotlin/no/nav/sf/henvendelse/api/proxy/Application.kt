@@ -29,6 +29,7 @@ import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.Status.Companion.OK
 import org.http4k.routing.ResourceLoader.Companion.Classpath
 import org.http4k.routing.bind
 import org.http4k.routing.routes
@@ -95,6 +96,8 @@ class Application(
             "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
             "/internal/isReady" bind Method.GET to { Response(Status.OK) },
             "/internal/metrics" bind Method.GET to Metrics.metricsHandler,
+            "/internal/testAccess/old" bind Method.GET to testAccessHandlerOld,
+            "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
         )
 
     tailrec fun refreshLoop() {
@@ -103,6 +106,16 @@ class Application(
         runBlocking { delay(900000) } // 15 min
 
         refreshLoop()
+    }
+
+    private val testAccessHandlerOld: HttpHandler = {
+        val defaultAccessTokenHandler = DefaultAccessTokenHandler()
+        Response(OK).body("Test access (old) successful: " + defaultAccessTokenHandler.testAccess())
+    }
+
+    private val testAccessHandlerNew: HttpHandler = {
+        val newAccessTokenHandler = NewAccessTokenHandler()
+        Response(OK).body("Test access (new) successful: " + newAccessTokenHandler.testAccess())
     }
 
     fun handleApiRequest(request: Request): Response {
