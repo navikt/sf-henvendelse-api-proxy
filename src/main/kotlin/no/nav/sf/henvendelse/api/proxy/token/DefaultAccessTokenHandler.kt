@@ -33,12 +33,12 @@ class DefaultAccessTokenHandler : AccessTokenHandler {
     override val accessToken get() = fetchAccessTokenAndInstanceUrl().first
     override val instanceUrl get() = fetchAccessTokenAndInstanceUrl().second
 
-    override fun refreshToken() {
-        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
-            log.info { "Refreshing access token" }
-            accessToken
-        }
-    }
+//    override fun refreshToken() {
+//        if ((expireTime - System.currentTimeMillis()) / 60000 < 30) { // Refresh if expireTime within 30 min
+//            log.info { "Refreshing access token" }
+//            accessToken
+//        }
+//    }
 
     private val log = KotlinLogging.logger { }
 

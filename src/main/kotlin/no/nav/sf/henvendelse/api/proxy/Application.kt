@@ -15,6 +15,7 @@ import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
+import no.nav.sf.henvendelse.api.proxy.token.NewAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.Statistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import no.nav.sf.henvendelse.api.proxy.token.getAzpName
@@ -61,7 +62,7 @@ val useHenvendelseListeCache = env(secret_USE_CACHE) == "true"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
-    private val accessTokenHandler: AccessTokenHandler = DefaultAccessTokenHandler(),
+    private val accessTokenHandler: AccessTokenHandler = if (isDev) NewAccessTokenHandler() else DefaultAccessTokenHandler(),
     private val devContext: Boolean = isDev,
     val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
 ) {
@@ -98,7 +99,7 @@ class Application(
 
     tailrec fun refreshLoop() {
         runBlocking { delay(60000) } // 1 min
-        accessTokenHandler.refreshToken()
+        // accessTokenHandler.refreshToken()
         runBlocking { delay(900000) } // 15 min
 
         refreshLoop()
@@ -151,7 +152,6 @@ class Application(
                         log.error { "Failed to check navident on token" }
                         false
                     }
-
                  */
 
                 val page = request.query("page")?.toInt() ?: 1

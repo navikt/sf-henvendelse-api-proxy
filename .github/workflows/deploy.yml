@@ -1,4 +1,4 @@
-name: Build, push, deploy fss and gcp
+name: Build, push, deploy
 
 on: [push, pull_request]
 
