@@ -47,6 +47,7 @@ import kotlin.system.measureTimeMillis
 const val HEADER_X_REQUEST_ID = "X-Request-ID"
 const val HEADER_NAV_CALL_ID = "Nav-Call-Id"
 const val HEADER_NAV_CONSUMER_ID = "Nav-Consumer-Id"
+const val HEADER_TRACEPARENT = "traceparent"
 
 // Required in forward request by salesforce api:
 const val HEADER_AUTHORIZATION = "Authorization"
@@ -128,6 +129,7 @@ class Application(
                 HEADER_NAV_CALL_ID to (request.header(HEADER_NAV_CALL_ID) ?: ""),
                 HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""),
                 HEADER_NAV_CONSUMER_ID to (request.header(HEADER_NAV_CONSUMER_ID) ?: ""),
+                HEADER_TRACEPARENT to (request.header(HEADER_TRACEPARENT) ?: ""),
                 "callIndex" to callIndex.toString(),
             ),
         ) {
