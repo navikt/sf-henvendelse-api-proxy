@@ -97,6 +97,7 @@ class Application(
             "/internal/isAlive" bind Method.GET to { Response(Status.OK) },
             "/internal/isReady" bind Method.GET to { Response(Status.OK) },
             "/internal/metrics" bind Method.GET to Metrics.metricsHandler,
+            "/internal/whoAmI" bind Method.GET to { Response(OK).body(env(env_AZURE_APP_CLIENT_ID)) },
             "/internal/testAccess/old" bind Method.GET to testAccessHandlerOld,
             "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
         )
