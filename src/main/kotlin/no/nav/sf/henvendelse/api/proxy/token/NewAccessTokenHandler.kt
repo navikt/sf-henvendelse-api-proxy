@@ -2,12 +2,12 @@ package no.nav.sf.henvendelse.api.proxy.token
 
 import com.google.gson.Gson
 import mu.KotlinLogging
-import no.nav.sf.henvendelse.api.proxy.config_SF_JWT_USERNAME
 import no.nav.sf.henvendelse.api.proxy.config_SF_TOKEN_HOST
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.secret_SF_JWT_CLIENT_ID
 import no.nav.sf.henvendelse.api.proxy.secret_SF_JWT_KEYSTORE_B64
 import no.nav.sf.henvendelse.api.proxy.secret_SF_JWT_KEYSTORE_PASSWORD
+import no.nav.sf.henvendelse.api.proxy.secret_SF_JWT_USERNAME
 import org.http4k.client.OkHttp
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
@@ -29,7 +29,7 @@ import java.util.Base64
  */
 class NewAccessTokenHandler(
     private val sfTokenHost: String = env(config_SF_TOKEN_HOST),
-    private val sfUsername: String = env(config_SF_JWT_USERNAME),
+    private val sfUsername: String = env(secret_SF_JWT_USERNAME),
     private val sfClientId: String = env(secret_SF_JWT_CLIENT_ID),
     private val keystoreJksB64: String = env(secret_SF_JWT_KEYSTORE_B64),
     private val keystorePassword: String = env(secret_SF_JWT_KEYSTORE_PASSWORD),

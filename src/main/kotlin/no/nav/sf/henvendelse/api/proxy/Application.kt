@@ -1,9 +1,7 @@
 package no.nav.sf.henvendelse.api.proxy
 
 import com.google.gson.JsonParser
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import mu.withLoggingContext
@@ -15,6 +13,7 @@ import no.nav.sf.henvendelse.api.proxy.httpclient.supportProxy
 import no.nav.sf.henvendelse.api.proxy.token.AccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.DefaultTokenValidator
+import no.nav.sf.henvendelse.api.proxy.token.MigratingAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.NewAccessTokenHandler
 import no.nav.sf.henvendelse.api.proxy.token.Statistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
@@ -40,6 +39,8 @@ import org.http4k.server.asServer
 import org.slf4j.MarkerFactory
 import java.io.File
 import java.nio.ByteBuffer
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.zip.GZIPInputStream
 import kotlin.system.measureTimeMillis
 
@@ -100,6 +101,8 @@ class Application(
             "/internal/whoAmI" bind Method.GET to { Response(OK).body(env(env_AZURE_APP_CLIENT_ID)) },
             "/internal/testAccess/old" bind Method.GET to testAccessHandlerOld,
             "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
+            "/internal/testAccess/validation" bind Method.GET to testAccessHandlerValidation,
+            "/internal/testAccess/migration" bind Method.GET to testAccessHandlerMigration,
         )
 
     tailrec fun refreshLoop() {
@@ -110,14 +113,27 @@ class Application(
         refreshLoop()
     }
 
+    val currentTimeStamp: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+
     private val testAccessHandlerOld: HttpHandler = {
-        val defaultAccessTokenHandler = DefaultAccessTokenHandler()
-        Response(OK).body("Test access (old) successful: " + defaultAccessTokenHandler.testAccess())
+        val oldAccessTokenHandler = DefaultAccessTokenHandler()
+        Response(OK).body("$currentTimeStamp\nTest access (old) successful: " + oldAccessTokenHandler.testAccess())
     }
 
     private val testAccessHandlerNew: HttpHandler = {
         val newAccessTokenHandler = NewAccessTokenHandler()
-        Response(OK).body("Test access (new) successful: " + newAccessTokenHandler.testAccess())
+        Response(OK).body("$currentTimeStamp\nTest access (new) successful: " + newAccessTokenHandler.testAccess())
+    }
+
+    private val testAccessHandlerValidation: HttpHandler = {
+        val newAccessTokenHandlerAgainstValidation = NewAccessTokenHandler(sfClientId = env(secret_SF_VALIDATION_CLIENT_ID))
+        Response(OK).body("$currentTimeStamp\nTest access (validation) successful: " + newAccessTokenHandlerAgainstValidation.testAccess())
+    }
+
+    private val testAccessHandlerMigration: HttpHandler = {
+        val migrationTokenHandler =
+            MigratingAccessTokenHandler(old = DefaultAccessTokenHandler(), new = NewAccessTokenHandler())
+        Response(OK).body("$currentTimeStamp\nTest access (migration) result: " + migrationTokenHandler.testAccess())
     }
 
     fun handleApiRequest(request: Request): Response {

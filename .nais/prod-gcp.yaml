@@ -74,6 +74,7 @@ spec:
           namespace: personoversikt
           cluster: prod-gcp
   envFrom:
+    - configmap: salesforce-common
     - secret: sf-henvendelse-api
   env:
     - name: SF_TOKENHOST
