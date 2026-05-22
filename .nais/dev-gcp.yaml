@@ -96,6 +96,7 @@ spec:
           cluster: dev-gcp
   envFrom:
     - configmap: salesforce-common
+    - configmap: sf-henvendelse-api
     - secret: sf-henvendelse-sit2
   env:
     - name: SF_TOKENHOST
