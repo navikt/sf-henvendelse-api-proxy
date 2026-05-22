@@ -77,6 +77,8 @@ spec:
     - configmap: salesforce-common
 #    - configmap: sf-henvendelse-api
     - secret: sf-henvendelse-api
+    - secret: sf-henvendelse-prod
+    - secret: migration-prod
   env:
     - name: SF_TOKENHOST
       value: 'https://login.salesforce.com/services/oauth2/token'
