@@ -65,15 +65,7 @@ val useHenvendelseListeCache = env(secret_USE_CACHE) == "true"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
-    private val accessTokenHandler: AccessTokenHandler =
-        if (isDev) {
-            NewAccessTokenHandler()
-        } else {
-            MigratingAccessTokenHandler(
-                old = DefaultAccessTokenHandler(),
-                new = NewAccessTokenHandler(),
-            )
-        },
+    private val accessTokenHandler: AccessTokenHandler = NewAccessTokenHandler(),
     private val devContext: Boolean = isDev,
     val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
 ) {
