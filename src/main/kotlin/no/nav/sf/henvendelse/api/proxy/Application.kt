@@ -320,9 +320,28 @@ class Application(
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
                         )
 
+                        val responseHeaders =
+                            mapOf(
+                                "content-type" to response.header("Content-Type"),
+                                "content-encoding" to response.header("Content-Encoding"),
+                                "content-length" to response.header("Content-Length"),
+                                "transfer-encoding" to response.header("Transfer-Encoding"),
+                                "vary" to response.header("Vary"),
+                                "cache-control" to response.header("Cache-Control"),
+                                "etag" to response.header("ETag"),
+                                "last-modified" to response.header("Last-Modified"),
+                                "content-disposition" to response.header("Content-Disposition"),
+                                "content-language" to response.header("Content-Language"),
+                                "date" to response.header("Date"),
+                                "server" to response.header("Server"),
+                            ).filterValues { it != null }
+
                         withLoggingContext(
                             mapOf(
                                 "responseBody" to response.bodyString(),
+                                "responseHeaders" to responseHeaders.toString(),
+                                "requestAcceptEncoding" to (forwardRequest.header("Accept-Encoding") ?: ""),
+                                "requestAccept" to (forwardRequest.header("Accept") ?: ""),
                             ),
                         ) {
                             if (!response.status.successful || teamLogAll) {

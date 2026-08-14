@@ -31,6 +31,8 @@
         <appender-ref ref="team-logs" />
     </root>
 
+    <logger name="io.netty.channel.DefaultChannelPipeline" level="ERROR" />
+
     <logger name="team-logs-logger" level="INFO" additivity="false">
         <appender-ref ref="team-logs" />
     </logger>
