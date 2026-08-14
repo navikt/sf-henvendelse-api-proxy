@@ -129,7 +129,8 @@ class Application(
     }
 
     private val testAccessHandlerValidation: HttpHandler = {
-        val newAccessTokenHandlerAgainstValidation = NewAccessTokenHandler(sfClientId = env(secret_SF_VALIDATION_CLIENT_ID))
+        val newAccessTokenHandlerAgainstValidation =
+            NewAccessTokenHandler(sfClientId = env(secret_SF_VALIDATION_CLIENT_ID))
         Response(OK).body("$currentTimeStamp\nTest access (validation) successful: " + newAccessTokenHandlerAgainstValidation.testAccess())
     }
 
@@ -213,7 +214,8 @@ class Application(
                     if (request.uri.path.contains("henvendelseliste")) {
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
-                        henvendelseCacheResponse = decompressIfGzipped(get(aktorIdInFocus, page, pageSize, "henvendelseliste"))
+                        henvendelseCacheResponse =
+                            decompressIfGzippedAndRealize(get(aktorIdInFocus, page, pageSize, "henvendelseliste"))
 
                         if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
                             stats.logAndUpdateMetrics(
@@ -249,18 +251,23 @@ class Application(
                         }
                     }
 
-                    val response = invokeRequest(forwardRequest, stats)
+                    val response = decompressIfGzippedAndRealize(invokeRequest(forwardRequest, stats))
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
-                        val sfDecompressed = decompressIfGzipped(response)
-                        Cache.doAsyncPut(aktorIdInFocus, page, pageSize, sfDecompressed.bodyString(), "henvendelseliste")
-                        if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                            File(
-                                "/tmp/latestCompare",
-                            ).writeText(
-                                "REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${sfDecompressed.toMessage()}",
-                            )
-                        }
+                        Cache.doAsyncPut(
+                            aktorIdInFocus,
+                            page,
+                            pageSize,
+                            response.bodyString(),
+                            "henvendelseliste",
+                        )
+//                        if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
+//                            File(
+//                                "/tmp/latestCompare",
+//                            ).writeText(
+//                                "REQUEST:\n${request.toMessage()}\n\nCACHE:\n${henvendelseCacheResponse.toMessage()}\n\nSF:\n${sfDecompressed.toMessage()}",
+//                            )
+//                        }
                     }
 
                     if (response.status.successful) {
@@ -283,7 +290,8 @@ class Application(
                         } else if (request.uri.path.contains("journal")) {
                             // Parse aktorId from response:
                             try {
-                                val jsonObject = JsonParser.parseString(decompressIfGzipped(response).bodyString()).asJsonObject
+                                val jsonObject =
+                                    JsonParser.parseString(decompressIfGzippedAndRealize(response).bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
                                 Cache.doAsyncDelete(aktorIdInFocus, "journal")
                             } catch (e: Exception) {
@@ -291,7 +299,8 @@ class Application(
                             }
                         } else if (request.uri.path.contains("meldingskjede")) {
                             try {
-                                val jsonObject = JsonParser.parseString(decompressIfGzipped(response).bodyString()).asJsonObject
+                                val jsonObject =
+                                    JsonParser.parseString(decompressIfGzippedAndRealize(response).bodyString()).asJsonObject
                                 aktorIdInFocus = jsonObject.get("aktorId").asString
                                 Cache.doAsyncDelete(aktorIdInFocus, "lukk")
                             } catch (e: Exception) {
@@ -299,7 +308,7 @@ class Application(
                             }
                         }
                     } else {
-                        File("/tmp/failResponse-${response.status.code}").writeText(decompressIfGzipped(response).toMessage())
+                        File("/tmp/failResponse-${response.status.code}").writeText(decompressIfGzippedAndRealize(response).toMessage())
                     }
 
                     stats.logAndUpdateMetrics(response.status.code, forwardRequest.uri, forwardRequest, response)
@@ -320,6 +329,8 @@ class Application(
                                 "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}",
                         )
 
+                        val responseBody = response.bodyString()
+
                         val responseHeaders =
                             mapOf(
                                 "content-type" to response.header("Content-Type"),
@@ -338,7 +349,7 @@ class Application(
 
                         withLoggingContext(
                             mapOf(
-                                "responseBody" to response.bodyString(),
+                                "responseBody" to responseBody,
                                 "responseHeaders" to responseHeaders.toString(),
                                 "requestAcceptEncoding" to (forwardRequest.header("Accept-Encoding") ?: ""),
                                 "requestAccept" to (forwardRequest.header("Accept") ?: ""),
@@ -354,28 +365,6 @@ class Application(
                             }
                         }
                     }
-
-                    File(
-                        "/tmp/latestStatus-${response.status.code}",
-                    ).writeText(
-                        "FORWARD REQUEST:\n${forwardRequest.toMessage()}\n\nRESPONSE:\n${decompressIfGzipped(response).toMessage()}",
-                    )
-
-                    /*
-                    if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
-                        if (Cache.compareRealToCache(
-                                decompressIfGzipped(response),
-                                decompressIfGzipped(henvendelseCacheResponse),
-                                aktorIdInFocus,
-                            )
-                        ) {
-                            GlobalScope.launch {
-                                Cache.retryCallVsCache(forwardRequest, aktorIdInFocus)
-                            }
-                        }
-                    }
-
-                     */
 
                     // Fix: We remove introduction of a standard cookie (BrowserId) from salesforce response that is not used and
                     //      creates noise in clients due to cookie source mismatch.
@@ -423,12 +412,16 @@ class Application(
         tokenFetchStats.elapsedTimeAccessTokenRequest = measureTimeMillis { accessTokenHandler.accessToken }
 
         // Drop API_BASE_PATH from url and replace with salesforce path
-        val dstUrl = "${accessTokenHandler.instanceUrl}$APEX_REST_BASE_PATH${request.uri.toString().removePrefix(API_BASE_PATH)}"
+        val dstUrl =
+            "${accessTokenHandler.instanceUrl}$APEX_REST_BASE_PATH${request.uri.toString().removePrefix(API_BASE_PATH)}"
         val headers: Headers =
             request.headers.filter { !restrictedHeaders.contains(it.first.lowercase()) } +
                 listOf(
                     HEADER_AUTHORIZATION to "Bearer ${accessTokenHandler.accessToken}",
-                    HEADER_X_CORRELATION_ID to (request.header(HEADER_X_CORRELATION_ID) ?: ""), // Make sure expected case on header
+                    HEADER_X_CORRELATION_ID to (
+                        request.header(HEADER_X_CORRELATION_ID)
+                            ?: ""
+                    ), // Make sure expected case on header
                     HEADER_X_ACTING_NAV_IDENT to navIdent,
                 )
 
@@ -440,9 +433,10 @@ class Application(
         tokenFetchStats: Statistics,
     ): Response {
         lateinit var response: Response
+        val requestWithoutAcceptEncoding = request.removeHeader("Accept-Encoding")
         tokenFetchStats.latestCallElapsedTime =
             measureTimeMillis {
-                response = client(request)
+                response = client(requestWithoutAcceptEncoding) // Let OkHttp handle
             }
         return response
     }
@@ -471,14 +465,23 @@ class Application(
             .body(Body(ByteBuffer.wrap(bodyBytes)))
     }
 
-    fun decompressIfGzipped(response: Response): Response =
+    fun decompressIfGzippedAndRealize(response: Response): Response {
         if (response.header("Content-Encoding") == "gzip") {
-            val decompressed = GZIPInputStream(response.body.stream).bufferedReader().use { it.readText() }
-            response
+            val decompressed =
+                GZIPInputStream(response.body.stream)
+                    .bufferedReader()
+                    .use { it.readText() }
+
+            return response
                 .removeHeader("Content-Encoding")
+                .removeHeader("Content-Length")
                 .body(decompressed)
-                .header("Content-Length", decompressed.length.toString())
-        } else {
-            response
         }
+
+        val body = response.bodyString()
+
+        return response
+            .removeHeader("Content-Length")
+            .body(body)
+    }
 }
