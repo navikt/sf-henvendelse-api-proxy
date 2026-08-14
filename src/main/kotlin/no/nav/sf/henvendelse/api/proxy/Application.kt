@@ -63,13 +63,14 @@ val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLO
 
 val useHenvendelseListeCache = env(secret_USE_CACHE).lowercase() == "true"
 
-val teamLogAll = System.getenv(config_TEAM_LOG_ALL).lowercase() == "true"
+val applyTeamLogAll: Boolean = System.getenv(config_TEAM_LOG_ALL).lowercase() == "true"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
     private val accessTokenHandler: AccessTokenHandler = NewAccessTokenHandler(),
     private val devContext: Boolean = isDev,
     val client: HttpHandler = if (isGcp) noProxy() else supportProxy(),
+    val teamLogAll: Boolean = applyTeamLogAll,
 ) {
     private val log = KotlinLogging.logger { }
     private val teamLogsMarker = MarkerFactory.getMarker("TEAM_LOGS")
