@@ -5,7 +5,6 @@ package no.nav.sf.henvendelse.api.proxy.httpclient
 import mu.KotlinLogging
 import no.nav.sf.henvendelse.api.proxy.env
 import no.nav.sf.henvendelse.api.proxy.env_HTTPS_PROXY
-import no.nav.sf.henvendelse.api.proxy.secret_ENFORCE_HTTP_1_1
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import org.http4k.client.OkHttp

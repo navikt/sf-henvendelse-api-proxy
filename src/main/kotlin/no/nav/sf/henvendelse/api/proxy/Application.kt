@@ -61,7 +61,7 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
 val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
 
-val useHenvendelseListeCache = env(secret_USE_CACHE).lowercase() == "true"
+val useHenvendelseListeCache = env(config_USE_CACHE).lowercase() == "true"
 
 val applyTeamLogAll: Boolean = System.getenv(config_TEAM_LOG_ALL).lowercase() == "true"
 
@@ -253,14 +253,6 @@ class Application(
 
                     val response = decompressIfGzippedAndRealize(invokeRequest(forwardRequest, stats))
 
-                    val body1 = response.bodyString()
-                    val body2 = response.bodyString()
-
-                    log.info(
-                        "Check rereadable=${body1 == body2}, " +
-                            "body1Length=${body1.length}, body2Length=${body2.length}",
-                    )
-
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         Cache.doAsyncPut(
                             aktorIdInFocus,
@@ -346,13 +338,6 @@ class Application(
                                 "content-length" to response.header("Content-Length"),
                                 "transfer-encoding" to response.header("Transfer-Encoding"),
                                 "vary" to response.header("Vary"),
-                                "cache-control" to response.header("Cache-Control"),
-                                "etag" to response.header("ETag"),
-                                "last-modified" to response.header("Last-Modified"),
-                                "content-disposition" to response.header("Content-Disposition"),
-                                "content-language" to response.header("Content-Language"),
-                                "date" to response.header("Date"),
-                                "server" to response.header("Server"),
                             ).filterValues { it != null }
 
                         withLoggingContext(
