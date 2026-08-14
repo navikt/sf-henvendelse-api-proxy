@@ -61,7 +61,9 @@ const val APEX_REST_BASE_PATH = "/services/apexrest"
 val isDev: Boolean = env(config_DEPLOY_CLUSTER) == "dev-fss" || env(config_DEPLOY_CLUSTER) == "dev-gcp"
 val isGcp: Boolean = env(config_DEPLOY_CLUSTER) == "dev-gcp" || env(config_DEPLOY_CLUSTER) == "prod-gcp"
 
-val useHenvendelseListeCache = env(secret_USE_CACHE) == "true"
+val useHenvendelseListeCache = env(secret_USE_CACHE).lowercase() == "true"
+
+val teamLogAll = System.getenv(config_TEAM_LOG_ALL).lowercase() == "true"
 
 class Application(
     private val tokenValidator: TokenValidator = DefaultTokenValidator(),
@@ -78,7 +80,7 @@ class Application(
 
     fun start() {
         log.info {
-            "Starting ${if (devContext) "DEV" else "PROD"}, use cache $useHenvendelseListeCache, enforce 1.1 $enforceHttp1_1"
+            "Starting ${if (devContext) "DEV" else "PROD"}, use cache $useHenvendelseListeCache, team log all $teamLogAll, enforce 1.1 $enforceHttp1_1"
         }
         apiServer(8080).start()
         try {
@@ -322,7 +324,7 @@ class Application(
                                 "responseBody" to response.bodyString(),
                             ),
                         ) {
-                            if (!response.status.successful) {
+                            if (!response.status.successful || teamLogAll) {
                                 log.info(
                                     teamLogsMarker,
                                     "Summary (Teams): status=${response.status.code}, " +

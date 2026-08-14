@@ -17,7 +17,7 @@ import java.time.Duration
 
 private val log = KotlinLogging.logger { }
 
-val enforceHttp1_1 = env(secret_ENFORCE_HTTP_1_1) == "true"
+val enforceHttp1_1 = false
 
 private fun createOkHttpClient(
     proxy: Proxy? = null,
