@@ -253,6 +253,14 @@ class Application(
 
                     val response = decompressIfGzippedAndRealize(invokeRequest(forwardRequest, stats))
 
+                    val body1 = response.bodyString()
+                    val body2 = response.bodyString()
+
+                    log.info(
+                        "Check rereadable=${body1 == body2}, " +
+                            "body1Length=${body1.length}, body2Length=${body2.length}",
+                    )
+
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         Cache.doAsyncPut(
                             aktorIdInFocus,
