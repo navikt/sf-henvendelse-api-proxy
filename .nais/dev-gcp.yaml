@@ -85,6 +85,12 @@ spec:
         - application: bisys
           namespace: bidrag
           cluster: dev-fss
+        - application: bidrag-henvendelse-q2
+          namespace: bidrag
+          cluster: dev-gcp
+        - application: bidrag-henvendelse-q1
+          namespace: bidrag
+          cluster: dev-gcp
         - application: salesforce
           namespace: teamcrm
           cluster: dev-external

@@ -64,6 +64,9 @@ spec:
         - application: bisys
           namespace: bidrag
           cluster: prod-fss
+        - application: bidrag-henvendelse
+          namespace: bidrag
+          cluster: prod-gcp
         - application: salesforce
           namespace: teamcrm
           cluster: prod-external
