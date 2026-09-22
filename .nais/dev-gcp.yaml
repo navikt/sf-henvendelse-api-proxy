@@ -100,6 +100,12 @@ spec:
         - application: modia-robot-api
           namespace: personoversikt
           cluster: dev-gcp
+        - application: testnav-dolly-proxy-nav
+          namespace: dolly
+          cluster: dev-fss
+        - application: testnav-dolly-proxy-trygdeetaten
+          namespace: dolly
+          cluster: dev-fss
   envFrom:
     - configmap: salesforce-common
     - configmap: sf-henvendelse-api

@@ -19,6 +19,7 @@ import no.nav.sf.henvendelse.api.proxy.token.Statistics
 import no.nav.sf.henvendelse.api.proxy.token.TokenValidator
 import no.nav.sf.henvendelse.api.proxy.token.getAzpName
 import no.nav.sf.henvendelse.api.proxy.token.getNAVIdent
+import no.nav.sf.henvendelse.api.proxy.token.isDollyToken
 import no.nav.sf.henvendelse.api.proxy.token.isMachineToken
 import no.nav.sf.henvendelse.api.proxy.token.isNavOBOToken
 import org.http4k.core.Body
@@ -159,10 +160,13 @@ class Application(
             if (firstValidToken == null) {
                 log.warn { "Proxy: Not authorized" }
                 return Response(Status.UNAUTHORIZED).body("Not authorized")
-            } else if (!request.uri.path.contains("/kodeverk/") && firstValidToken.isMachineToken()) {
+            } else if (!request.uri.path.contains("/kodeverk/") &&
+                firstValidToken.isMachineToken() &&
+                !firstValidToken.isDollyToken()
+            ) {
                 // Request is authorized with a machine token instead of an obo token, we only allow access to
-                // kodeverk endpoints in that case:
-                log.warn { "Proxy: Machine token authorization not sufficient" }
+                // kodeverk endpoints in that case (except Dolly in test):
+                log.warn { "Proxy: Machine token authorization not sufficient, sender ${firstValidToken.getAzpName()}" }
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
                 val navIdent = fetchNavIdent(firstValidToken, stats)

@@ -21,6 +21,14 @@ fun JwtToken.isMachineToken(): Boolean {
     return false
 }
 
+private val dollyCallers =
+    setOf(
+        "dev-fss:dolly:testnav-dolly-proxy-nav",
+        "dev-fss:dolly:testnav-dolly-proxy-trygdeetaten",
+    )
+
+fun JwtToken.isDollyToken(): Boolean = getAzpName() in dollyCallers
+
 fun JwtToken.hasClaim(name: String) = this.jwtTokenClaims.get(name) != null
 
 fun JwtToken.getClaim(name: String) = this.jwtTokenClaims.get(name)?.toString() ?: ""
