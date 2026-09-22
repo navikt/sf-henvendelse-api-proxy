@@ -379,6 +379,10 @@ class Application(
         return if (token.isNavOBOToken()) {
             Metrics.callSource.labels("obo-${tokenFetchStats.srcLabel}").inc()
             token.getNAVIdent()
+        } else if (token.isDollyToken()) {
+            Metrics.callSource.labels("m2m-${tokenFetchStats.srcLabel}").inc()
+            tokenFetchStats.machine = true
+            "Dolly"
         } else if (token.isMachineToken()) {
             Metrics.callSource.labels("m2m-${tokenFetchStats.srcLabel}").inc()
             tokenFetchStats.machine = true
