@@ -169,7 +169,13 @@ class Application(
                 log.warn { "Proxy: Machine token authorization not sufficient, sender ${firstValidToken.getAzpName()}" }
                 return Response(Status.FORBIDDEN).body("Machine token authorization not sufficient")
             } else {
+                if (firstValidToken.isDollyToken()) {
+                    log.info("DOLLY authorized call ${request.method} ${request.uri}")
+                }
                 val navIdent = fetchNavIdent(firstValidToken, stats)
+                if (firstValidToken.isDollyToken()) {
+                    log.info("DOLLY got navIdent $navIdent")
+                }
 
                 try {
                     Metrics.issuer.labels(firstValidToken.issuer).inc()
@@ -207,7 +213,7 @@ class Application(
                     }
 
                 if (navIdent.isEmpty()) {
-                    File("/tmp/message-missing").writeText("($callIndex)" + request.toMessage())
+                    // File("/tmp/files/message-missing").writeText("($callIndex)" + request.toMessage())
                     return Response(Status.BAD_REQUEST).body("Missing Nav identifier")
                 } else {
                     val forwardRequest = createForwardRequest(request, navIdent, stats)
@@ -255,7 +261,17 @@ class Application(
                         }
                     }
 
+                    if (firstValidToken.isDollyToken()) {
+                        log.info("DOLLY authorized call BEFORE ${request.method} ${request.uri}")
+                    }
+
                     val response = decompressIfGzippedAndRealize(invokeRequest(forwardRequest, stats))
+
+                    if (firstValidToken.isDollyToken()) {
+                        log.info(
+                            "DOLLY authorized call AFTER, ${response.status.code}, ${response.bodyString()} ${request.method} ${request.uri}",
+                        )
+                    }
 
                     if (request.uri.path.contains("henvendelseliste") && response.status.code == 200) {
                         Cache.doAsyncPut(
