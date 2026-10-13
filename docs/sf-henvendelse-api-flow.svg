@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 1570" role="img" aria-labelledby="flow-title flow-description" style="width:100%;height:auto;display:block">
+  <title id="flow-title">Henvendelse API proxy request flow</title>
+  <desc id="flow-description">A request to the proxy is validated and authorized, then routed either to the henvendelseliste cache or Salesforce. The response is processed and returned to the caller.</desc>
+  <defs>
+    <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#8295b0"/>
+    </marker>
+    <marker id="flow-arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#ff817a"/>
+    </marker>
+    <marker id="flow-arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#62d29a"/>
+    </marker>
+    <style>
+      .flow-bg { fill: #0b1120; }
+      .flow-title { font: 700 27px system-ui, sans-serif; fill: #edf3ff; text-anchor: middle; }
+      .flow-subtitle { font: 15px system-ui, sans-serif; fill: #9eafc8; text-anchor: middle; }
+      .flow-card { fill: #151e2e; stroke: #34445c; stroke-width: 1.5; }
+      .flow-auth { fill: #14243a; stroke: #42658f; }
+      .flow-decision { fill: #282315; stroke: #80642e; }
+      .flow-error { fill: #2b191d; stroke: #85464c; }
+      .flow-cache { fill: #14271f; stroke: #397858; }
+      .flow-return { fill: #14271f; stroke: #397858; }
+      .flow-text { font: 600 17px system-ui, sans-serif; fill: #e7eefb; }
+      .flow-detail { font: 14px system-ui, sans-serif; fill: #a5b4ca; }
+      .flow-step { fill: #315c91; }
+      .flow-step-text { font: 700 13px system-ui, sans-serif; fill: #fff; text-anchor: middle; }
+      .flow-connector { fill: none; stroke: #8295b0; stroke-width: 2; marker-end: url(#flow-arrow); }
+      .flow-connector-red { fill: none; stroke: #ff817a; stroke-width: 2; marker-end: url(#flow-arrow-red); }
+      .flow-connector-green { fill: none; stroke: #62d29a; stroke-width: 2; marker-end: url(#flow-arrow-green); }
+      .flow-branch { font: 700 11px system-ui, sans-serif; fill: #a5b4ca; letter-spacing: 1px; }
+      .flow-status { font: 700 17px system-ui, sans-serif; fill: #ff9b96; }
+      .flow-status-detail { font: 13px system-ui, sans-serif; fill: #d5a5a7; }
+    </style>
+  </defs>
+
+  <rect class="flow-bg" width="1120" height="1570" rx="20"/>
+  <text class="flow-title" x="560" y="48">From caller to Salesforce</text>
+  <text class="flow-subtitle" x="560" y="74">Request lifecycle for every path under /api/**</text>
+
+  <g>
+    <rect class="flow-card" x="310" y="105" width="500" height="82" rx="15"/>
+    <circle class="flow-step" cx="343" cy="146" r="17"/>
+    <text class="flow-step-text" x="343" y="151">1</text>
+    <text class="flow-text" x="373" y="140">Calling application</text>
+    <text class="flow-detail" x="373" y="163">Sends an HTTP request to /api/**</text>
+  </g>
+  <path class="flow-connector" d="M560 187V222"/>
+
+  <g>
+    <rect class="flow-card flow-auth" x="310" y="228" width="500" height="100" rx="15"/>
+    <circle class="flow-step" cx="343" cy="278" r="17"/>
+    <text class="flow-step-text" x="343" y="283">2</text>
+    <text class="flow-text" x="373" y="268">Validate caller token</text>
+    <text class="flow-detail" x="373" y="292">Azure issuer and configured application audience</text>
+  </g>
+  <path class="flow-connector" d="M560 328V365"/>
+  <path class="flow-connector-red" d="M310 278H260"/>
+  <text class="flow-branch" x="282" y="265">NO</text>
+  <g>
+    <rect class="flow-card flow-error" x="35" y="243" width="220" height="70" rx="13"/>
+    <text class="flow-status" x="55" y="272">401</text>
+    <text class="flow-status-detail" x="55" y="294">Not authorized</text>
+  </g>
+
+  <g>
+    <rect class="flow-card flow-decision" x="310" y="371" width="500" height="116" rx="15"/>
+    <circle class="flow-step" cx="343" cy="429" r="17"/>
+    <text class="flow-step-text" x="343" y="434">3</text>
+    <text class="flow-text" x="373" y="414">Authorize token type and path</text>
+    <text class="flow-detail" x="373" y="439">Machine tokens: /kodeverk/** only</text>
+    <text class="flow-detail" x="373" y="462">Recognized Dolly callers are exempt</text>
+  </g>
+  <path class="flow-connector" d="M560 487V524"/>
+  <path class="flow-connector-red" d="M310 429H260"/>
+  <text class="flow-branch" x="282" y="416">NO</text>
+  <g>
+    <rect class="flow-card flow-error" x="35" y="394" width="220" height="70" rx="13"/>
+    <text class="flow-status" x="55" y="423">403</text>
+    <text class="flow-status-detail" x="55" y="445">Machine token not allowed</text>
+  </g>
+
+  <g>
+    <rect class="flow-card" x="310" y="530" width="500" height="108" rx="15"/>
+    <circle class="flow-step" cx="343" cy="584" r="17"/>
+    <text class="flow-step-text" x="343" y="589">4</text>
+    <text class="flow-text" x="373" y="567">Derive acting NAV identity</text>
+    <text class="flow-detail" x="373" y="592">OBO: NAVident · Dolly: Dolly · machine: azp_name</text>
+  </g>
+  <path class="flow-connector" d="M560 638V677"/>
+  <path class="flow-connector-red" d="M310 584H260"/>
+  <text class="flow-branch" x="282" y="571">EMPTY</text>
+  <g>
+    <rect class="flow-card flow-error" x="35" y="549" width="220" height="70" rx="13"/>
+    <text class="flow-status" x="55" y="578">400</text>
+    <text class="flow-status-detail" x="55" y="600">Missing NAV identifier</text>
+  </g>
+
+  <g>
+    <rect class="flow-card flow-auth" x="310" y="683" width="500" height="114" rx="15"/>
+    <circle class="flow-step" cx="343" cy="740" r="17"/>
+    <text class="flow-step-text" x="343" y="745">5</text>
+    <text class="flow-text" x="373" y="720">Prepare Salesforce request</text>
+    <text class="flow-detail" x="373" y="745">Rewrite /api to /services/apexrest</text>
+    <text class="flow-detail" x="373" y="768">Preserve method, query and body; add acting identity</text>
+  </g>
+  <path class="flow-connector" d="M560 797V838"/>
+
+  <g>
+    <rect class="flow-card flow-decision" x="310" y="844" width="500" height="144" rx="15"/>
+    <circle class="flow-step" cx="343" cy="916" r="17"/>
+    <text class="flow-step-text" x="343" y="921">6</text>
+    <text class="flow-text" x="373" y="880">Check henvendelseliste cache</text>
+    <text class="flow-detail" x="373" y="905">Read using aktorid, page and pageSize</text>
+    <text class="flow-detail" x="373" y="929">Return a 200 cache entry only when enabled by</text>
+    <text class="flow-detail" x="373" y="953">USE_CACHE or the request parameter ?cache=true</text>
+  </g>
+  <path class="flow-connector-green" d="M810 916H866"/>
+  <text class="flow-branch" x="825" y="903">HIT</text>
+  <g>
+    <rect class="flow-card flow-cache" x="860" y="870" width="227" height="92" rx="13"/>
+    <text class="flow-text" x="973" y="899" text-anchor="middle">Return cache entry</text>
+    <text class="flow-detail" x="973" y="923" text-anchor="middle">HTTP 200 · logged</text>
+    <text class="flow-detail" x="973" y="944" text-anchor="middle">Salesforce call skipped</text>
+  </g>
+  <path class="flow-connector" d="M560 988V1030"/>
+  <text class="flow-branch" x="578" y="1016">MISS / CACHE DISABLED / OTHER PATH</text>
+
+  <g>
+    <rect class="flow-card flow-auth" x="310" y="1036" width="500" height="100" rx="15"/>
+    <circle class="flow-step" cx="343" cy="1086" r="17"/>
+    <text class="flow-step-text" x="343" y="1091">7</text>
+    <text class="flow-text" x="373" y="1076">Call Salesforce</text>
+    <text class="flow-detail" x="373" y="1100">Configured HTTP client · remove Accept-Encoding</text>
+  </g>
+  <path class="flow-connector" d="M560 1136V1173"/>
+
+  <g>
+    <rect class="flow-card" x="310" y="1179" width="500" height="110" rx="15"/>
+    <circle class="flow-step" cx="343" cy="1234" r="17"/>
+    <text class="flow-step-text" x="343" y="1239">8</text>
+    <text class="flow-text" x="373" y="1219">Process response and cache effects</text>
+    <text class="flow-detail" x="373" y="1244">Decompress gzip; asynchronously update or invalidate cache</text>
+    <text class="flow-detail" x="373" y="1267">Cache writes happen only for relevant successful calls</text>
+  </g>
+  <path class="flow-connector" d="M560 1289V1325"/>
+
+  <g>
+    <rect class="flow-card" x="310" y="1331" width="500" height="83" rx="15"/>
+    <circle class="flow-step" cx="343" cy="1372" r="17"/>
+    <text class="flow-step-text" x="343" y="1377">9</text>
+    <text class="flow-text" x="373" y="1366">Record metrics and request logs</text>
+    <text class="flow-detail" x="373" y="1390">Status, timing, source and selected request metadata</text>
+  </g>
+  <path class="flow-connector" d="M560 1414V1450"/>
+
+  <g>
+    <rect class="flow-card flow-return" x="310" y="1456" width="500" height="82" rx="15"/>
+    <text class="flow-text" x="560" y="1489" text-anchor="middle">Return response to calling application</text>
+    <text class="flow-detail" x="560" y="1513" text-anchor="middle">Remove Set-Cookie and hop-by-hop headers</text>
+  </g>
+</svg>
