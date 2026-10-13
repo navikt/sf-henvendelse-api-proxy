@@ -2,7 +2,7 @@
 
 Proxy for apper som kjører i NAIS og trenger tilgang til Henvendelse API i Salesforce. Kallende apper autentiserer seg vanligvis med et Azure on-behalf-of-token. Machine tokens er bare tillatt mot ikke-sensitive `kodeverk`-endepunkter, med et eget unntak for Dolly-callers.
 
-<details>
+<details markdown="1">
 <summary>Detaljert request-flyt for /api</summary>
 
 ![Request-flyt gjennom Henvendelse API-proxyen](docs/sf-henvendelse-api-flow-no.svg)
