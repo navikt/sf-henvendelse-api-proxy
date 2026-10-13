@@ -77,7 +77,10 @@
   <g>
     <rect class="flow-card flow-error" x="35" y="394" width="220" height="70" rx="13"/>
     <text class="flow-status" x="55" y="423">403</text>
-    <text class="flow-status-detail" x="55" y="445">Machine token not allowed</text>
+    <text class="flow-status-detail" x="55" y="438">
+      <tspan x="55">Machine token</tspan>
+      <tspan x="55" dy="16">authorization not sufficient</tspan>
+    </text>
   </g>
 
   <g>
@@ -93,7 +96,7 @@
   <g>
     <rect class="flow-card flow-error" x="35" y="549" width="220" height="70" rx="13"/>
     <text class="flow-status" x="55" y="578">400</text>
-    <text class="flow-status-detail" x="55" y="600">Missing NAV identifier</text>
+    <text class="flow-status-detail" x="55" y="600">Missing Nav identifier</text>
   </g>
 
   <g>

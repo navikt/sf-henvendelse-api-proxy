@@ -1,17 +1,17 @@
 # sf henvendelse api proxy
 
-Proxy for applications running in NAIS to access the Henvendelse API in Salesforce. Callers typically authenticate with an Azure on-behalf-of token. Machine tokens are permitted only for non-sensitive `kodeverk` endpoints, with a specific exception for Dolly callers.
+Proxy for apper som kjører i NAIS og trenger tilgang til Henvendelse API i Salesforce. Kallende apper autentiserer seg vanligvis med et Azure on-behalf-of-token. Machine tokens er bare tillatt mot ikke-sensitive `kodeverk`-endepunkter, med et eget unntak for Dolly-callers.
 
 <details>
-<summary>Detailed /api request flow</summary>
+<summary>Detaljert request-flyt for /api</summary>
 
-![Henvendelse API proxy request flow](docs/sf-henvendelse-api-flow.svg)
+![Request-flyt gjennom Henvendelse API-proxyen](docs/sf-henvendelse-api-flow-no.svg)
 
-### Decisions and side effects
+### Beslutninger og sideeffekter
 
-- Token validation uses the Azure issuer configuration and the configured application audience. A missing or invalid token returns **401**.
-- A token with the `access_as_application` role is treated as a machine token. Unless it is a recognized Dolly caller, it is allowed only when the request path contains `/kodeverk/`; other paths return **403**.
-- The acting identity is taken from the `NAVident` claim for OBO tokens, set to `Dolly` for recognized Dolly callers, or taken from `azp_name` for other machine tokens. If no identity can be derived, the proxy returns **400**.
-- For `henvendelseliste` paths, the proxy reads the cache before calling Salesforce, even when cached responses are not enabled. It returns a cached response only when the cache has status **200** and either `USE_CACHE=true` or the request has `?cache=true`; otherwise it continues to Salesforce. Successful Salesforce responses are written to the cache asynchronously.
-- Successful selected write paths invalidate related cache entries asynchronously. Responses are logged and measured, gzip is decompressed when present, and `Set-Cookie` plus hop-by-hop response headers are removed before returning.
+- Token validation bruker Azure issuer-konfigurasjonen og konfigurert application audience. Manglende eller ugyldig token gir **401**.
+- Et token med rollen `access_as_application` regnes som et machine token. Med unntak av gjenkjente Dolly-callers er det bare tillatt når request path inneholder `/kodeverk/`; andre paths gir **403**.
+- Acting identity hentes fra `NAVident`-claimet for OBO-tokens, settes til `Dolly` for gjenkjente Dolly-callers eller hentes fra `azp_name` for andre machine tokens. Hvis ingen identity kan utledes, returnerer proxyen **400**.
+- For paths som inneholder `henvendelseliste` leser proxyen fra cache før den eventuelt kaller Salesforce, også når cache-respons ikke er aktivert. En cache entry returneres bare når status er **200** og enten `USE_CACHE=true` eller requesten har `?cache=true`; ellers går kallet videre til Salesforce. Vellykkede Salesforce-responser skrives asynkront til cache.
+- Utvalgte vellykkede write-paths invaliderer relaterte cache entries asynkront. Responser logges og måles, gzip dekomprimeres når det finnes, og `Set-Cookie` samt hop-by-hop headers fjernes før responsen returneres.
 </details>
