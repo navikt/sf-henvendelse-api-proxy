@@ -38,9 +38,13 @@ object Cache {
         page: Int,
         pageSize: Int,
         endpointLabel: String,
+        version: String = "v1",
     ): Response {
         val request =
-            Request(Method.GET, "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize").headers(authHeaders)
+            Request(
+                Method.GET,
+                "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize&version=$version",
+            ).headers(authHeaders)
         val response: Response
 
         val callTime =
@@ -69,9 +73,13 @@ object Cache {
         pageSize: Int,
         json: String,
         endpointLabel: String,
+        version: String = "v1",
     ) {
         val request =
-            Request(Method.POST, "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize").headers(authHeaders).body(json)
+            Request(
+                Method.POST,
+                "$endpointSfHenvendelserDb?aktorId=$aktorId&page=$page&pageSize=$pageSize&version=$version",
+            ).headers(authHeaders).body(json)
         lateinit var response: Response
         var retryCount = 0
         val maxRetries = 2
@@ -132,10 +140,11 @@ object Cache {
         page: Int,
         pageSize: Int,
         endpointLabel: String,
+        version: String = "v1",
     ) {
         log.info { "Will perform async postgres cache get with aktorId $aktorId" }
         GlobalScope.launch {
-            get(aktorId, page, pageSize, endpointLabel)
+            get(aktorId, page, pageSize, endpointLabel, version)
         }
     }
 
@@ -145,10 +154,11 @@ object Cache {
         pageSize: Int,
         json: String,
         endpointLabel: String,
+        version: String = "v1",
     ) {
         log.info { "Will perform async postgres cache put with aktorId $aktorId" }
         GlobalScope.launch {
-            put(aktorId, page, pageSize, json, endpointLabel)
+            put(aktorId, page, pageSize, json, endpointLabel, version)
         }
     }
 

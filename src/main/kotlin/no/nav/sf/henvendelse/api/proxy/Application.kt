@@ -202,6 +202,7 @@ class Application(
 
                 val page = request.query("page")?.toInt() ?: 1
                 val pageSize = request.query("pageSize")?.toInt() ?: 50
+                val version = if (request.uri.path.endsWith("/henvendelseliste/v2")) "v2" else "v1"
 
                 val cache = request.query("cache")
                 val forceCache =
@@ -225,7 +226,7 @@ class Application(
                         aktorIdInFocus = request.query("aktorid") ?: "null"
                         // Cache.doAsyncGet(aktorId, "henvendelseliste")
                         henvendelseCacheResponse =
-                            decompressIfGzippedAndRealize(get(aktorIdInFocus, page, pageSize, "henvendelseliste"))
+                            decompressIfGzippedAndRealize(get(aktorIdInFocus, page, pageSize, "henvendelseliste", version))
 
                         if ((forceCache || useHenvendelseListeCache) && henvendelseCacheResponse.status.code == 200) {
                             stats.logAndUpdateMetrics(
@@ -242,13 +243,14 @@ class Application(
                                     "src" to stats.srcLabel,
                                     "uri" to forwardRequest.uri.toString(),
                                     "aktorId" to aktorIdInFocus,
+                                    "api_version" to version,
                                     "x-acting-nav-ident" to navIdent,
                                 ),
                             ) {
                                 log.info {
                                     "Summary : Cached Response, " +
                                         "status=${henvendelseCacheResponse.status.code}, call_ms=${stats.latestCallElapsedTime}, " +
-                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}"
+                                        "method=${forwardRequest.method.name}, uri=${forwardRequest.uri}, src=${stats.srcLabel}, apiVersion=$version"
                                 }
                             }
                             val response =
@@ -280,6 +282,7 @@ class Application(
                             pageSize,
                             response.bodyString(),
                             "henvendelseliste",
+                            version,
                         )
 //                        if (henvendelseCacheResponse != null && henvendelseCacheResponse.status.code == 200) {
 //                            File(
