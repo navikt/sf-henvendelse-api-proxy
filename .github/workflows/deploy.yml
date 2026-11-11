@@ -1,6 +1,7 @@
 name: Build, push, deploy
 
 on:
+  workflow_call:
   push:
     branches-ignore:
       - 'chore/**'
